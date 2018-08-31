@@ -80,9 +80,9 @@ namespace klong {
     };
 
     struct Token {
-        TokenType type = TokenType::NONE;
         SourceLocation location;
-        std::string value;
+        TokenType type = TokenType::NONE;
+        std::string value = "";
         NumberType numberType = NumberType::NONE;
         uint8_t radix = 10;
     };
