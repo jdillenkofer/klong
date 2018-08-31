@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 #include "common/source_file.h"
 #include "lexer/lexer.h"
@@ -20,5 +21,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     auto lexer = Lexer(sourceFile);
+    std::vector<Token> tokens;
+    while(lexer.hasNext()) {
+        auto token = lexer.next();
+        tokens.emplace_back(token);
+    }
     return 0;
 }

@@ -74,16 +74,16 @@ namespace klong {
     };
 
     enum class NumberType {
-        None,
-        Integer,
-        Float
+        NONE,
+        INTEGER,
+        FLOAT
     };
 
     struct Token {
         TokenType type = TokenType::NONE;
         SourceLocation location;
         std::string value;
-        NumberType numberType = NumberType::None;
+        NumberType numberType = NumberType::NONE;
         uint8_t radix = 10;
     };
 }

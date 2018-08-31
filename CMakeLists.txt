@@ -8,6 +8,7 @@ set(EXECUTABLE_NAME
 if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "CLANG"))
   set(CMAKE_CXX_FLAGS
     "${CMAKE_CXX_FLAGS} \
+     -g \
      -Wall \
      -Wextra \
      -Wconversion \
@@ -29,8 +30,7 @@ if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" ST
      -Wmissing-field-initializers \
      -fno-common \
      -pedantic \
-     -std=c++2a \
-     -O3")
+     -std=c++2a")
 endif()
 
 include_directories(src/)

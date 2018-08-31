@@ -1,6 +1,9 @@
 # custom
 build
 
+# VS Code
+.vscode
+
 # Visual Studio
 # User-specific files
 *.suo
