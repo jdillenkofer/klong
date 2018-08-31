@@ -35,7 +35,6 @@ namespace klong {
             bool tilde(Token& token);
             bool colon(Token& token);
             bool comma(Token& token);
-            bool assignOp(Token& token);
             bool period(Token& token);
             bool percent(Token& token);
             bool question(Token& token);
@@ -45,8 +44,8 @@ namespace klong {
             bool rightCurlyBrace(Token& token);
             bool leftParenthesis(Token& token);
             bool rightParenthesis(Token& token);
-            
-            
+            bool blockComment(Token& token);
+            bool lineComment(Token& token);
 
         private:
             static std::multimap<char, LexerCaseCallable> cases;
@@ -54,5 +53,6 @@ namespace klong {
             SourceFile _source;
             SourceLocation _sourceLocation;
             size_t _currentPosition = 0;
+
     };
 }

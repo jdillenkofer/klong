@@ -19,10 +19,15 @@ namespace klong {
         // period/spread
         {'.', std::bind(&Lexer::period, std::placeholders::_1, std::placeholders::_2)},
 
+        // block comment, line comment, slash
+        {'/', std::bind(&Lexer::blockComment, std::placeholders::_1, std::placeholders::_2)},
+        {'/', std::bind(&Lexer::lineComment, std::placeholders::_1, std::placeholders::_2)},
+        {'/', std::bind(&Lexer::slash, std::placeholders::_1, std::placeholders::_2)},
+
         // tilde
         {'~', std::bind(&Lexer::tilde, std::placeholders::_1, std::placeholders::_2)},
 
-        // assignment, scope operator, colon
+        // colon
         {':', std::bind(&Lexer::colon, std::placeholders::_1, std::placeholders::_2)},
 
         // percent/number literal
@@ -181,10 +186,6 @@ namespace klong {
         return true;
     }
 
-    bool Lexer::assignOp(Token& token) {
-        return false;
-    }
-
     bool Lexer::period(Token& token) {
         auto c = read();
         token.type = TokenType::PERIOD;
@@ -254,6 +255,58 @@ namespace klong {
         token.type = TokenType::RIGHT_PAR;
         token.location = _sourceLocation;
         token.value = std::string(1, c);
+        return true;
+    }
+
+    bool Lexer::blockComment(Token& token) {
+        auto code = _source.code();
+        auto position = _currentPosition;
+        auto commentStart = _currentPosition;
+        position++;
+        if (code[position] != '*') {
+            return false;
+        }
+        
+        position++;
+        while(code[position] != '*') {
+            if (position == code.length() - 1) {
+                return false;
+            }
+            position++;
+        }
+        // skip *
+        position++;
+        if (code[position] != '/') {
+            return false;
+        }
+        // skip /
+        position++;
+        auto commentEnd = position;
+        token.type = TokenType::BLOCK_COMMENT;
+        token.location = _sourceLocation;
+        token.value = code.substr(commentStart, commentEnd - commentStart);
+        _currentPosition = commentEnd;
+        return true;
+    }
+
+    bool Lexer::lineComment(Token& token) {
+        auto code = _source.code();
+        auto position = _currentPosition;
+        auto commentStart = _currentPosition;
+        position++;
+        if (code[position] != '/') {
+            return false;
+        }
+
+        position++;
+        while(code[position] != '\n' && position < code.length()) {
+            position++;
+        }
+        auto commentEnd = position;
+        token.type = TokenType::LINE_COMMENT;
+        token.location = _sourceLocation;
+        token.value = code.substr(commentStart, commentEnd - commentStart);
+        _currentPosition = commentEnd;
         return true;
     }
 
