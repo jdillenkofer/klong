@@ -63,6 +63,13 @@ namespace klong {
         {'(', std::bind(&Lexer::leftParenthesis, std::placeholders::_1, std::placeholders::_2)},
         {')', std::bind(&Lexer::rightParenthesis, std::placeholders::_1, std::placeholders::_2)},
 
+        // control flow keyword
+        {'i', std::bind(&Lexer::ifKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'e', std::bind(&Lexer::elseKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'w', std::bind(&Lexer::whileKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'f', std::bind(&Lexer::forKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'d', std::bind(&Lexer::doKeyword, std::placeholders::_1, std::placeholders::_2)},
+
         // let and const keyword
         {'l', std::bind(&Lexer::letKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'c', std::bind(&Lexer::constKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -141,42 +148,32 @@ namespace klong {
         return character;
     }
 
-    bool Lexer::letKeyword(Token& token) {
-        auto code = _source.code();
-        auto startLocation = _sourceLocation;
-        auto letStart = _currentPosition;
-        if (matches("let")) {
-            auto letEnd = _currentPosition;
-            updateLocation();
-            auto endLocation = _sourceLocation;
-            token.start = startLocation;
-            token.end = endLocation;
-            token.type = TokenType::LET;
-            token.value = code.substr(letStart, letEnd - letStart);
-            return true;
-        }
+    bool Lexer::ifKeyword(Token& token) {
+        return matchesKeyword(token, "if", TokenType::IF);
+    }
 
-        _currentPosition = letStart;
-        return false;
+    bool Lexer::elseKeyword(Token& token) {
+        return matchesKeyword(token, "else", TokenType::ELSE);
+    }
+
+    bool Lexer::whileKeyword(Token& token) {
+        return matchesKeyword(token, "while", TokenType::WHILE);
+    }
+
+    bool Lexer::forKeyword(Token& token) {
+        return matchesKeyword(token, "for", TokenType::FOR);
+    }
+
+    bool Lexer::doKeyword(Token& token) {
+        return matchesKeyword(token, "do", TokenType::DO);
+    }
+    
+    bool Lexer::letKeyword(Token& token) {
+        return matchesKeyword(token, "let", TokenType::LET);
     }
 
     bool Lexer::constKeyword(Token& token) {
-        auto code = _source.code();
-        auto startLocation = _sourceLocation;
-        auto constStart = _currentPosition;
-        if (matches("const")) {
-            auto constEnd = _currentPosition;
-            updateLocation();
-            auto endLocation = _sourceLocation;
-            token.start = startLocation;
-            token.end = endLocation;
-            token.type = TokenType::CONST;
-            token.value = code.substr(constStart, constEnd - constStart);
-            return true;
-        }
-
-        _currentPosition = constStart;
-        return false;
+        return matchesKeyword(token, "const", TokenType::CONST);
     }
 
     bool Lexer::plus(Token& token) {

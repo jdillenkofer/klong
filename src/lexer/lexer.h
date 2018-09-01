@@ -55,6 +55,31 @@ namespace klong {
                 return false;
             }
 
+            inline bool matchesKeyword(Token& token, const std::string& keyword, TokenType type) {
+                auto code = _source.code();
+                auto startLocation = _sourceLocation;
+                auto keywordStart = _currentPosition;
+                if (matches(keyword)) {
+                    auto keywordEnd = _currentPosition;
+                    updateLocation();
+                    auto endLocation = _sourceLocation;
+                    token.start = startLocation;
+                    token.end = endLocation;
+                    token.type = type;
+                    token.value = code.substr(keywordStart, keywordEnd - keywordStart);
+                    return true;
+                }
+
+                _currentPosition = keywordStart;
+                return false;
+            }
+
+            bool ifKeyword(Token& token);
+            bool elseKeyword(Token& token);
+            bool whileKeyword(Token& token);
+            bool forKeyword(Token& token);
+            bool doKeyword(Token& token);
+
             bool letKeyword(Token& token);
             bool constKeyword(Token& token);
 
