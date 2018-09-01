@@ -741,6 +741,7 @@ namespace klong {
         auto characterLiteralStart = _currentPosition;
         auto startLocation = _sourceLocation;
         char content;
+        // first ' char
         char c = read();
         // escaped char
         if ((c = read()) == '\\') {
@@ -751,6 +752,10 @@ namespace klong {
                 _currentPosition = characterLiteralStart;
                 return false;
             }
+        } else if (c == '\'') {
+            // if there is no char, we bail
+            _currentPosition = characterLiteralStart;
+            return false;
         } else {
             content = c;
         }
