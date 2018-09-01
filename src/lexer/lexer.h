@@ -55,6 +55,10 @@ namespace klong {
             bool assignOp(Token& token);
             bool equal(Token& token);
             bool notEqual(Token& token);
+            bool lessThan(Token& token);
+            bool greaterThan(Token& token);
+            bool lessThanEqual(Token& token);
+            bool greaterThanEqual(Token& token);
             bool leftCurlyBrace(Token& token);
             bool rightCurlyBrace(Token& token);
             bool leftParenthesis(Token& token);

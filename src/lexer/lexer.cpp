@@ -44,6 +44,14 @@ namespace klong {
         {'=', std::bind(&Lexer::equal, std::placeholders::_1, std::placeholders::_2)},
         {'=', std::bind(&Lexer::assignOp, std::placeholders::_1, std::placeholders::_2)},
 
+        // gt, ge
+        {'>', std::bind(&Lexer::greaterThanEqual, std::placeholders::_1, std::placeholders::_2)},
+        {'>', std::bind(&Lexer::greaterThan, std::placeholders::_1, std::placeholders::_2)},
+        
+        // lt, le
+        {'<', std::bind(&Lexer::lessThanEqual, std::placeholders::_1, std::placeholders::_2)},
+        {'<', std::bind(&Lexer::lessThan, std::placeholders::_1, std::placeholders::_2)},
+
         // pipe
         {'|', std::bind(&Lexer::pipe, std::placeholders::_1, std::placeholders::_2)},
 
@@ -181,24 +189,7 @@ namespace klong {
     }
 
     bool Lexer::assignOp(Token& token) {
-        auto revertPosition = _currentPosition;
-        auto startLocation = _sourceLocation;
-        // read first =
-        char c = read();
-        // check for "=="
-        if (read(false) == '=') {
-            _currentPosition = revertPosition;
-            return false;
-        }
-
-        updateLocation();
-        auto endLocation = _sourceLocation;
-        token.type = TokenType::ASSIGN_OP;
-        token.start = startLocation;
-        token.end = endLocation;
-        token.value = std::string(1, c);
-        return true;
-
+        return readSingleLineToken(token, TokenType::ASSIGN_OP);
     }
 
     bool Lexer::equal(Token& token) {
@@ -243,6 +234,56 @@ namespace klong {
         return true;
     }
 
+    bool Lexer::lessThan(Token& token) {
+        return readSingleLineToken(token, TokenType::LT_OP);
+    }
+
+    bool Lexer::greaterThan(Token& token) {
+        return readSingleLineToken(token, TokenType::GT_OP);
+    }
+
+    bool Lexer::lessThanEqual(Token& token) {
+        auto code = _source.code();
+        auto lessThanEqualStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        // ignore first <
+        read();
+        if (read() != '=') {
+            _currentPosition = lessThanEqualStart;
+            return false;
+        }
+
+        auto lessThanEqualEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::LE_OP;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = code.substr(lessThanEqualStart, lessThanEqualEnd - lessThanEqualStart);
+        return true;
+    }
+
+    bool Lexer::greaterThanEqual(Token& token) {
+                auto code = _source.code();
+        auto greaterThanEqualStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        // ignore first >
+        read();
+        if (read() != '=') {
+            _currentPosition = greaterThanEqualStart;
+            return false;
+        }
+
+        auto greaterThanEqualEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::GE_OP;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = code.substr(greaterThanEqualStart, greaterThanEqualEnd - greaterThanEqualStart);
+        return true;
+    }
+    
     bool Lexer::leftCurlyBrace(Token& token) {
         return readSingleLineToken(token, TokenType::LEFT_CURLY_BRACE);
     }
