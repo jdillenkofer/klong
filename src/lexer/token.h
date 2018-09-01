@@ -36,6 +36,7 @@ namespace klong {
         SLASH,
         CARET,
         TILDE,
+        SEMICOLON,
         COLON,
         COMMA,
         PERIOD,
@@ -54,6 +55,8 @@ namespace klong {
         RIGHT_CURLY_BRACE,
         LEFT_PAR,
         RIGHT_PAR,
+        LEFT_SQUARED_BRACKET,
+        RIGHT_SQUARED_BRACKET,
 
         CHARACTER_LITERAL,
         NUMBER_LITERAL,

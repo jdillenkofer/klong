@@ -22,12 +22,16 @@ namespace klong {
             void skipWhitespace(size_t& position) const;
             char read(bool advancePosition = true);
             bool isWhitespace(char c) const;
+            bool isAlphanumeric(char c) const;
             bool readSingleLineToken(Token& token, TokenType type);
             bool matches(const std::string& str);
             bool matchesKeyword(Token& token, const std::string& keyword, TokenType type);
 
             bool blockComment(Token& token);
             bool lineComment(Token& token);
+
+            bool funKeyword(Token& token);
+            bool returnKeyword(Token& token);
 
             bool ifKeyword(Token& token);
             bool elseKeyword(Token& token);
@@ -45,6 +49,7 @@ namespace klong {
             bool slash(Token& token);
             bool caret(Token& token);
             bool tilde(Token& token);
+            bool semicolon(Token& token);
             bool colon(Token& token);
             bool comma(Token& token);
             bool period(Token& token);
@@ -63,6 +68,21 @@ namespace klong {
             bool rightCurlyBrace(Token& token);
             bool leftParenthesis(Token& token);
             bool rightParenthesis(Token& token);
+            bool leftSquaredBracket(Token& token);
+            bool rightSquaredBracket(Token& token);
+            
+            bool stringType(Token& token);
+            bool boolType(Token& token);
+            bool i8Type(Token& token);
+            bool i16Type(Token& token);
+            bool i32Type(Token& token);
+            bool i64Type(Token& token);
+            bool u8Type(Token& token);
+            bool u16Type(Token& token);
+            bool u32Type(Token& token);
+            bool u64Type(Token& token);
+            bool f32Type(Token& token);
+            bool f64Type(Token& token);
 
         private:
             static std::multimap<char, LexerCaseCallable> cases;

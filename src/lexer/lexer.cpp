@@ -28,6 +28,9 @@ namespace klong {
         // tilde
         {'~', std::bind(&Lexer::tilde, std::placeholders::_1, std::placeholders::_2)},
 
+        // semicolon
+        {';', std::bind(&Lexer::semicolon, std::placeholders::_1, std::placeholders::_2)},
+
         // colon
         {':', std::bind(&Lexer::colon, std::placeholders::_1, std::placeholders::_2)},
 
@@ -63,6 +66,14 @@ namespace klong {
         {'(', std::bind(&Lexer::leftParenthesis, std::placeholders::_1, std::placeholders::_2)},
         {')', std::bind(&Lexer::rightParenthesis, std::placeholders::_1, std::placeholders::_2)},
 
+        // squared-brackets
+        {'[', std::bind(&Lexer::leftSquaredBracket, std::placeholders::_1, std::placeholders::_2)},
+        {']', std::bind(&Lexer::rightSquaredBracket, std::placeholders::_1, std::placeholders::_2)},
+
+        // function
+        {'f', std::bind(&Lexer::funKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'r', std::bind(&Lexer::returnKeyword, std::placeholders::_1, std::placeholders::_2)},
+
         // control flow keyword
         {'i', std::bind(&Lexer::ifKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'e', std::bind(&Lexer::elseKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -73,6 +84,20 @@ namespace klong {
         // let and const keyword
         {'l', std::bind(&Lexer::letKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'c', std::bind(&Lexer::constKeyword, std::placeholders::_1, std::placeholders::_2)},
+
+        // types
+        {'s', std::bind(&Lexer::stringType, std::placeholders::_1, std::placeholders::_2)},
+        {'b', std::bind(&Lexer::boolType, std::placeholders::_1, std::placeholders::_2)},
+        {'i', std::bind(&Lexer::i8Type, std::placeholders::_1, std::placeholders::_2)},
+        {'i', std::bind(&Lexer::i16Type, std::placeholders::_1, std::placeholders::_2)},
+        {'i', std::bind(&Lexer::i32Type, std::placeholders::_1, std::placeholders::_2)},
+        {'i', std::bind(&Lexer::i64Type, std::placeholders::_1, std::placeholders::_2)},
+        {'u', std::bind(&Lexer::u8Type, std::placeholders::_1, std::placeholders::_2)},
+        {'u', std::bind(&Lexer::u16Type, std::placeholders::_1, std::placeholders::_2)},
+        {'u', std::bind(&Lexer::u32Type, std::placeholders::_1, std::placeholders::_2)},
+        {'u', std::bind(&Lexer::u64Type, std::placeholders::_1, std::placeholders::_2)},
+        {'f', std::bind(&Lexer::f32Type, std::placeholders::_1, std::placeholders::_2)},
+        {'f', std::bind(&Lexer::f64Type, std::placeholders::_1, std::placeholders::_2)},
     };
 
     bool Lexer::hasNext() const {
@@ -152,6 +177,10 @@ namespace klong {
         return c == ' ' || c == '\t' || c == '\n';
     }
 
+    bool Lexer::isAlphanumeric(char c) const {
+        return isalnum(c);
+    }
+
     bool Lexer::readSingleLineToken(Token& token, TokenType type) {
         auto c = read();
         auto start = _sourceLocation;
@@ -166,16 +195,15 @@ namespace klong {
 
     bool Lexer::matches(const std::string& str) {
         size_t pos = 0;
-        char c = read();
-        while(pos < (str.size() - 1)) {
+        char c;
+        while(pos < str.size()) {
+            c = read();
             if (c != str[pos]) {
                 return false;
             }
-            c = read();
             pos++;
         }
-        // expect whitespace behind the match
-        if (isWhitespace(read(false))){
+        if (!isAlphanumeric(read(false))){
             return true;
         }
         return false;
@@ -262,6 +290,14 @@ namespace klong {
         return true;
     }
 
+    bool Lexer::funKeyword(Token& token) {
+        return matchesKeyword(token, "fun", TokenType::FUN);
+    }
+
+    bool Lexer::returnKeyword(Token& token) {
+        return matchesKeyword(token, "return", TokenType::RETURN);
+    }
+
     bool Lexer::ifKeyword(Token& token) {
         return matchesKeyword(token, "if", TokenType::IF);
     }
@@ -316,6 +352,10 @@ namespace klong {
 
     bool Lexer::tilde(Token& token) {
         return readSingleLineToken(token, TokenType::TILDE);
+    }
+
+    bool Lexer::semicolon(Token& token) {
+        return readSingleLineToken(token, TokenType::SEMICOLON);
     }
 
     bool Lexer::colon(Token& token) {
@@ -457,4 +497,61 @@ namespace klong {
     bool Lexer::rightParenthesis(Token& token) {
         return readSingleLineToken(token, TokenType::RIGHT_PAR);
     }
+
+    bool Lexer::leftSquaredBracket(Token& token) {
+        return readSingleLineToken(token, TokenType::LEFT_SQUARED_BRACKET);
+    }
+
+    bool Lexer::rightSquaredBracket(Token& token) {
+        return readSingleLineToken(token, TokenType::RIGHT_SQUARED_BRACKET);
+    }
+
+    bool Lexer::stringType(Token& token) {
+        return matchesKeyword(token, "string", TokenType::STRING);
+    }
+
+    bool Lexer::boolType(Token& token) {
+        return matchesKeyword(token, "bool", TokenType::BOOL);
+    }
+
+    bool Lexer::i8Type(Token& token) {
+        return matchesKeyword(token, "i8", TokenType::I8);
+    }
+
+    bool Lexer::i16Type(Token& token) {
+        return matchesKeyword(token, "i16", TokenType::I16);
+    }
+
+    bool Lexer::i32Type(Token& token) {
+        return matchesKeyword(token, "i32", TokenType::I32);
+    }
+
+    bool Lexer::i64Type(Token& token) {
+        return matchesKeyword(token, "i64", TokenType::I64);
+    }
+
+    bool Lexer::u8Type(Token& token) {
+        return matchesKeyword(token, "u8", TokenType::U8);
+    }
+
+    bool Lexer::u16Type(Token& token) {
+        return matchesKeyword(token, "u16", TokenType::U16);
+    }
+
+    bool Lexer::u32Type(Token& token) {
+        return matchesKeyword(token, "u32", TokenType::U32);
+    }
+
+    bool Lexer::u64Type(Token& token) {
+        return matchesKeyword(token, "u64", TokenType::U64);
+    }
+
+    bool Lexer::f32Type(Token& token) {
+        return matchesKeyword(token, "f32", TokenType::F32);
+    }
+
+    bool Lexer::f64Type(Token& token) {
+        return matchesKeyword(token, "f64", TokenType::F64);
+    }
+
 }
