@@ -125,7 +125,10 @@ namespace klong {
 
     char Lexer::read(bool advancePosition) {
         const auto code = _source.code();
-        auto character = code[_currentPosition]; 
+        if (_currentPosition == code.length()) {
+            return '\0';
+        }
+        auto character = code[_currentPosition];
         if (advancePosition) {
             _currentPosition++;
         }
@@ -312,24 +315,28 @@ namespace klong {
             return false;
         }
         
-        while(read() != '*') {
-            if (_currentPosition == code.length() - 1) {
-                _currentPosition = commentStart;
-                return false;
+        while(_currentPosition < code.length() - 1) {
+            while(read() != '*') {
+                if (_currentPosition == code.length() - 1) {
+                    _currentPosition = commentStart;
+                    return false;
+                }
+            }
+
+            if (read() == '/') {
+                auto commentEnd = _currentPosition;
+                updateLocation();
+                auto endLocation = _sourceLocation;
+                token.type = TokenType::BLOCK_COMMENT;
+                token.start = startLocation;
+                token.end = endLocation;
+                token.value = code.substr(commentStart, commentEnd - commentStart);
+                return true;
             }
         }
-        
-        if (read() != '/') {
-            return false;
-        }
-        auto commentEnd = _currentPosition;
-        updateLocation();
-        auto endLocation = _sourceLocation;
-        token.type = TokenType::BLOCK_COMMENT;
-        token.start = startLocation;
-        token.end = endLocation;
-        token.value = code.substr(commentStart, commentEnd - commentStart);
-        return true;
+
+        _currentPosition = commentStart;
+        return false;
     }
 
     bool Lexer::lineComment(Token& token) {
