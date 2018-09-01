@@ -131,6 +131,32 @@ namespace klong {
         {'x', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
         {'y', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
         {'z', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'A', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'B', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'C', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'D', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'E', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'F', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'G', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'H', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'I', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'J', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'K', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'L', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'M', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'N', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'O', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'P', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'Q', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'R', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'S', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'T', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'U', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'V', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'W', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'X', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'Y', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'Z', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
 
         // character literal
         {'\'', std::bind(&Lexer::characterLiteral, std::placeholders::_1, std::placeholders::_2)},
@@ -801,8 +827,49 @@ namespace klong {
     }
 
     bool Lexer::stringLiteral(Token& token) {
-        (void) token;
-        return false;
+        auto code = _source.code();
+        auto stringLiteralStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        std::stringstream content;
+
+        // skip first '"'
+        char c = read();
+        while((c = read(false)) != '"') {
+            if (_currentPosition == _source.code().length()) {
+                _currentPosition = stringLiteralStart;
+                return false;
+            }
+            // escaped char
+            if (read(false) == '\\') {
+                _currentPosition++;
+                // TODO: refactor this
+                if (_currentPosition == _source.code().length()) {
+                    _currentPosition = stringLiteralStart;
+                    return false;
+                }
+                char unescaped = read(false);
+                char escaped = getEscapedValue(unescaped);
+                // escape error
+                if (escaped == -1) {
+                    _currentPosition = stringLiteralStart;
+                    return false;
+                }
+                content << escaped;
+            } else {
+                content << c;
+            }
+            _currentPosition++;
+        }
+        // skip the terminating '"'
+        _currentPosition++;
+
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::STRING_LITERAL;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = content.str();
+        return true;
     }
 
     bool Lexer::trueKeyword(Token& token) {
