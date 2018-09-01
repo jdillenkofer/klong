@@ -62,6 +62,10 @@ namespace klong {
         // parens
         {'(', std::bind(&Lexer::leftParenthesis, std::placeholders::_1, std::placeholders::_2)},
         {')', std::bind(&Lexer::rightParenthesis, std::placeholders::_1, std::placeholders::_2)},
+
+        // let and const keyword
+        {'l', std::bind(&Lexer::letKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'c', std::bind(&Lexer::constKeyword, std::placeholders::_1, std::placeholders::_2)},
     };
 
     bool Lexer::hasNext() const {
@@ -78,7 +82,9 @@ namespace klong {
         auto ch = read(false);
         Token token {
             &_source,
-            &_source
+            &_source,
+            TokenType::NONE,
+            std::string(1, ch)
         };
 
         auto case_range = cases.equal_range(ch);
@@ -133,6 +139,44 @@ namespace klong {
             _currentPosition++;
         }
         return character;
+    }
+
+    bool Lexer::letKeyword(Token& token) {
+        auto code = _source.code();
+        auto startLocation = _sourceLocation;
+        auto letStart = _currentPosition;
+        if (matches("let")) {
+            auto letEnd = _currentPosition;
+            updateLocation();
+            auto endLocation = _sourceLocation;
+            token.start = startLocation;
+            token.end = endLocation;
+            token.type = TokenType::LET;
+            token.value = code.substr(letStart, letEnd - letStart);
+            return true;
+        }
+
+        _currentPosition = letStart;
+        return false;
+    }
+
+    bool Lexer::constKeyword(Token& token) {
+        auto code = _source.code();
+        auto startLocation = _sourceLocation;
+        auto constStart = _currentPosition;
+        if (matches("const")) {
+            auto constEnd = _currentPosition;
+            updateLocation();
+            auto endLocation = _sourceLocation;
+            token.start = startLocation;
+            token.end = endLocation;
+            token.type = TokenType::CONST;
+            token.value = code.substr(constStart, constEnd - constStart);
+            return true;
+        }
+
+        _currentPosition = constStart;
+        return false;
     }
 
     bool Lexer::plus(Token& token) {

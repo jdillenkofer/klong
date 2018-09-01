@@ -38,6 +38,26 @@ namespace klong {
                 return true;
             }
 
+            inline bool matches(const std::string& str) {
+                size_t pos = 0;
+                char c = read();
+                while(pos < (str.size() - 1)) {
+                    if (c != str[pos]) {
+                        return false;
+                    }
+                    c = read();
+                    pos++;
+                }
+                // expect whitespace behind the match
+                if (isWhitespace(read(false))){
+                    return true;
+                }
+                return false;
+            }
+
+            bool letKeyword(Token& token);
+            bool constKeyword(Token& token);
+
             bool plus(Token& token);
             bool bang(Token& token);
             bool pipe(Token& token);

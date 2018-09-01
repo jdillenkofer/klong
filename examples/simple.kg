@@ -1,13 +1,9 @@
 fun main(argc: i32, argv: str[]): i32 {
-    
-    // addition
-    // let i: i32 = 12 + 12;
+    // a */ b c
+    const a: i32 = 5;
+    const b: i32 = 5;
 
-    // type inference
-    // let x = 5;
-
-    let res: i32 = add(i, x);
-    // print("Hello World");
+    let res: i32 = a + b;
     return 0;
 }
 
