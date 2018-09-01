@@ -148,6 +148,120 @@ namespace klong {
         return character;
     }
 
+    bool Lexer::isWhitespace(char c) const {
+        return c == ' ' || c == '\t' || c == '\n';
+    }
+
+    bool Lexer::readSingleLineToken(Token& token, TokenType type) {
+        auto c = read();
+        auto start = _sourceLocation;
+        updateLocation();
+        auto end = _sourceLocation;
+        token.type = type;
+        token.start = start;
+        token.end = end;
+        token.value = std::string(1, c);
+        return true;
+    }
+
+    bool Lexer::matches(const std::string& str) {
+        size_t pos = 0;
+        char c = read();
+        while(pos < (str.size() - 1)) {
+            if (c != str[pos]) {
+                return false;
+            }
+            c = read();
+            pos++;
+        }
+        // expect whitespace behind the match
+        if (isWhitespace(read(false))){
+            return true;
+        }
+        return false;
+    }
+    
+    bool Lexer::matchesKeyword(Token& token, const std::string& keyword, TokenType type) {
+        auto code = _source.code();
+        auto startLocation = _sourceLocation;
+        auto keywordStart = _currentPosition;
+        if (matches(keyword)) {
+            auto keywordEnd = _currentPosition;
+            updateLocation();
+            auto endLocation = _sourceLocation;
+            token.start = startLocation;
+            token.end = endLocation;
+            token.type = type;
+            token.value = code.substr(keywordStart, keywordEnd - keywordStart);
+            return true;
+        }
+        _currentPosition = keywordStart;
+        return false;
+    }
+
+    bool Lexer::blockComment(Token& token) {
+        auto code = _source.code();
+        auto commentStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+
+        // ignore the /
+        read();
+        if (read() != '*') {
+            _currentPosition = commentStart;
+            return false;
+        }
+        
+        while(_currentPosition < code.length() - 1) {
+            while(read() != '*') {
+                if (_currentPosition == code.length() - 1) {
+                    _currentPosition = commentStart;
+                    return false;
+                }
+            }
+
+            if (read() == '/') {
+                auto commentEnd = _currentPosition;
+                updateLocation();
+                auto endLocation = _sourceLocation;
+                token.type = TokenType::BLOCK_COMMENT;
+                token.start = startLocation;
+                token.end = endLocation;
+                token.value = code.substr(commentStart, commentEnd - commentStart);
+                return true;
+            }
+        }
+
+        _currentPosition = commentStart;
+        return false;
+    }
+
+    bool Lexer::lineComment(Token& token) {
+        auto code = _source.code();
+        auto commentStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+
+        // ignore first /
+        read();
+        if (read() != '/') {
+            _currentPosition = commentStart;
+            return false;
+        }
+
+        // read while we have not reached the end of the line or the end of the file
+        while(read(false) != '\n' && _currentPosition < code.length()) {
+            _currentPosition++;
+        }
+
+        auto commentEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::LINE_COMMENT;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = code.substr(commentStart, commentEnd - commentStart);
+        return true;
+    }
+
     bool Lexer::ifKeyword(Token& token) {
         return matchesKeyword(token, "if", TokenType::IF);
     }
@@ -343,69 +457,4 @@ namespace klong {
     bool Lexer::rightParenthesis(Token& token) {
         return readSingleLineToken(token, TokenType::RIGHT_PAR);
     }
-
-    bool Lexer::blockComment(Token& token) {
-        auto code = _source.code();
-        auto commentStart = _currentPosition;
-        auto startLocation = _sourceLocation;
-
-        // ignore the /
-        read();
-        if (read() != '*') {
-            _currentPosition = commentStart;
-            return false;
-        }
-        
-        while(_currentPosition < code.length() - 1) {
-            while(read() != '*') {
-                if (_currentPosition == code.length() - 1) {
-                    _currentPosition = commentStart;
-                    return false;
-                }
-            }
-
-            if (read() == '/') {
-                auto commentEnd = _currentPosition;
-                updateLocation();
-                auto endLocation = _sourceLocation;
-                token.type = TokenType::BLOCK_COMMENT;
-                token.start = startLocation;
-                token.end = endLocation;
-                token.value = code.substr(commentStart, commentEnd - commentStart);
-                return true;
-            }
-        }
-
-        _currentPosition = commentStart;
-        return false;
-    }
-
-    bool Lexer::lineComment(Token& token) {
-        auto code = _source.code();
-        auto commentStart = _currentPosition;
-        auto startLocation = _sourceLocation;
-
-        // ignore first /
-        read();
-        if (read() != '/') {
-            _currentPosition = commentStart;
-            return false;
-        }
-
-        // read while we have not reached the end of the line or the end of the file
-        while(read(false) != '\n' && _currentPosition < code.length()) {
-            _currentPosition++;
-        }
-
-        auto commentEnd = _currentPosition;
-        updateLocation();
-        auto endLocation = _sourceLocation;
-        token.type = TokenType::LINE_COMMENT;
-        token.start = startLocation;
-        token.end = endLocation;
-        token.value = code.substr(commentStart, commentEnd - commentStart);
-        return true;
-    }
-
-
 }
