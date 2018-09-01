@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <sstream>
 #include <functional>
 
 #include "token.h"
@@ -24,10 +25,16 @@ namespace klong {
             bool isWhitespace(char c) const;
             bool isAlpha(char c) const;
             bool isAlphanumeric(char c) const;
+            bool isDigit(char c) const;
+            bool isHexDigit(char c) const;
             bool readSingleLineToken(Token& token, TokenType type);
             bool matches(const std::string& str);
             bool matchesKeyword(Token& token, const std::string& keyword, TokenType type);
             char getEscapedValue(char valueToEscape);
+
+            bool hexLiteral(Token& token, std::stringstream& content);
+            bool binaryLiteral(Token& token, std::stringstream& content);
+            bool decimalLiteral(Token& token, std::stringstream& content);
 
             bool blockComment(Token& token);
             bool lineComment(Token& token);

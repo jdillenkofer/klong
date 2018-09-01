@@ -240,6 +240,14 @@ namespace klong {
         return isalnum(c);
     }
 
+    bool Lexer::isDigit(char c) const {
+        return isdigit(c);
+    }
+
+    bool Lexer::isHexDigit(char c) const {
+        return isxdigit(c);
+    }
+
     bool Lexer::readSingleLineToken(Token& token, TokenType type) {
         auto c = read();
         auto start = _sourceLocation;
@@ -327,6 +335,77 @@ namespace klong {
         }
         return escaped;
     }
+
+    bool Lexer::hexLiteral(Token& token, std::stringstream& content) {
+        char c;
+        uint8_t nibbles = 0;
+
+        while(isHexDigit(c = read(false))) {
+            content << c;
+            _currentPosition++;
+            nibbles++;
+        }
+
+        if (nibbles == 0 || nibbles > 16) {
+            return false;
+        }
+
+        token.radix = 16;
+        token.numberType = NumberType::INTEGER;
+        return true;
+    }
+
+    bool Lexer::binaryLiteral(Token& token, std::stringstream& content) {
+        char c;
+        uint8_t bits = 0;
+        
+        while((c = read(false)) == '0' || c == '1') {
+            content << c;
+            _currentPosition++;
+            bits++;
+        }
+
+        if (bits == 0 || bits > 64) {
+            return false;
+        }
+
+        token.radix = 2;
+        token.numberType = NumberType::INTEGER;
+        return true;
+    }
+
+    bool Lexer::decimalLiteral(Token& token, std::stringstream& content) {
+        char c;
+        bool atleastOneDigitBeforeDot = false;
+        while(isDigit(c = read(false))) {
+            content << c;
+            _currentPosition++;
+            atleastOneDigitBeforeDot = true;
+        }
+        if (!atleastOneDigitBeforeDot) {
+            return false;
+        }
+        if ((c = read(false)) == '.') {
+            content << c;
+            _currentPosition++;
+            bool atleastOneDecimal = false;
+            while(isDigit(c = read(false))) {
+                content << c;
+                _currentPosition++;
+                atleastOneDecimal = true;
+            }
+
+            if (!atleastOneDecimal) {
+                return false;
+            }
+            token.numberType = NumberType::FLOAT;
+        } else {
+            token.numberType = NumberType::INTEGER;
+        }
+        token.radix = 10;
+        return true;
+    }
+
 
     bool Lexer::blockComment(Token& token) {
         auto code = _source.code();
@@ -663,8 +742,62 @@ namespace klong {
     }
 
     bool Lexer::numberLiteral(Token& token) {
-        (void) token;
-        return false;
+        auto numberLiteralStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        std::stringstream content;
+        uint8_t radix = 10;
+        
+        char c = read(false);
+
+        // parse radix
+        if (c == '0') {
+            // skip the '0'
+            read();
+            switch(read(false)) {
+            case 'x':
+            case 'X':
+                radix = 16;
+                break;
+            case 'b':
+            case 'B':
+                radix = 2;
+                break;
+            default:
+                // base 10 literals may not start with a '0'
+                _currentPosition = numberLiteralStart;
+                return false;
+            }
+            read();
+        }
+
+        bool result;
+
+        switch(radix) {
+        case 16:
+            result = hexLiteral(token, content);
+            break;
+        case 2:
+            result = binaryLiteral(token, content);
+            break;
+        case 10:
+        default:
+            result = decimalLiteral(token, content);
+            break;
+        }
+
+        if (result) {
+            updateLocation();
+            auto endLocation = _sourceLocation;
+
+            token.type = TokenType::NUMBER_LITERAL;
+            token.start = startLocation;
+            token.end = endLocation;
+            token.value = content.str();
+            return true;
+        } else {
+            _currentPosition = numberLiteralStart;
+            return false;
+        }
     }
 
     bool Lexer::stringLiteral(Token& token) {
