@@ -27,8 +27,6 @@ namespace klong {
         LET,
         CONST,
         
-        IDENTIFIER,
-        
         PLUS,
         BANG,
         PIPE,
@@ -58,10 +56,13 @@ namespace klong {
         LEFT_SQUARED_BRACKET,
         RIGHT_SQUARED_BRACKET,
 
+        IDENTIFIER,
+
         CHARACTER_LITERAL,
         NUMBER_LITERAL,
         STRING_LITERAL,
-        BOOL_LITERAL,
+        TRUE_KEYWORD,
+        FALSE_KEYWORD,
 
         // Types
         STRING,

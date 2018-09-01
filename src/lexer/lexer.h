@@ -22,10 +22,12 @@ namespace klong {
             void skipWhitespace(size_t& position) const;
             char read(bool advancePosition = true);
             bool isWhitespace(char c) const;
+            bool isAlpha(char c) const;
             bool isAlphanumeric(char c) const;
             bool readSingleLineToken(Token& token, TokenType type);
             bool matches(const std::string& str);
             bool matchesKeyword(Token& token, const std::string& keyword, TokenType type);
+            char getEscapedValue(char valueToEscape);
 
             bool blockComment(Token& token);
             bool lineComment(Token& token);
@@ -70,6 +72,14 @@ namespace klong {
             bool rightParenthesis(Token& token);
             bool leftSquaredBracket(Token& token);
             bool rightSquaredBracket(Token& token);
+
+            bool identifier(Token& token);
+            
+            bool characterLiteral(Token& token);
+            bool numberLiteral(Token& token);
+            bool stringLiteral(Token& token);
+            bool trueKeyword(Token& token);
+            bool falseKeyword(Token& token);
             
             bool stringType(Token& token);
             bool boolType(Token& token);

@@ -98,6 +98,61 @@ namespace klong {
         {'u', std::bind(&Lexer::u64Type, std::placeholders::_1, std::placeholders::_2)},
         {'f', std::bind(&Lexer::f32Type, std::placeholders::_1, std::placeholders::_2)},
         {'f', std::bind(&Lexer::f64Type, std::placeholders::_1, std::placeholders::_2)},
+
+        // true and false keywords
+        {'t', std::bind(&Lexer::trueKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'f', std::bind(&Lexer::falseKeyword, std::placeholders::_1, std::placeholders::_2)},
+
+        // identifier
+        {'_', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'a', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'b', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'c', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'d', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'e', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'f', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'g', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'h', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'i', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'j', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'k', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'l', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'m', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'n', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'o', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'p', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'q', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'r', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'s', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'t', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'u', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'v', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'w', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'x', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'y', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+        {'z', std::bind(&Lexer::identifier, std::placeholders::_1, std::placeholders::_2)},
+
+        // character literal
+        {'\'', std::bind(&Lexer::characterLiteral, std::placeholders::_1, std::placeholders::_2)},
+
+        // number literal
+        {'-', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'0', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'1', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'2', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'3', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'4', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'5', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'6', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'7', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'8', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+        {'9', std::bind(&Lexer::numberLiteral, std::placeholders::_1, std::placeholders::_2)},
+
+        // string literal
+        {'"', std::bind(&Lexer::stringLiteral, std::placeholders::_1, std::placeholders::_2)},
+
+        // minus
+        {'-', std::bind(&Lexer::minus, std::placeholders::_1, std::placeholders::_2)},
     };
 
     bool Lexer::hasNext() const {
@@ -177,6 +232,10 @@ namespace klong {
         return c == ' ' || c == '\t' || c == '\n';
     }
 
+    bool Lexer::isAlpha(char c) const {
+        return isalpha(c);
+    }
+
     bool Lexer::isAlphanumeric(char c) const {
         return isalnum(c);
     }
@@ -225,6 +284,48 @@ namespace klong {
         }
         _currentPosition = keywordStart;
         return false;
+    }
+
+    char Lexer::getEscapedValue(char unescaped) {
+        char escaped;
+        switch(unescaped) {
+            case '\'':
+                escaped = 0x27;
+                break;
+            case '"':
+                escaped = 0x22;
+                break;
+            case '?':
+                escaped = 0x3f;
+                break;
+            case '\\':
+                escaped = 0x5c;
+                break;
+            case 'a':
+                escaped = 0x07;
+                break;
+            case 'b':
+                escaped = 0x08;
+                break;
+            case 'f':
+                escaped = 0x0c;
+                break;
+            case 'n':
+                escaped = 0x0a;
+                break;
+            case 'r':
+                escaped = 0x0d;
+                break;
+            case 't':
+                escaped = 0x09;
+                break;
+            case 'v':
+                escaped = 0x0b;
+                break;
+            default:
+                escaped = -1;
+        }
+        return escaped;
     }
 
     bool Lexer::blockComment(Token& token) {
@@ -462,7 +563,7 @@ namespace klong {
     }
 
     bool Lexer::greaterThanEqual(Token& token) {
-                auto code = _source.code();
+        auto code = _source.code();
         auto greaterThanEqualStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first >
@@ -504,6 +605,79 @@ namespace klong {
 
     bool Lexer::rightSquaredBracket(Token& token) {
         return readSingleLineToken(token, TokenType::RIGHT_SQUARED_BRACKET);
+    }
+
+    bool Lexer::identifier(Token& token) {
+        auto code = _source.code();
+        auto identifierStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        char c = read();
+        if (!isAlpha(c)) {
+            _currentPosition = identifierStart;
+            return false;
+        }
+        while((c = read(false)) && isAlphanumeric(c)) {
+            // skip alphanumeric chars
+            _currentPosition++;
+        }
+
+        auto identifierEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::IDENTIFIER;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = code.substr(identifierStart, identifierEnd - identifierStart);
+        return true;
+    }
+
+    bool Lexer::characterLiteral(Token& token) {
+        auto code = _source.code();
+        auto characterLiteralStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        char content;
+        char c = read();
+        // escaped char
+        if ((c = read()) == '\\') {
+            c = read();
+            content = getEscapedValue(c);
+            // escape error
+            if (content == -1) {
+                _currentPosition = characterLiteralStart;
+                return false;
+            }
+        } else {
+            content = c;
+        }
+        if ((c = read()) == '\'') {
+            updateLocation();
+            auto endLocation = _sourceLocation;
+            token.type = TokenType::CHARACTER_LITERAL;
+            token.start = startLocation;
+            token.end = endLocation;
+            token.value = content;
+            return true;
+        }
+        _currentPosition = characterLiteralStart;
+        return false;
+    }
+
+    bool Lexer::numberLiteral(Token& token) {
+        (void) token;
+        return false;
+    }
+
+    bool Lexer::stringLiteral(Token& token) {
+        (void) token;
+        return false;
+    }
+
+    bool Lexer::trueKeyword(Token& token) {
+        return matchesKeyword(token, "true", TokenType::TRUE_KEYWORD);
+    }
+
+    bool Lexer::falseKeyword(Token& token) {
+        return matchesKeyword(token, "false", TokenType::FALSE_KEYWORD);
     }
 
     bool Lexer::stringType(Token& token) {
