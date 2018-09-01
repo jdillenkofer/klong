@@ -26,6 +26,18 @@ namespace klong {
                 return c == ' ' || c == '\t' || c == '\n';
             }
 
+            inline bool readSingleLineToken(Token& token, TokenType type) {
+                auto c = read();
+                auto start = _sourceLocation;
+                updateLocation();
+                auto end = _sourceLocation;
+                token.type = type;
+                token.start = start;
+                token.end = end;
+                token.value = std::string(1, c);
+                return true;
+            }
+
             bool plus(Token& token);
             bool bang(Token& token);
             bool pipe(Token& token);
@@ -40,6 +52,9 @@ namespace klong {
             bool question(Token& token);
             bool asterisk(Token& token);
             bool ampersand(Token& token);
+            bool assignOp(Token& token);
+            bool equal(Token& token);
+            bool notEqual(Token& token);
             bool leftCurlyBrace(Token& token);
             bool rightCurlyBrace(Token& token);
             bool leftParenthesis(Token& token);

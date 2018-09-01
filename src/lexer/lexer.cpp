@@ -11,6 +11,7 @@ namespace klong {
         {'^', std::bind(&Lexer::caret, std::placeholders::_1, std::placeholders::_2)},
 
         // bang
+        {'!', std::bind(&Lexer::notEqual, std::placeholders::_1, std::placeholders::_2)},
         {'!', std::bind(&Lexer::bang, std::placeholders::_1, std::placeholders::_2)},
 
         // question
@@ -39,6 +40,10 @@ namespace klong {
         // ampersand
         {'&', std::bind(&Lexer::ampersand, std::placeholders::_1, std::placeholders::_2)},
 
+        // equal, assignOp
+        {'=', std::bind(&Lexer::equal, std::placeholders::_1, std::placeholders::_2)},
+        {'=', std::bind(&Lexer::assignOp, std::placeholders::_1, std::placeholders::_2)},
+
         // pipe
         {'|', std::bind(&Lexer::pipe, std::placeholders::_1, std::placeholders::_2)},
 
@@ -64,6 +69,7 @@ namespace klong {
 
         auto ch = read(false);
         Token token {
+            &_source,
             &_source
         };
 
@@ -84,6 +90,10 @@ namespace klong {
         return token;
     }
 
+    /*
+     * updateLocation should only be called, if we are committing to
+     * the updatedLocation. There is no easy way to revert the location.
+     */
     void Lexer::updateLocation() {
         const auto code = _source.code();
         for (auto i = _sourceLocation.charPos(); i < _currentPosition; i++) {
@@ -115,198 +125,196 @@ namespace klong {
     }
 
     bool Lexer::plus(Token& token) {
-        auto c = read();
-        token.type = TokenType::PLUS;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::PLUS);
     }
 
     bool Lexer::bang(Token& token) {
-        auto c = read();
-        token.type = TokenType::BANG;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::BANG);
     }
 
     bool Lexer::pipe(Token& token) {
-        auto c = read();
-        token.type = TokenType::PIPE;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::PIPE);
     }
 
     bool Lexer::minus(Token& token) {
-        auto c = read();
-        token.type = TokenType::MINUS;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::MINUS);
     }
 
     bool Lexer::slash(Token& token) {
-        auto c = read();
-        token.type = TokenType::SLASH;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::SLASH);
     }
 
     bool Lexer::caret(Token& token) {
-        auto c = read();
-        token.type = TokenType::CARET;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::CARET);
     }
 
     bool Lexer::tilde(Token& token) {
-        auto c = read();
-        token.type = TokenType::TILDE;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::TILDE);
     }
 
     bool Lexer::colon(Token& token) {
-        auto c = read();
-        token.type = TokenType::COLON;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::COLON);
     }
 
     bool Lexer::comma(Token& token) {
-        auto c = read();
-        token.type = TokenType::COMMA;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::COMMA);
     }
 
     bool Lexer::period(Token& token) {
-        auto c = read();
-        token.type = TokenType::PERIOD;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::PERIOD);
     }
 
     bool Lexer::percent(Token& token) {
-        auto c = read();
-        token.type = TokenType::PERCENT;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::PERCENT);
     }
 
     bool Lexer::question(Token& token) {
-        auto c = read();
-        token.type = TokenType::QUESTION;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::QUESTION);
     }
 
     bool Lexer::asterisk(Token& token) {
-        auto c = read();
-        token.type = TokenType::ASTERISK;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::ASTERISK);
     }
 
     bool Lexer::ampersand(Token& token) {
-        auto c = read();
-        token.type = TokenType::AMPERSAND;
-        token.location = _sourceLocation;
+        return readSingleLineToken(token, TokenType::AMPERSAND);
+    }
+
+    bool Lexer::assignOp(Token& token) {
+        auto revertPosition = _currentPosition;
+        auto startLocation = _sourceLocation;
+        // read first =
+        char c = read();
+        // check for "=="
+        if (read(false) == '=') {
+            _currentPosition = revertPosition;
+            return false;
+        }
+
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::ASSIGN_OP;
+        token.start = startLocation;
+        token.end = endLocation;
         token.value = std::string(1, c);
+        return true;
+
+    }
+
+    bool Lexer::equal(Token& token) {
+        auto code = _source.code();
+        auto equalStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        // ignore first =
+        read();
+        if (read() != '=') {
+            _currentPosition = equalStart;
+            return false;
+        }
+
+        auto equalEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::EQ_OP;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = code.substr(equalStart, equalEnd - equalStart);
+        return true;
+    }
+
+    bool Lexer::notEqual(Token& token) {
+        auto code = _source.code();
+        auto equalStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+        // ignore first !
+        read();
+        if (read() != '=') {
+            _currentPosition = equalStart;
+            return false;
+        }
+
+        auto equalEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::NE_OP;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = code.substr(equalStart, equalEnd - equalStart);
         return true;
     }
 
     bool Lexer::leftCurlyBrace(Token& token) {
-        auto c = read();
-        token.type = TokenType::LEFT_CURLY_BRACE;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::LEFT_CURLY_BRACE);
     }
 
     bool Lexer::rightCurlyBrace(Token& token) {
-        auto c = read();
-        token.type = TokenType::RIGHT_CURLY_BRACE;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::RIGHT_CURLY_BRACE);
     }
 
     bool Lexer::leftParenthesis(Token& token) {
-        auto c = read();
-        token.type = TokenType::LEFT_PAR;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::LEFT_PAR);
     }
 
     bool Lexer::rightParenthesis(Token& token) {
-        auto c = read();
-        token.type = TokenType::RIGHT_PAR;
-        token.location = _sourceLocation;
-        token.value = std::string(1, c);
-        return true;
+        return readSingleLineToken(token, TokenType::RIGHT_PAR);
     }
 
     bool Lexer::blockComment(Token& token) {
         auto code = _source.code();
-        auto position = _currentPosition;
         auto commentStart = _currentPosition;
-        position++;
-        if (code[position] != '*') {
+        auto startLocation = _sourceLocation;
+
+        // ignore the /
+        read();
+        if (read() != '*') {
+            _currentPosition = commentStart;
             return false;
         }
         
-        position++;
-        while(code[position] != '*') {
-            if (position == code.length() - 1) {
+        while(read() != '*') {
+            if (_currentPosition == code.length() - 1) {
+                _currentPosition = commentStart;
                 return false;
             }
-            position++;
         }
-        // skip *
-        position++;
-        if (code[position] != '/') {
+        
+        if (read() != '/') {
             return false;
         }
-        // skip /
-        position++;
-        auto commentEnd = position;
+        auto commentEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
         token.type = TokenType::BLOCK_COMMENT;
-        token.location = _sourceLocation;
+        token.start = startLocation;
+        token.end = endLocation;
         token.value = code.substr(commentStart, commentEnd - commentStart);
-        _currentPosition = commentEnd;
         return true;
     }
 
     bool Lexer::lineComment(Token& token) {
         auto code = _source.code();
-        auto position = _currentPosition;
         auto commentStart = _currentPosition;
-        position++;
-        if (code[position] != '/') {
+        auto startLocation = _sourceLocation;
+
+        // ignore first /
+        read();
+        if (read() != '/') {
+            _currentPosition = commentStart;
             return false;
         }
 
-        position++;
-        while(code[position] != '\n' && position < code.length()) {
-            position++;
+        // read while we have not reached the end of the line or the end of the file
+        while(read(false) != '\n' && _currentPosition < code.length()) {
+            _currentPosition++;
         }
-        auto commentEnd = position;
+
+        auto commentEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
         token.type = TokenType::LINE_COMMENT;
-        token.location = _sourceLocation;
+        token.start = startLocation;
+        token.end = endLocation;
         token.value = code.substr(commentStart, commentEnd - commentStart);
-        _currentPosition = commentEnd;
         return true;
     }
 

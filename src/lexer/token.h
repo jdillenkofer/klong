@@ -38,12 +38,14 @@ namespace klong {
         TILDE,
         COLON,
         COMMA,
-        ASSIGN_OP,
         PERIOD,
         PERCENT,
         QUESTION,
         ASTERISK,
         AMPERSAND,
+        ASSIGN_OP,
+        EQ_OP,
+        NE_OP,
         LT_OP,
         GT_OP,
         LE_OP,
@@ -80,7 +82,8 @@ namespace klong {
     };
 
     struct Token {
-        SourceLocation location;
+        SourceLocation start;
+        SourceLocation end;
         TokenType type = TokenType::NONE;
         std::string value = "";
         NumberType numberType = NumberType::NONE;
