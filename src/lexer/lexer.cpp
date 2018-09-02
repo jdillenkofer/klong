@@ -91,6 +91,7 @@ namespace klong {
 
         // function
         {'f', std::bind(&Lexer::funKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'p', std::bind(&Lexer::printKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'r', std::bind(&Lexer::returnKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // control flow keyword
@@ -201,10 +202,19 @@ namespace klong {
         auto position = _currentPosition;
         auto code = _source.code();
         skipWhitespace(position);
-        return position < code.length();
+        return position <= code.length();
     }
     
     Token Lexer::next() {
+        if (_currentPosition >= _source.code().length()) {
+            _currentPosition++;
+            return Token {
+                _sourceLocation,
+                _sourceLocation,
+                TokenType::END_OF_FILE
+            };
+        }
+
         skipWhitespace(_currentPosition);
         updateLocation();
 
@@ -226,8 +236,15 @@ namespace klong {
         }
 
         if (!hasFoundMatchingCase) {
-            _currentPosition++;
+            auto startLocation = _sourceLocation;
+            auto c = read();
             updateLocation();
+            auto endLocation = _sourceLocation;
+            token.start = startLocation;
+            token.end = endLocation;
+            token.type = TokenType::ERROR;
+            token.value = std::string(1, c);
+            throw LexerException(token, "Illegal char sequence encountered.");
         }
 
         return token;
@@ -514,6 +531,10 @@ namespace klong {
 
     bool Lexer::funKeyword(Token& token) {
         return matchesKeyword(token, "fun", TokenType::FUN);
+    }
+
+    bool Lexer::printKeyword(Token& token) {
+        return matchesKeyword(token, "print", TokenType::PRINT);
     }
 
     bool Lexer::returnKeyword(Token& token) {

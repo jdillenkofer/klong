@@ -6,6 +6,10 @@
 namespace klong {
     class SourceLocation {
         public:
+            SourceLocation(): _source(nullptr) {
+                
+            }
+            
             SourceLocation(SourceFile* source): _source(source) {
             }
 

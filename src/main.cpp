@@ -3,6 +3,7 @@
 
 #include "common/source_file.h"
 #include "lexer/lexer.h"
+#include "parser/parser.h"
 
 using namespace klong;
 
@@ -21,10 +22,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     auto lexer = Lexer(sourceFile);
-    std::vector<Token> tokens;
-    while(lexer.hasNext()) {
-        auto token = lexer.next();
-        tokens.emplace_back(token);
-    }
+    auto parser = Parser(&lexer);
+    auto statements = parser.parse();
     return 0;
 }

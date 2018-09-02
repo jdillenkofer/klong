@@ -38,6 +38,7 @@ include_directories(src/)
 set(SOURCE_FILES
     src/main.cpp
     src/lexer/lexer.cpp
+    src/parser/parser.cpp
 )
 
 set(HEADER_FILES
@@ -45,6 +46,12 @@ set(HEADER_FILES
     src/common/source_location.h
     src/lexer/token.h
     src/lexer/lexer.h
+    src/lexer/ilexer.h
+    src/parser/expr.h
+    src/parser/stmt.h
+    src/parser/visitor.h
+    src/parser/parser.h
+    src/parser/iparser.h
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES} ${HEADER_FILES})

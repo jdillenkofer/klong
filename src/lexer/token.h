@@ -7,6 +7,7 @@ namespace klong {
     enum class TokenType {
         END_OF_FILE,
         NONE,
+        ERROR,
         
         // Comments
         LINE_COMMENT,
@@ -14,6 +15,7 @@ namespace klong {
 
         // Functions
         FUN,
+        PRINT,
         RETURN,
 
         // Control flow
@@ -91,6 +93,8 @@ namespace klong {
     };
 
     struct Token {
+        Token() = default;
+
         SourceLocation start;
         SourceLocation end;
         TokenType type = TokenType::NONE;

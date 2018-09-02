@@ -4,11 +4,11 @@
 #include <sstream>
 #include <functional>
 
-#include "token.h"
+#include "ilexer.h"
 #include "../common/source_file.h"
 
 namespace klong {
-    class Lexer {
+    class Lexer : public ILexer {
         public:
             using LexerCaseCallable = std::function<bool (Lexer*, Token&)>;
 
@@ -40,6 +40,7 @@ namespace klong {
             bool lineComment(Token& token);
 
             bool funKeyword(Token& token);
+            bool printKeyword(Token& token);
             bool returnKeyword(Token& token);
 
             bool ifKeyword(Token& token);
@@ -112,6 +113,5 @@ namespace klong {
             SourceFile _source;
             SourceLocation _sourceLocation;
             size_t _currentPosition = 0;
-
     };
 }
