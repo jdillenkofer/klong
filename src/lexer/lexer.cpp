@@ -4,8 +4,27 @@ namespace klong {
     std::multimap<char, Lexer::LexerCaseCallable> Lexer::cases = {
         // plus
         {'+', std::bind(&Lexer::plus, std::placeholders::_1, std::placeholders::_2)},
+        
+        // minus
+        {'-', std::bind(&Lexer::minus, std::placeholders::_1, std::placeholders::_2)},
+        
         // comma
         {',', std::bind(&Lexer::comma, std::placeholders::_1, std::placeholders::_2)},
+
+        // hash
+        {'#', std::bind(&Lexer::hash, std::placeholders::_1, std::placeholders::_2)},
+        
+        // atSign
+        {'@', std::bind(&Lexer::atSign, std::placeholders::_1, std::placeholders::_2)},
+
+        // dollar
+        {'$', std::bind(&Lexer::dollar, std::placeholders::_1, std::placeholders::_2)},
+
+        // backslash
+        {'\\', std::bind(&Lexer::backslash, std::placeholders::_1, std::placeholders::_2)},
+
+        // backquote
+        {'`', std::bind(&Lexer::backquote, std::placeholders::_1, std::placeholders::_2)},
 
         // caret
         {'^', std::bind(&Lexer::caret, std::placeholders::_1, std::placeholders::_2)},
@@ -34,7 +53,7 @@ namespace klong {
         // colon
         {':', std::bind(&Lexer::colon, std::placeholders::_1, std::placeholders::_2)},
 
-        // percent/number literal
+        // percent
         {'%', std::bind(&Lexer::percent, std::placeholders::_1, std::placeholders::_2)},
 
         // asterisk
@@ -176,9 +195,6 @@ namespace klong {
 
         // string literal
         {'"', std::bind(&Lexer::stringLiteral, std::placeholders::_1, std::placeholders::_2)},
-
-        // minus
-        {'-', std::bind(&Lexer::minus, std::placeholders::_1, std::placeholders::_2)},
     };
 
     bool Lexer::hasNext() const {
@@ -546,6 +562,26 @@ namespace klong {
 
     bool Lexer::minus(Token& token) {
         return readSingleLineToken(token, TokenType::MINUS);
+    }
+
+    bool Lexer::hash(Token& token) {
+        return readSingleLineToken(token, TokenType::HASH);
+    }
+
+    bool Lexer::atSign(Token& token) {
+        return readSingleLineToken(token, TokenType::AT_SIGN);
+    }
+
+    bool Lexer::dollar(Token& token) {
+        return readSingleLineToken(token, TokenType::DOLLAR);
+    }
+
+    bool Lexer::backslash(Token& token) {
+        return readSingleLineToken(token, TokenType::BACKSLASH);
+    }
+
+    bool Lexer::backquote(Token& token) {
+        return readSingleLineToken(token, TokenType::BACKQUOTE);
     }
 
     bool Lexer::slash(Token& token) {

@@ -53,8 +53,13 @@ namespace klong {
 
             bool plus(Token& token);
             bool bang(Token& token);
-            bool pipe(Token& token);
             bool minus(Token& token);
+            bool hash(Token& token);
+            bool atSign(Token& token);
+            bool dollar(Token& token);
+            bool backslash(Token& token);
+            bool backquote(Token& token);
+            bool pipe(Token& token);
             bool slash(Token& token);
             bool caret(Token& token);
             bool tilde(Token& token);
