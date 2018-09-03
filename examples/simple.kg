@@ -1,10 +1,14 @@
 fun main() {
     // a */ b c
-    let a = 5;
-    const b = 5;
+    let a: i32 = 5;
+    const b: i32 = 5;
 
-    let res = a + b;
+    let res: i32 = test(a, b);
     return;
+}
+
+fun test(a: i32, b: i32): i32 {
+    return a + b;
 }
 
 main();

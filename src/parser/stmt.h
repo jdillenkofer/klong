@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <memory>
+#include <utility>
 
 namespace klong {
 
@@ -48,8 +49,8 @@ namespace klong {
 
     class Function : public Stmt {
         public:
-            Function(Token name, std::vector<Token> params, std::vector<StmtPtr> body):
-                _name(name), _params(params), _body(body) {
+            Function(Token name, std::vector<std::pair<Token, Token>> params, Token returnType, std::vector<StmtPtr> body):
+                _name(name), _params(params), _returnType(returnType), _body(body) {
 
             }
             void accept(Visitor* visitor) {
@@ -57,7 +58,8 @@ namespace klong {
             }
         private:
             Token _name;
-            std::vector<Token> _params;
+            std::vector<std::pair<Token, Token>> _params;
+            Token _returnType;
             std::vector<StmtPtr> _body;
     };
 
@@ -104,8 +106,8 @@ namespace klong {
 
     class Let : public Stmt {
         public:
-            Let(Token name, ExprPtr initializer):
-                _name(name), _initializer(initializer) {
+            Let(Token name, Token type, ExprPtr initializer):
+                _name(name), _type(type), _initializer(initializer) {
 
             }
             void accept(Visitor* visitor) {
@@ -113,13 +115,14 @@ namespace klong {
             }
         private:
             Token _name;
+            Token _type;
             ExprPtr _initializer;
     };
 
     class Const : public Stmt {
         public:
-            Const(Token name, ExprPtr initializer): 
-                _name(name), _initializer(initializer) {
+            Const(Token name, Token type, ExprPtr initializer): 
+                _name(name), _type(type), _initializer(initializer) {
 
             }
             void accept(Visitor* visitor) {
@@ -127,6 +130,7 @@ namespace klong {
             }
         private:
             Token _name;
+            Token _type;
             ExprPtr _initializer;
     };
 

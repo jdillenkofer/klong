@@ -96,6 +96,7 @@ namespace klong {
             bool trueKeyword(Token& token);
             bool falseKeyword(Token& token);
             
+            bool voidType(Token& token);
             bool stringType(Token& token);
             bool boolType(Token& token);
             bool i8Type(Token& token);

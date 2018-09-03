@@ -45,6 +45,7 @@ namespace klong {
             std::vector<StmtPtr> blockStmt();
             std::shared_ptr<Let> letDeclaration();
             std::shared_ptr<Const> constDeclaration();
+            Token typeDeclaration();
             std::shared_ptr<If> ifStmt();
             std::shared_ptr<Print> printStmt();
             std::shared_ptr<Return> returnStmt();

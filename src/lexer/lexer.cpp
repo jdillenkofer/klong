@@ -108,6 +108,7 @@ namespace klong {
         {'c', std::bind(&Lexer::constKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // types
+        {'v', std::bind(&Lexer::voidType, std::placeholders::_1, std::placeholders::_2)},
         {'s', std::bind(&Lexer::stringType, std::placeholders::_1, std::placeholders::_2)},
         {'b', std::bind(&Lexer::boolType, std::placeholders::_1, std::placeholders::_2)},
         {'i', std::bind(&Lexer::i8Type, std::placeholders::_1, std::placeholders::_2)},
@@ -937,6 +938,10 @@ namespace klong {
 
     bool Lexer::falseKeyword(Token& token) {
         return matchesKeyword(token, "false", TokenType::FALSE_KEYWORD);
+    }
+
+    bool Lexer::voidType(Token& token) {
+        return matchesKeyword(token, "void", TokenType::VOID);
     }
 
     bool Lexer::stringType(Token& token) {

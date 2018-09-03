@@ -100,16 +100,27 @@ namespace klong {
     std::shared_ptr<Function> Parser::function(std::string kind) {
         Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
         consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
-        std::vector<Token> params;
+        std::vector<std::pair<Token, Token>> params;
         if (!check(TokenType::RIGHT_PAR)) {
             do {
-                params.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+                Token identifier = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                consume(TokenType::COLON, "Expect ':' after parameter name.");
+                Token type = typeDeclaration();
+                if (type.type == TokenType::VOID) {
+                    throw ParseException(type, "Illegal type 'void' in argument list.");
+                }
+                params.push_back(std::pair<Token, Token>(identifier, type));
             } while(match(TokenType::COMMA));
         }
         consume(TokenType::RIGHT_PAR, "Expect ')' after parameters.");
+        Token returnType;
+        returnType.type = TokenType::VOID;
+        if (match(TokenType::COLON)) {
+            returnType = typeDeclaration();   
+        }
         consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' before " + kind + " body.");
         std::vector<StmtPtr> body = blockStmt();
-        return std::make_shared<Function>(name, params, body);
+        return std::make_shared<Function>(name, params, returnType, body);
     }
 
     std::vector<StmtPtr> Parser::blockStmt() {
@@ -124,25 +135,56 @@ namespace klong {
     std::shared_ptr<Let> Parser::letDeclaration() {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
+        Token type;
+        if (match(TokenType::COLON)) {
+            type = typeDeclaration();
+        }
         ExprPtr initializer = nullptr;
         if (match(TokenType::ASSIGN_OP)) {
             initializer = expression();
         }
         
         consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
-        return std::make_shared<Let>(name, initializer);
+        return std::make_shared<Let>(name, type, initializer);
     }
 
     std::shared_ptr<Const> Parser::constDeclaration() {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
+        Token type;
+        if (match(TokenType::COLON)) {
+            type = typeDeclaration();
+        }
         ExprPtr initializer = nullptr;
         if (match(TokenType::ASSIGN_OP)) {
             initializer = expression();
         }
         
         consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
-        return std::make_shared<Const>(name, initializer);
+        return std::make_shared<Const>(name, type, initializer);
+    }
+
+    Token Parser::typeDeclaration() {
+        Token type;
+        switch(peek().type) {
+            case TokenType::I8:
+            case TokenType::I16:
+            case TokenType::I32:
+            case TokenType::I64:
+            case TokenType::U8:
+            case TokenType::U16:
+            case TokenType::U32:
+            case TokenType::U64:
+            case TokenType::F32:
+            case TokenType::F64:
+            case TokenType::IDENTIFIER:
+                type = peek();
+                advance();
+                break;
+            default:
+                throw new ParseException(peek(), "Expect type after ':'.");
+        }
+        return type;
     }
 
     std::shared_ptr<If> Parser::ifStmt() {
