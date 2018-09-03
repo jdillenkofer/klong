@@ -10,13 +10,13 @@ namespace klong {
     
     class Expr {
         public:
-            virtual ~Expr() = 0;
+            virtual ~Expr() = default;
             virtual void accept(Visitor* visitor) = 0;
     };
 
     using ExprPtr = std::shared_ptr<Expr>;
 
-    class Assign : Expr {
+    class Assign : public Expr {
         public:
             Assign(Token name, ExprPtr value): 
                 _name(name), _value(value) {
@@ -31,7 +31,7 @@ namespace klong {
             ExprPtr _value;
     };
     
-    class Binary : Expr {
+    class Binary : public Expr {
         public:
             Binary(ExprPtr left, Token op, ExprPtr right): 
                 _left(left), _op(op), _right(right) {
@@ -47,7 +47,7 @@ namespace klong {
             ExprPtr _right;
     };
     
-    class Call : Expr {
+    class Call : public Expr {
         public:
             Call(ExprPtr callee, Token paren, std::vector<ExprPtr>&& args): 
                 _callee(callee), _paren(paren), _args(args) {
@@ -63,7 +63,7 @@ namespace klong {
             std::vector<ExprPtr> _args;
     };
     
-    class Grouping : Expr {
+    class Grouping : public Expr {
         public:
             Grouping(ExprPtr expr): _expr(expr) {
 
@@ -76,7 +76,7 @@ namespace klong {
             ExprPtr _expr;
     };
     
-    class Literal : Expr {
+    class Literal : public Expr {
         public:
             Literal(Token value): _value(value) {
 
@@ -90,7 +90,7 @@ namespace klong {
             Token _value;
     };
     
-    class Logical : Expr {
+    class Logical : public Expr {
         public:
             Logical(ExprPtr left, Token op, ExprPtr right): 
                 _left(left), _op(op), _right(right) {
@@ -106,7 +106,7 @@ namespace klong {
             ExprPtr _right;
     };
     
-    class Unary : Expr {
+    class Unary : public Expr {
         public:
             Unary(Token op, ExprPtr right):
                 _op(op), _right(right) {
@@ -121,7 +121,7 @@ namespace klong {
             ExprPtr _right;
     };
 
-    class Variable : Expr {
+    class Variable : public Expr {
         public:
             Variable(Token name): 
                 _name(name) {

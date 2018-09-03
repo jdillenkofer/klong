@@ -12,14 +12,14 @@ namespace klong {
     
     class Stmt {
         public:
-            virtual ~Stmt() = 0;
+            virtual ~Stmt() = default;
             virtual void accept(Visitor* visitor) = 0;
     };
 
     using StmtPtr = std::shared_ptr<Stmt>;
     using ExprPtr = std::shared_ptr<Expr>;
 
-    class Block : Stmt {
+    class Block : public Stmt {
         public:
             Block(std::vector<StmtPtr>&& statements):
                 _statements(statements) {
@@ -33,7 +33,7 @@ namespace klong {
             std::vector<StmtPtr> _statements;
     };
 
-    class Expression : Stmt {
+    class Expression : public Stmt {
         public:
             Expression(ExprPtr expression): 
                 _expression(expression) {
@@ -46,7 +46,7 @@ namespace klong {
             ExprPtr _expression;
     };
 
-    class Function : Stmt {
+    class Function : public Stmt {
         public:
             Function(Token name, std::vector<Token> params, std::vector<StmtPtr> body):
                 _name(name), _params(params), _body(body) {
@@ -61,7 +61,7 @@ namespace klong {
             std::vector<StmtPtr> _body;
     };
 
-    class If : Stmt {
+    class If : public Stmt {
         public:
             If(ExprPtr condition, StmtPtr thenBranch, StmtPtr elseBranch):
                 _condition(condition), _thenBranch(thenBranch), _elseBranch(elseBranch) {
@@ -76,7 +76,7 @@ namespace klong {
             StmtPtr _elseBranch;
     };
 
-    class Print : Stmt {
+    class Print : public Stmt {
         public:
             Print(ExprPtr expression): _expression(expression) {
 
@@ -88,7 +88,7 @@ namespace klong {
             ExprPtr _expression;
     };
 
-    class Return : Stmt {
+    class Return : public Stmt {
         public:
             Return(Token keyword, ExprPtr value): 
             _keyword(keyword), _value(value) {
@@ -102,7 +102,7 @@ namespace klong {
             ExprPtr _value;
     };
 
-    class Let : Stmt {
+    class Let : public Stmt {
         public:
             Let(Token name, ExprPtr initializer):
                 _name(name), _initializer(initializer) {
@@ -116,7 +116,7 @@ namespace klong {
             ExprPtr _initializer;
     };
 
-    class Const : Stmt {
+    class Const : public Stmt {
         public:
             Const(Token name, ExprPtr initializer): 
                 _name(name), _initializer(initializer) {
@@ -130,7 +130,7 @@ namespace klong {
             ExprPtr _initializer;
     };
 
-    class While : Stmt {
+    class While : public Stmt {
         public:
             While(ExprPtr condition, StmtPtr body): 
                 _condition(condition), _body(body) {

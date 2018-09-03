@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 
     const std::string filename = argv[1];
     auto sourceFile = SourceFile(filename);
-    auto result = sourceFile.load();
+    auto result = sourceFile.loadFromFile();
     if (!result) {
         std::cerr << "Cannot load source file " << sourceFile.path() << std::endl;
         return 1;

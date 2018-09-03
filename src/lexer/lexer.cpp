@@ -200,13 +200,12 @@ namespace klong {
 
     bool Lexer::hasNext() const {
         auto position = _currentPosition;
-        auto code = _source.code();
         skipWhitespace(position);
-        return position <= code.length();
+        return position <= _code.length();
     }
     
     Token Lexer::next() {
-        if (_currentPosition >= _source.code().length()) {
+        if (_currentPosition >= _code.length()) {
             _currentPosition++;
             return Token {
                 _sourceLocation,
@@ -255,9 +254,8 @@ namespace klong {
      * the updatedLocation. There is no easy way to revert the location.
      */
     void Lexer::updateLocation() {
-        const auto code = _source.code();
         for (auto i = _sourceLocation.charPos(); i < _currentPosition; i++) {
-            const auto c = code[i];
+            const auto c = _code[i];
             switch(c) {
                 case '\n':
                     _sourceLocation.incLine();
@@ -269,18 +267,16 @@ namespace klong {
     }
 
     void Lexer::skipWhitespace(size_t& position) const {
-        const auto code = _source.code();
-        while (isWhitespace(code[position])) {
+        while (isWhitespace(_code[position])) {
             position++;
         }
     }
 
     char Lexer::read(bool advancePosition) {
-        const auto code = _source.code();
-        if (_currentPosition == code.length()) {
+        if (_currentPosition == _code.length()) {
             return '\0';
         }
-        auto character = code[_currentPosition];
+        auto character = _code[_currentPosition];
         if (advancePosition) {
             _currentPosition++;
         }
@@ -336,7 +332,6 @@ namespace klong {
     }
     
     bool Lexer::matchesKeyword(Token& token, const std::string& keyword, TokenType type) {
-        auto code = _source.code();
         auto startLocation = _sourceLocation;
         auto keywordStart = _currentPosition;
         if (matches(keyword)) {
@@ -346,7 +341,7 @@ namespace klong {
             token.start = startLocation;
             token.end = endLocation;
             token.type = type;
-            token.value = code.substr(keywordStart, keywordEnd - keywordStart);
+            token.value = _code.substr(keywordStart, keywordEnd - keywordStart);
             return true;
         }
         _currentPosition = keywordStart;
@@ -467,7 +462,6 @@ namespace klong {
 
 
     bool Lexer::blockComment(Token& token) {
-        auto code = _source.code();
         auto commentStart = _currentPosition;
         auto startLocation = _sourceLocation;
 
@@ -478,9 +472,9 @@ namespace klong {
             return false;
         }
         
-        while(_currentPosition < code.length() - 1) {
+        while(_currentPosition < _code.length() - 1) {
             while(read() != '*') {
-                if (_currentPosition == code.length() - 1) {
+                if (_currentPosition == _code.length() - 1) {
                     _currentPosition = commentStart;
                     return false;
                 }
@@ -493,7 +487,7 @@ namespace klong {
                 token.type = TokenType::BLOCK_COMMENT;
                 token.start = startLocation;
                 token.end = endLocation;
-                token.value = code.substr(commentStart, commentEnd - commentStart);
+                token.value = _code.substr(commentStart, commentEnd - commentStart);
                 return true;
             }
         }
@@ -503,7 +497,6 @@ namespace klong {
     }
 
     bool Lexer::lineComment(Token& token) {
-        auto code = _source.code();
         auto commentStart = _currentPosition;
         auto startLocation = _sourceLocation;
 
@@ -515,7 +508,7 @@ namespace klong {
         }
 
         // read while we have not reached the end of the line or the end of the file
-        while(read(false) != '\n' && _currentPosition < code.length()) {
+        while(read(false) != '\n' && _currentPosition < _code.length()) {
             _currentPosition++;
         }
 
@@ -525,7 +518,7 @@ namespace klong {
         token.type = TokenType::LINE_COMMENT;
         token.start = startLocation;
         token.end = endLocation;
-        token.value = code.substr(commentStart, commentEnd - commentStart);
+        token.value = _code.substr(commentStart, commentEnd - commentStart);
         return true;
     }
 
@@ -654,7 +647,6 @@ namespace klong {
     }
 
     bool Lexer::equal(Token& token) {
-        auto code = _source.code();
         auto equalStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first =
@@ -670,12 +662,11 @@ namespace klong {
         token.type = TokenType::EQ_OP;
         token.start = startLocation;
         token.end = endLocation;
-        token.value = code.substr(equalStart, equalEnd - equalStart);
+        token.value = _code.substr(equalStart, equalEnd - equalStart);
         return true;
     }
 
     bool Lexer::notEqual(Token& token) {
-        auto code = _source.code();
         auto equalStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first !
@@ -691,7 +682,7 @@ namespace klong {
         token.type = TokenType::NE_OP;
         token.start = startLocation;
         token.end = endLocation;
-        token.value = code.substr(equalStart, equalEnd - equalStart);
+        token.value = _code.substr(equalStart, equalEnd - equalStart);
         return true;
     }
 
@@ -704,7 +695,6 @@ namespace klong {
     }
 
     bool Lexer::lessThanEqual(Token& token) {
-        auto code = _source.code();
         auto lessThanEqualStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first <
@@ -720,12 +710,11 @@ namespace klong {
         token.type = TokenType::LE_OP;
         token.start = startLocation;
         token.end = endLocation;
-        token.value = code.substr(lessThanEqualStart, lessThanEqualEnd - lessThanEqualStart);
+        token.value = _code.substr(lessThanEqualStart, lessThanEqualEnd - lessThanEqualStart);
         return true;
     }
 
     bool Lexer::greaterThanEqual(Token& token) {
-        auto code = _source.code();
         auto greaterThanEqualStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first >
@@ -741,7 +730,7 @@ namespace klong {
         token.type = TokenType::GE_OP;
         token.start = startLocation;
         token.end = endLocation;
-        token.value = code.substr(greaterThanEqualStart, greaterThanEqualEnd - greaterThanEqualStart);
+        token.value = _code.substr(greaterThanEqualStart, greaterThanEqualEnd - greaterThanEqualStart);
         return true;
     }
     
@@ -770,7 +759,6 @@ namespace klong {
     }
 
     bool Lexer::identifier(Token& token) {
-        auto code = _source.code();
         auto identifierStart = _currentPosition;
         auto startLocation = _sourceLocation;
         char c = read();
@@ -789,7 +777,7 @@ namespace klong {
         token.type = TokenType::IDENTIFIER;
         token.start = startLocation;
         token.end = endLocation;
-        token.value = code.substr(identifierStart, identifierEnd - identifierStart);
+        token.value = _code.substr(identifierStart, identifierEnd - identifierStart);
         return true;
     }
 
@@ -889,7 +877,6 @@ namespace klong {
     }
 
     bool Lexer::stringLiteral(Token& token) {
-        auto code = _source.code();
         auto stringLiteralStart = _currentPosition;
         auto startLocation = _sourceLocation;
         std::stringstream content;
@@ -897,7 +884,7 @@ namespace klong {
         // skip first '"'
         char c = read();
         while((c = read(false)) != '"') {
-            if (_currentPosition == _source.code().length()) {
+            if (_currentPosition == _code.length()) {
                 _currentPosition = stringLiteralStart;
                 return false;
             }
@@ -905,7 +892,7 @@ namespace klong {
             if (read(false) == '\\') {
                 _currentPosition++;
                 // TODO: refactor this
-                if (_currentPosition == _source.code().length()) {
+                if (_currentPosition == _code.length()) {
                     _currentPosition = stringLiteralStart;
                     return false;
                 }

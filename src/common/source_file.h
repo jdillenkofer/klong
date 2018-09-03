@@ -7,10 +7,17 @@
 namespace klong {
     class SourceFile {
         public:
-        SourceFile(const std::string& path) : _path(path) {
+        SourceFile(const std::string& path):
+            _path(path) {
+        
         }
 
-        inline bool load() {
+        SourceFile(const std::string& path, const std::string& code):
+            _path(path), _code(code) {
+
+        }
+
+        inline bool loadFromFile() {
             std::ifstream file(_path);
             std::stringstream input_buffer;
             if (!file) {
