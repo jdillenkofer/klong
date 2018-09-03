@@ -143,4 +143,22 @@ namespace klong {
             ExprPtr _condition;
             StmtPtr _body;
     };
+
+    class Comment : public Stmt {
+        public:
+            Comment(Token name): 
+                _name(name) {
+
+            }
+
+            void accept(Visitor* visitor) {
+                visitor->visitCommentStmt(this);
+            }
+
+            Token name() {
+                return _name;
+            }
+        private:
+            Token _name;
+    };
 }

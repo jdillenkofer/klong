@@ -11,6 +11,7 @@ namespace klong {
     class Let;
     class Const;
     class While;
+    class Comment;
     
     // Expr
     class Assign;
@@ -34,6 +35,7 @@ namespace klong {
             virtual void visitLetStmt(Let* stmt) = 0;
             virtual void visitConstStmt(Const* stmt) = 0;
             virtual void visitWhileStmt(While* stmt) = 0;
+            virtual void visitCommentStmt(Comment* expr) = 0;
 
             // Expr
             virtual void visitAssignExpr(Assign* expr) = 0;

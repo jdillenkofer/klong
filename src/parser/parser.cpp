@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include <iostream>
 #include <exception>
 
 namespace klong {
@@ -46,22 +47,57 @@ namespace klong {
         return peek().type == TokenType::END_OF_FILE;
     }
 
+    void Parser::synchronize() {
+        advance();
+
+        while(!isAtEnd()) {
+            if (previous().type == TokenType::SEMICOLON) return;
+
+            switch(peek().type) {
+                case TokenType::FUN:
+                case TokenType::LET:
+                case TokenType::CONST:
+                case TokenType::FOR:
+                case TokenType::IF:
+                case TokenType::WHILE:
+                case TokenType::PRINT:
+                case TokenType::RETURN:
+                    return;
+                default:
+                    break;
+            }
+
+            advance();
+        }
+    }
+
     StmtPtr Parser::declarationStmt() {
-        if (match(TokenType::FUN)) {
-            return functionStmt("function");
-        }
+        try {
+            if (match(TokenType::FUN)) {
+                return function("function");
+            }
 
-        if (match(TokenType::LET)) {
-            return letStmt();
-        }
+            if (match(TokenType::LET)) {
+                return letDeclaration();
+            }
 
-        if (match(TokenType::CONST)) {
-            return constStmt();
+            if (match(TokenType::CONST)) {
+                return constDeclaration();
+            }
+
+            if (match(TokenType::LINE_COMMENT, TokenType::BLOCK_COMMENT)) {
+                return std::make_shared<Comment>(previous());
+            }
+
+            return statement();
+        } catch(const ParseException& error) {
+            std::cerr << error.what() << std::endl;
+            synchronize();
+            return nullptr;
         }
-        throw ParseException(peek(), "Error");
     }
     
-    std::shared_ptr<Function> Parser::functionStmt(std::string kind) {
+    std::shared_ptr<Function> Parser::function(std::string kind) {
         Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
         consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
         std::vector<Token> params;
@@ -85,30 +121,26 @@ namespace klong {
         return statments;
     }
 
-    std::shared_ptr<Let> Parser::letStmt() {
+    std::shared_ptr<Let> Parser::letDeclaration() {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
         ExprPtr initializer = nullptr;
-        /*
         if (match(TokenType::ASSIGN_OP)) {
             initializer = expression();
         }
-        */
-
+        
         consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
         return std::make_shared<Let>(name, initializer);
     }
 
-    std::shared_ptr<Const> Parser::constStmt() {
+    std::shared_ptr<Const> Parser::constDeclaration() {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
         ExprPtr initializer = nullptr;
-        /*
         if (match(TokenType::ASSIGN_OP)) {
             initializer = expression();
         }
-        */
-
+        
         consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
         return std::make_shared<Const>(name, initializer);
     }
@@ -152,6 +184,56 @@ namespace klong {
         return std::make_shared<While>(condition, body);
     }
 
+    StmtPtr Parser::forStmt() {
+        consume(TokenType::LEFT_PAR, "Expect '(' after 'for'.");
+        StmtPtr initializer;
+        if (match(TokenType::SEMICOLON)) {
+            initializer = nullptr;
+        } else if (match(TokenType::LET)) {
+            initializer = letDeclaration();
+        } else if (match(TokenType::CONST)) {
+            initializer = constDeclaration();
+        } else {
+            initializer = expressionStmt();
+        }
+
+        ExprPtr condition = nullptr;
+        if (!check(TokenType::SEMICOLON)) {
+            condition = expression();
+        }
+        consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+        ExprPtr increment = nullptr;
+        if (!check(TokenType::RIGHT_PAR)) {
+            increment = expression();
+        }
+        consume(TokenType::RIGHT_PAR, "Expect ')' after for clause.");
+
+        StmtPtr body = statement();
+        if (increment != nullptr) {
+            std::vector<StmtPtr> statements;
+            statements.push_back(body);
+            statements.push_back(std::make_shared<Expression>(increment));
+            body = std::make_shared<Block>(std::move(statements));
+        }
+
+        if (condition == nullptr) {
+            Token trueToken;
+            trueToken.type = TokenType::TRUE_KEYWORD;
+            condition = std::make_shared<Literal>(trueToken);
+        }
+        body = std::make_shared<While>(condition, body);
+
+        if (initializer != nullptr) {
+            std::vector<StmtPtr> statements;
+            statements.push_back(initializer);
+            statements.push_back(body);
+            body = std::make_shared<Block>(std::move(statements));
+        }
+
+        return body;
+    }
+
     std::shared_ptr<Expression> Parser::expressionStmt() {
         ExprPtr expr = expression();
         consume(TokenType::SEMICOLON, "Expect ';' after expression.");
@@ -159,6 +241,9 @@ namespace klong {
     }
 
     StmtPtr Parser::statement() {
+        if (match(TokenType::FOR)) {
+            return forStmt();
+        }
         if (match(TokenType::IF)) {
             return ifStmt();
         }
@@ -178,17 +263,152 @@ namespace klong {
     }
 
     ExprPtr Parser::expression() {
-        return assignment();
+        return assignmentExpr();
     }
 
-    std::shared_ptr<Assign> Parser::assignment() {
-        return nullptr;
-/*
-        ExprPtr expr = or();
+    ExprPtr Parser::assignmentExpr() {
+        ExprPtr expr = orExpr();
         if (match(TokenType::ASSIGN_OP)) {
             Token assign = previous();
-            ExprPtr value = assignment();
+            ExprPtr value = assignmentExpr();
+            auto variable = std::dynamic_pointer_cast<Variable>(expr);
+            if (variable != nullptr) {
+                Token name = variable->name();
+                return std::make_shared<Assign>(name, value);
+            }
+
+            throw ParseException(assign, "Invalid assign target");
         }
-*/
+        return expr;
+    }
+
+    ExprPtr Parser::orExpr() {
+        ExprPtr expr = andExpr();
+
+        while(match(TokenType::OR)) {
+            Token op = previous();
+            ExprPtr right = andExpr();
+            expr = std::make_shared<Logical>(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::andExpr() {
+        ExprPtr expr = equalityExpr();
+
+        while(match(TokenType::AND)) {
+            Token op = previous();
+            ExprPtr right = equalityExpr();
+            expr = std::make_shared<Logical>(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::equalityExpr() {
+        ExprPtr expr = comparisonExpr();
+
+        while(match(TokenType::EQ_OP, TokenType::NE_OP)) {
+            Token op = previous();
+            ExprPtr right = comparisonExpr();
+            expr = std::make_shared<Binary>(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::comparisonExpr() {
+        ExprPtr expr = additionExpr();
+
+        while(match(TokenType::GT_OP, TokenType::GE_OP, TokenType::LT_OP, TokenType::LE_OP)) {
+            Token op = previous();
+            ExprPtr right = additionExpr();
+            expr = std::make_shared<Binary>(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::additionExpr() {
+        ExprPtr expr = multiplicationExpr();
+
+        while (match(TokenType::MINUS, TokenType::PLUS)) {
+            Token op = previous();
+            ExprPtr right = multiplicationExpr();
+            expr = std::make_shared<Binary>(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::multiplicationExpr() {
+        ExprPtr expr = unaryExpr();
+
+        while(match(TokenType::SLASH, TokenType::ASTERISK)) {
+            Token op = previous();
+            ExprPtr right = unaryExpr();
+            expr = std::make_shared<Binary>(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::unaryExpr() {
+        if (match(TokenType::BANG, TokenType::MINUS)) {
+            Token op = previous();
+            ExprPtr right = unaryExpr();
+            return std::make_shared<Unary>(op, right);
+        }
+
+        return callExpr();
+    }
+
+    ExprPtr Parser::finishCallExpr(ExprPtr callee) {
+        std::vector<ExprPtr> args;
+        if (!check(TokenType::RIGHT_PAR)) {
+            do {
+                args.push_back(expression());
+            } while(match(TokenType::COMMA));
+        }
+        Token paren = consume(TokenType::RIGHT_PAR, "Expect ')' after arguments.");
+
+        return std::make_shared<Call>(callee, paren, std::move(args));
+    }
+
+    ExprPtr Parser::callExpr() {
+        ExprPtr expr = primary();
+
+        while(true) {
+            if (match(TokenType::LEFT_PAR)) {
+                expr = finishCallExpr(expr);
+            } else {
+                break;
+            }
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::primary() {
+        if (match(TokenType::FALSE_KEYWORD, 
+                TokenType::TRUE_KEYWORD, 
+                TokenType::NUMBER_LITERAL, 
+                TokenType::CHARACTER_LITERAL, 
+                TokenType::STRING_LITERAL)) {
+            return std::make_shared<Literal>(previous());
+        }
+        
+        if (match(TokenType::IDENTIFIER)) {
+            return std::make_shared<Variable>(previous());
+        }
+
+        if (match(TokenType::LEFT_PAR)) {
+            ExprPtr expr = expression();
+            consume(TokenType::RIGHT_PAR, "Expect ')' after expression.");
+            return std::make_shared<Grouping>(expr);
+        }
+
+        throw ParseException(peek(), "Expect expression.");
     }
 }

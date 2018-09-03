@@ -95,6 +95,8 @@ namespace klong {
         {'r', std::bind(&Lexer::returnKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // control flow keyword
+        {'a', std::bind(&Lexer::andOp, std::placeholders::_1, std::placeholders::_2)},
+        {'o', std::bind(&Lexer::orOp, std::placeholders::_1, std::placeholders::_2)},
         {'i', std::bind(&Lexer::ifKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'e', std::bind(&Lexer::elseKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'w', std::bind(&Lexer::whileKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -574,6 +576,10 @@ namespace klong {
         return readSingleLineToken(token, TokenType::PIPE);
     }
 
+    bool Lexer::orOp(Token& token) {
+        return matchesKeyword(token, "or", TokenType::OR);
+    }
+
     bool Lexer::minus(Token& token) {
         return readSingleLineToken(token, TokenType::MINUS);
     }
@@ -640,6 +646,10 @@ namespace klong {
 
     bool Lexer::ampersand(Token& token) {
         return readSingleLineToken(token, TokenType::AMPERSAND);
+    }
+
+    bool Lexer::andOp(Token& token) {
+        return matchesKeyword(token, "and", TokenType::AND);
     }
 
     bool Lexer::assignOp(Token& token) {

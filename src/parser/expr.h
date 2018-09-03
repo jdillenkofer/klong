@@ -131,6 +131,10 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitVariableExpr(this);
             }
+
+            Token name() {
+                return _name;
+            }
         private:
             Token _name;
     };
