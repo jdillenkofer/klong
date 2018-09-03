@@ -184,7 +184,7 @@ namespace klong {
         return std::make_shared<While>(condition, body);
     }
 
-    StmtPtr Parser::forStmt() {
+    std::shared_ptr<For> Parser::forStmt() {
         consume(TokenType::LEFT_PAR, "Expect '(' after 'for'.");
         StmtPtr initializer;
         if (match(TokenType::SEMICOLON)) {
@@ -210,28 +210,14 @@ namespace klong {
         consume(TokenType::RIGHT_PAR, "Expect ')' after for clause.");
 
         StmtPtr body = statement();
-        if (increment != nullptr) {
-            std::vector<StmtPtr> statements;
-            statements.push_back(body);
-            statements.push_back(std::make_shared<Expression>(increment));
-            body = std::make_shared<Block>(std::move(statements));
-        }
-
+        
         if (condition == nullptr) {
             Token trueToken;
             trueToken.type = TokenType::TRUE_KEYWORD;
             condition = std::make_shared<Literal>(trueToken);
         }
-        body = std::make_shared<While>(condition, body);
 
-        if (initializer != nullptr) {
-            std::vector<StmtPtr> statements;
-            statements.push_back(initializer);
-            statements.push_back(body);
-            body = std::make_shared<Block>(std::move(statements));
-        }
-
-        return body;
+        return std::make_shared<For>(initializer, condition, increment, body);
     }
 
     std::shared_ptr<Expression> Parser::expressionStmt() {

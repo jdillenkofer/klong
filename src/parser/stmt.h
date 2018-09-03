@@ -144,6 +144,22 @@ namespace klong {
             StmtPtr _body;
     };
 
+    class For : public Stmt {
+        public:
+            For(StmtPtr initializer, ExprPtr condition, ExprPtr increment, StmtPtr body): 
+                _initializer(initializer), _condition(condition), _increment(increment), _body(body) {
+                
+            }
+            void accept(Visitor* visitor) {
+                visitor->visitForStmt(this);
+            }
+        private:
+            StmtPtr _initializer;
+            ExprPtr _condition;
+            ExprPtr _increment;
+            StmtPtr _body;
+    };
+
     class Comment : public Stmt {
         public:
             Comment(Token name): 

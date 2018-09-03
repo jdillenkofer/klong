@@ -49,7 +49,7 @@ namespace klong {
             std::shared_ptr<Print> printStmt();
             std::shared_ptr<Return> returnStmt();
             std::shared_ptr<While> whileStmt();
-            StmtPtr forStmt();
+            std::shared_ptr<For> forStmt();
             std::shared_ptr<Expression> expressionStmt();
             StmtPtr statement();
             ExprPtr expression();
