@@ -4,12 +4,12 @@
 #include <exception>
 
 namespace klong {
-    std::vector<StmtPtr> Parser::parse() {
+    ModulePtr Parser::parse() {
         std::vector<StmtPtr> statements;
         while(!isAtEnd()) {
             statements.push_back(std::move(declarationStmt()));
         }
-        return statements;
+        return std::make_shared<Module>(std::move(statements));
     }
 
     Token Parser::consume(TokenType type, std::string errorMessage) {

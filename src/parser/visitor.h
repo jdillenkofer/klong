@@ -1,6 +1,9 @@
 #pragma once
 
 namespace klong {
+    // Module
+    class Module;
+
     // Stmt
     class Block;
     class Expression;
@@ -26,6 +29,9 @@ namespace klong {
 
     class Visitor {
         public:
+            // Module
+            virtual void visitModule(Module* module) = 0;
+
             // Stmt
             virtual void visitBlockStmt(Block* stmt) = 0;
             virtual void visitExpressionStmt(Expression* stmt) = 0;

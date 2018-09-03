@@ -23,6 +23,6 @@ int main(int argc, char* argv[]) {
     }
     auto lexer = Lexer(sourceFile);
     auto parser = Parser(&lexer);
-    auto statements = parser.parse();
+    auto module = parser.parse();
     return 0;
 }

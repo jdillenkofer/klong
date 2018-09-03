@@ -2,10 +2,11 @@
 
 #include <string>
 #include <memory>
-#include <array>
 
 #include "iparser.h"
 #include "../lexer/ilexer.h"
+#include "module.h"
+#include "stmt.h"
 #include "expr.h"
 
 #include "visitor.h" // <-- TODO: remove this include
@@ -18,7 +19,7 @@ namespace klong {
                 advance();
             }
 
-            std::vector<StmtPtr> parse();
+            ModulePtr parse();
         private:
             
             template<typename... T> bool match(T... types) {
