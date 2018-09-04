@@ -52,6 +52,7 @@ set(HEADER_FILES
     src/parser/visitor.h
     src/parser/parser.h
     src/parser/iparser.h
+    src/parser/type.h
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES} ${HEADER_FILES})

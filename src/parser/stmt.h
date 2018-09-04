@@ -31,6 +31,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitBlockStmt(this);
             }
+
         private:
             std::vector<StmtPtr> _statements;
     };
@@ -41,9 +42,11 @@ namespace klong {
                 _expression(expression) {
 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitExpressionStmt(this);
             }
+
         private:
             ExprPtr _expression;
     };
@@ -58,6 +61,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitFunctionStmt(this);
             }
+
         private:
             Token _name;
             std::vector<Token> _params;
@@ -74,6 +78,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitIfStmt(this);
             }
+
         private:
             ExprPtr _condition;
             StmtPtr _thenBranch;
@@ -85,9 +90,11 @@ namespace klong {
             Print(ExprPtr expression): _expression(expression) {
 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitPrintStmt(this);
             }
+
         private:
             ExprPtr _expression;
     };
@@ -98,9 +105,11 @@ namespace klong {
             _keyword(keyword), _value(value) {
 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitReturnStmt(this);
             }
+
         private:
             Token _keyword;
             ExprPtr _value;
@@ -112,9 +121,11 @@ namespace klong {
                 _name(name), _type(type), _initializer(initializer) {
 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitLetStmt(this);
             }
+
         private:
             Token _name;
             TypePtr _type;
@@ -127,9 +138,11 @@ namespace klong {
                 _name(name), _type(type), _initializer(initializer) {
 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitConstStmt(this);
             }
+
         private:
             Token _name;
             TypePtr _type;
@@ -142,9 +155,11 @@ namespace klong {
                 _condition(condition), _body(body) {
                 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitWhileStmt(this);
             }
+
         private:
             ExprPtr _condition;
             StmtPtr _body;
@@ -156,9 +171,11 @@ namespace klong {
                 _initializer(initializer), _condition(condition), _increment(increment), _body(body) {
                 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitForStmt(this);
             }
+
         private:
             StmtPtr _initializer;
             ExprPtr _condition;

@@ -26,6 +26,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitAssignExpr(this);
             }
+
         private:
             Token _name;
             ExprPtr _value;
@@ -41,6 +42,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitBinaryExpr(this);
             }
+
         private:
             ExprPtr _left;
             Token _op;
@@ -57,6 +59,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitCallExpr(this);
             }
+
         private:
             ExprPtr _callee;
             Token _paren;
@@ -72,6 +75,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitGroupingExpr(this);
             }
+
         private:
             ExprPtr _expr;
     };
@@ -100,6 +104,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitLogicalExpr(this);
             }
+
         private:
             ExprPtr _left;
             Token _op;
@@ -116,6 +121,7 @@ namespace klong {
             void accept(Visitor* visitor) {
                 visitor->visitUnaryExpr(this);
             }
+
         private:
             Token _op;
             ExprPtr _right;
@@ -135,6 +141,7 @@ namespace klong {
             Token name() {
                 return _name;
             }
+
         private:
             Token _name;
     };

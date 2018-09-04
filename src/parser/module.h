@@ -17,9 +17,11 @@ namespace klong {
                 _statements(statements) {
 
             }
+
             virtual void accept(Visitor* visitor) {
                 visitor->visitModule(this);
             };
+
         private:
             std::vector<StmtPtr> _statements;
     };

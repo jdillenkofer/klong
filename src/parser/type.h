@@ -30,15 +30,19 @@ namespace klong {
                         std::make_shared<BuiltInType>(voidToken));
                 }
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitFunctionType(this);
             }
+
             std::vector<TypePtr> paramTypes() const {
                 return _paramTypes;
             }
+
             const TypePtr returnType() const {
                 return _returnType;
             }
+
             bool isEqual(const Type* other) const {
                 auto otherFunctionType = dynamic_cast<const FunctionType*>(other);
                 if (otherFunctionType != nullptr) {
@@ -63,6 +67,7 @@ namespace klong {
                 }
                 return true;
             }
+
         private:
             std::vector<TypePtr> _paramTypes;
             TypePtr _returnType;
@@ -74,12 +79,15 @@ namespace klong {
                 _token(token) {
 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitBuiltInType(this);
             }
+
             Token token() const {
                 return _token;
             }
+
             bool isEqual(const Type* other) const {
                 auto otherBuiltInType = dynamic_cast<const BuiltInType*>(other);
                 if (otherBuiltInType != nullptr) {
@@ -87,6 +95,7 @@ namespace klong {
                 }
                 return false;
             }
+
         private:
             Token _token;
     };
@@ -97,12 +106,15 @@ namespace klong {
                 _token(token) {
 
             }
+
             void accept(Visitor* visitor) {
                 visitor->visitUserDefinedType(this);
             }
+
             Token token() const {
                 return _token;
             }
+
             bool isEqual(const Type* other) const {
                 // TODO: rework this
                 // maybe we need a symbol table here!?
@@ -113,6 +125,7 @@ namespace klong {
                 }
                 return false;
             }
+
         private:
             Token _token;
     };

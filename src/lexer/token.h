@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <climits>
+#include <cfloat>
 #include "../common/source_location.h"
 
 namespace klong {
@@ -96,8 +98,57 @@ namespace klong {
         FLOAT
     };
 
+    enum class NumberConversionResult {
+        OVERFLOW,
+        UNDERFLOW,
+        INCONVERTIBLE,
+        OK
+    };
+
     struct Token {
         Token() = default;
+
+        NumberConversionResult parse(int64_t& out) {
+            const char* str = value.c_str();
+            char* endPtr;
+            errno = 0;
+            out = strtoll(str, &endPtr, radix);
+            if (errno == ERANGE) {
+                return out == LONG_MAX ? NumberConversionResult::OVERFLOW : NumberConversionResult::UNDERFLOW;
+            }
+            if (*endPtr != '\0') {
+                return NumberConversionResult::INCONVERTIBLE;
+            }
+            return NumberConversionResult::OK;
+        }
+
+        NumberConversionResult parse(uint64_t& out) {
+            const char* str = value.c_str();
+            char* endPtr;
+            errno = 0;
+            out = strtoull(str, &endPtr, radix);
+            if (errno == ERANGE) {
+                return out == ULONG_MAX ? NumberConversionResult::OVERFLOW : NumberConversionResult::UNDERFLOW;
+            }
+            if (*endPtr != '\0') {
+                return NumberConversionResult::INCONVERTIBLE;
+            }
+            return NumberConversionResult::OK;
+        }
+
+        NumberConversionResult parse(double& out) {
+            const char* str = value.c_str();
+            char* endPtr;
+            errno = 0;
+            out = strtod(str, &endPtr);
+            if (errno == ERANGE) {
+                return out == DBL_MAX ? NumberConversionResult::OVERFLOW : NumberConversionResult::UNDERFLOW;
+            }
+            if (*endPtr != '\0') {
+                return NumberConversionResult::INCONVERTIBLE;
+            }
+            return NumberConversionResult::OK;
+        }
 
         SourceLocation start;
         SourceLocation end;

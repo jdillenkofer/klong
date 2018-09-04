@@ -456,6 +456,9 @@ namespace klong {
             if (!atleastOneDecimal) {
                 return false;
             }
+
+            // TODO: allow 1.7976931348623157E+308 notation
+
             token.numberType = NumberType::FLOAT;
         } else {
             token.numberType = NumberType::INTEGER;
@@ -866,17 +869,18 @@ namespace klong {
             case 'x':
             case 'X':
                 radix = 16;
+                read();
                 break;
             case 'b':
             case 'B':
                 radix = 2;
+                read();
                 break;
             default:
-                // base 10 literals may not start with a '0'
-                _currentPosition = numberLiteralStart;
-                return false;
+                radix = 10;
+                _currentPosition--;
+                break;
             }
-            read();
         }
 
         bool result;

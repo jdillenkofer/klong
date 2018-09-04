@@ -129,12 +129,12 @@ namespace klong {
     }
 
     std::vector<StmtPtr> Parser::blockStmt() {
-        std::vector<StmtPtr> statments;
+        std::vector<StmtPtr> statements;
         while(!check(TokenType::RIGHT_CURLY_BRACE) && !isAtEnd()) {
-            statments.push_back(declarationStmt());
+            statements.push_back(declarationStmt());
         }
         consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after block.");
-        return statments;
+        return statements;
     }
 
     std::shared_ptr<Let> Parser::letDeclaration() {
