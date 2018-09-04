@@ -5,7 +5,8 @@ namespace klong {
         // plus
         {'+', std::bind(&Lexer::plus, std::placeholders::_1, std::placeholders::_2)},
         
-        // minus
+        // arrow, minus
+        {'-', std::bind(&Lexer::arrow, std::placeholders::_1, std::placeholders::_2)},
         {'-', std::bind(&Lexer::minus, std::placeholders::_1, std::placeholders::_2)},
         
         // comma
@@ -563,6 +564,27 @@ namespace klong {
 
     bool Lexer::constKeyword(Token& token) {
         return matchesKeyword(token, "const", TokenType::CONST);
+    }
+
+    bool Lexer::arrow(Token& token) {
+        auto arrowStart = _currentPosition;
+        auto startLocation = _sourceLocation;
+
+        // ignore first -
+        read();
+        if (read() != '>') {
+            _currentPosition = arrowStart;
+            return false;
+        }
+
+        auto arrowEnd = _currentPosition;
+        updateLocation();
+        auto endLocation = _sourceLocation;
+        token.type = TokenType::ARROW;
+        token.start = startLocation;
+        token.end = endLocation;
+        token.value = _code.substr(arrowStart, arrowEnd - arrowStart);
+        return true;
     }
 
     bool Lexer::plus(Token& token) {

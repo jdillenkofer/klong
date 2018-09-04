@@ -29,6 +29,7 @@ namespace klong {
         LET,
         CONST,
         
+        ARROW,
         PLUS,
         BANG,
         PIPE,

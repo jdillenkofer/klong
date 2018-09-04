@@ -5,6 +5,7 @@
 
 #include "iparser.h"
 #include "../lexer/ilexer.h"
+#include "type.h"
 #include "module.h"
 #include "stmt.h"
 #include "expr.h"
@@ -46,7 +47,7 @@ namespace klong {
             std::vector<StmtPtr> blockStmt();
             std::shared_ptr<Let> letDeclaration();
             std::shared_ptr<Const> constDeclaration();
-            Token typeDeclaration();
+            TypePtr typeDeclaration();
             std::shared_ptr<If> ifStmt();
             std::shared_ptr<Print> printStmt();
             std::shared_ptr<Return> returnStmt();

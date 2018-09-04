@@ -27,6 +27,11 @@ namespace klong {
     class Unary;
     class Variable;
 
+    // Types
+    class FunctionType;
+    class BuiltInType;
+    class UserDefinedType;
+
     class Visitor {
         public:
             // Module
@@ -54,5 +59,10 @@ namespace klong {
             virtual void visitLogicalExpr(Logical* expr) = 0;
             virtual void visitUnaryExpr(Unary* expr) = 0;
             virtual void visitVariableExpr(Variable* expr) = 0;
+
+            // Types
+            virtual void visitFunctionType(FunctionType* type) = 0;
+            virtual void visitBuiltInType(BuiltInType* type) = 0;
+            virtual void visitUserDefinedType(UserDefinedType* type) = 0;
     };
 }

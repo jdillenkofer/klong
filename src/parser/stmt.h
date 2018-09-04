@@ -2,6 +2,7 @@
 
 #include "visitor.h"
 #include "../lexer/token.h"
+#include "type.h"
 
 #include <vector>
 #include <memory>
@@ -49,7 +50,7 @@ namespace klong {
 
     class Function : public Stmt {
         public:
-            Function(Token name, std::vector<std::pair<Token, Token>> params, Token returnType, std::vector<StmtPtr> body):
+            Function(Token name, std::vector<std::pair<Token, TypePtr>> params, TypePtr returnType, std::vector<StmtPtr> body):
                 _name(name), _params(params), _returnType(returnType), _body(body) {
 
             }
@@ -58,8 +59,8 @@ namespace klong {
             }
         private:
             Token _name;
-            std::vector<std::pair<Token, Token>> _params;
-            Token _returnType;
+            std::vector<std::pair<Token, TypePtr>> _params;
+            TypePtr _returnType;
             std::vector<StmtPtr> _body;
     };
 
@@ -106,7 +107,7 @@ namespace klong {
 
     class Let : public Stmt {
         public:
-            Let(Token name, Token type, ExprPtr initializer):
+            Let(Token name, TypePtr type, ExprPtr initializer):
                 _name(name), _type(type), _initializer(initializer) {
 
             }
@@ -115,13 +116,13 @@ namespace klong {
             }
         private:
             Token _name;
-            Token _type;
+            TypePtr _type;
             ExprPtr _initializer;
     };
 
     class Const : public Stmt {
         public:
-            Const(Token name, Token type, ExprPtr initializer): 
+            Const(Token name, TypePtr type, ExprPtr initializer): 
                 _name(name), _type(type), _initializer(initializer) {
 
             }
@@ -130,7 +131,7 @@ namespace klong {
             }
         private:
             Token _name;
-            Token _type;
+            TypePtr _type;
             ExprPtr _initializer;
     };
 

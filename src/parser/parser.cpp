@@ -100,21 +100,25 @@ namespace klong {
     std::shared_ptr<Function> Parser::function(std::string kind) {
         Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
         consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
-        std::vector<std::pair<Token, Token>> params;
+        std::vector<std::pair<Token, TypePtr>> params;
         if (!check(TokenType::RIGHT_PAR)) {
             do {
                 Token identifier = consume(TokenType::IDENTIFIER, "Expect parameter name.");
                 consume(TokenType::COLON, "Expect ':' after parameter name.");
-                Token type = typeDeclaration();
-                if (type.type == TokenType::VOID) {
-                    throw ParseException(type, "Illegal type 'void' in argument list.");
+                TypePtr type = typeDeclaration();
+                
+                // TODO: refactor this cast
+                std::shared_ptr<BuiltInType> builtInType = std::dynamic_pointer_cast<BuiltInType>(type); 
+                if (builtInType != nullptr && builtInType->typeToken().type == TokenType::VOID) {
+                    throw ParseException(builtInType->typeToken(), "Illegal type 'void' in argument list.");
                 }
-                params.push_back(std::pair<Token, Token>(identifier, type));
+                params.push_back(std::pair<Token, TypePtr>(identifier, type));
             } while(match(TokenType::COMMA));
         }
         consume(TokenType::RIGHT_PAR, "Expect ')' after parameters.");
-        Token returnType;
-        returnType.type = TokenType::VOID;
+        Token returnTypeToken;
+        returnTypeToken.type = TokenType::VOID;
+        TypePtr returnType = std::make_shared<BuiltInType>(returnTypeToken);
         if (match(TokenType::COLON)) {
             returnType = typeDeclaration();   
         }
@@ -135,7 +139,7 @@ namespace klong {
     std::shared_ptr<Let> Parser::letDeclaration() {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
-        Token type;
+        TypePtr type = nullptr;
         if (match(TokenType::COLON)) {
             type = typeDeclaration();
         }
@@ -151,7 +155,7 @@ namespace klong {
     std::shared_ptr<Const> Parser::constDeclaration() {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
-        Token type;
+        TypePtr type = nullptr;
         if (match(TokenType::COLON)) {
             type = typeDeclaration();
         }
@@ -164,9 +168,24 @@ namespace klong {
         return std::make_shared<Const>(name, type, initializer);
     }
 
-    Token Parser::typeDeclaration() {
-        Token type;
-        switch(peek().type) {
+    TypePtr Parser::typeDeclaration() {
+        Token type = peek();
+        advance();
+        switch(type.type) {
+            case TokenType::LEFT_PAR:
+            {
+                std::vector<TypePtr> argTypes;
+                do {
+                    argTypes.push_back(typeDeclaration());
+                } while(match(TokenType::COMMA));
+                consume(TokenType::RIGHT_PAR, "Expect ')' as type list terminator.");
+                consume(TokenType::ARROW, "Expect '->' after type list in function type.");
+                auto returnType = typeDeclaration();
+                return std::make_shared<FunctionType>(std::move(argTypes), returnType);
+            }
+            case TokenType::VOID:
+            case TokenType::STRING:
+            case TokenType::BOOL:
             case TokenType::I8:
             case TokenType::I16:
             case TokenType::I32:
@@ -177,14 +196,16 @@ namespace klong {
             case TokenType::U64:
             case TokenType::F32:
             case TokenType::F64:
+            {
+                return std::make_shared<BuiltInType>(type);
+            }
             case TokenType::IDENTIFIER:
-                type = peek();
-                advance();
-                break;
+            {
+                return std::make_shared<UserDefinedType>(type);
+            }
             default:
                 throw new ParseException(peek(), "Expect type after ':'.");
         }
-        return type;
     }
 
     std::shared_ptr<If> Parser::ifStmt() {
