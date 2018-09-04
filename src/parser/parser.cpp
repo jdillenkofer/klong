@@ -100,31 +100,32 @@ namespace klong {
     std::shared_ptr<Function> Parser::function(std::string kind) {
         Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
         consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
-        std::vector<std::pair<Token, TypePtr>> params;
+        std::vector<Token> params;
+        std::vector<TypePtr> paramTypes;
         if (!check(TokenType::RIGHT_PAR)) {
             do {
                 Token identifier = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                params.push_back(identifier);
                 consume(TokenType::COLON, "Expect ':' after parameter name.");
                 TypePtr type = typeDeclaration();
-                
+                                
                 // TODO: refactor this cast
                 std::shared_ptr<BuiltInType> builtInType = std::dynamic_pointer_cast<BuiltInType>(type); 
-                if (builtInType != nullptr && builtInType->typeToken().type == TokenType::VOID) {
-                    throw ParseException(builtInType->typeToken(), "Illegal type 'void' in argument list.");
+                if (builtInType != nullptr && builtInType->token().type == TokenType::VOID) {
+                    throw ParseException(builtInType->token(), "Illegal type 'void' in argument list.");
                 }
-                params.push_back(std::pair<Token, TypePtr>(identifier, type));
+                paramTypes.push_back(type);
             } while(match(TokenType::COMMA));
         }
         consume(TokenType::RIGHT_PAR, "Expect ')' after parameters.");
-        Token returnTypeToken;
-        returnTypeToken.type = TokenType::VOID;
-        TypePtr returnType = std::make_shared<BuiltInType>(returnTypeToken);
+        TypePtr returnType = nullptr;
         if (match(TokenType::COLON)) {
             returnType = typeDeclaration();   
         }
         consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' before " + kind + " body.");
         std::vector<StmtPtr> body = blockStmt();
-        return std::make_shared<Function>(name, params, returnType, body);
+        auto functionType = std::make_shared<FunctionType>(std::move(paramTypes), returnType);
+        return std::make_shared<Function>(name, std::move(params), functionType, std::move(body));
     }
 
     std::vector<StmtPtr> Parser::blockStmt() {

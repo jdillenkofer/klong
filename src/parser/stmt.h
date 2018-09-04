@@ -50,8 +50,9 @@ namespace klong {
 
     class Function : public Stmt {
         public:
-            Function(Token name, std::vector<std::pair<Token, TypePtr>> params, TypePtr returnType, std::vector<StmtPtr> body):
-                _name(name), _params(params), _returnType(returnType), _body(body) {
+            Function(Token name, std::vector<Token>&& params, 
+                std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body):
+                _name(name), _params(params), _functionType(functionType), _body(body) {
 
             }
             void accept(Visitor* visitor) {
@@ -59,8 +60,8 @@ namespace klong {
             }
         private:
             Token _name;
-            std::vector<std::pair<Token, TypePtr>> _params;
-            TypePtr _returnType;
+            std::vector<Token> _params;
+            std::shared_ptr<FunctionType> _functionType;
             std::vector<StmtPtr> _body;
     };
 
