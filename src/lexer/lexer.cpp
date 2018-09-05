@@ -211,23 +211,14 @@ namespace klong {
     Token Lexer::next() {
         if (_currentPosition >= _code.length()) {
             _currentPosition++;
-            return Token {
-                _sourceLocation,
-                _sourceLocation,
-                TokenType::END_OF_FILE
-            };
+            return Token { { _sourceLocation, _sourceLocation }, TokenType::END_OF_FILE };
         }
 
         skipWhitespace(_currentPosition);
         updateLocation();
 
         auto ch = read(false);
-        Token token {
-            &_source,
-            &_source,
-            TokenType::NONE,
-            std::string(1, ch)
-        };
+        Token token {{ &_source, &_source }, TokenType::NONE, std::string(1, ch)};
 
         auto case_range = cases.equal_range(ch);
         bool hasFoundMatchingCase = false;
@@ -243,8 +234,7 @@ namespace klong {
             auto c = read();
             updateLocation();
             auto endLocation = _sourceLocation;
-            token.start = startLocation;
-            token.end = endLocation;
+            token.sourceRange = { startLocation, endLocation };
             token.type = TokenType::ERROR;
             token.value = std::string(1, c);
             throw LexerException(token, "Illegal char sequence encountered.");
@@ -313,8 +303,7 @@ namespace klong {
         updateLocation();
         auto end = _sourceLocation;
         token.type = type;
-        token.start = start;
-        token.end = end;
+        token.sourceRange = { start, end };
         token.value = std::string(1, c);
         return true;
     }
@@ -342,8 +331,7 @@ namespace klong {
             auto keywordEnd = _currentPosition;
             updateLocation();
             auto endLocation = _sourceLocation;
-            token.start = startLocation;
-            token.end = endLocation;
+            token.sourceRange = { startLocation, endLocation };
             token.type = type;
             token.value = _code.substr(keywordStart, keywordEnd - keywordStart);
             return true;
@@ -492,8 +480,7 @@ namespace klong {
                 updateLocation();
                 auto endLocation = _sourceLocation;
                 token.type = TokenType::BLOCK_COMMENT;
-                token.start = startLocation;
-                token.end = endLocation;
+                token.sourceRange = { startLocation, endLocation };
                 token.value = _code.substr(commentStart, commentEnd - commentStart);
                 return true;
             }
@@ -523,8 +510,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::LINE_COMMENT;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(commentStart, commentEnd - commentStart);
         return true;
     }
@@ -584,8 +570,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::ARROW;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(arrowStart, arrowEnd - arrowStart);
         return true;
     }
@@ -696,8 +681,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::EQ_OP;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(equalStart, equalEnd - equalStart);
         return true;
     }
@@ -716,8 +700,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::NE_OP;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(equalStart, equalEnd - equalStart);
         return true;
     }
@@ -744,8 +727,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::LE_OP;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(lessThanEqualStart, lessThanEqualEnd - lessThanEqualStart);
         return true;
     }
@@ -764,8 +746,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::GE_OP;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(greaterThanEqualStart, greaterThanEqualEnd - greaterThanEqualStart);
         return true;
     }
@@ -811,8 +792,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::IDENTIFIER;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(identifierStart, identifierEnd - identifierStart);
         return true;
     }
@@ -844,8 +824,7 @@ namespace klong {
             updateLocation();
             auto endLocation = _sourceLocation;
             token.type = TokenType::CHARACTER_LITERAL;
-            token.start = startLocation;
-            token.end = endLocation;
+            token.sourceRange = { startLocation, endLocation };
             token.value = content;
             return true;
         }
@@ -903,8 +882,7 @@ namespace klong {
             auto endLocation = _sourceLocation;
 
             token.type = TokenType::NUMBER_LITERAL;
-            token.start = startLocation;
-            token.end = endLocation;
+            token.sourceRange = { startLocation, endLocation };
             token.value = content.str();
             return true;
         } else {
@@ -952,8 +930,7 @@ namespace klong {
         updateLocation();
         auto endLocation = _sourceLocation;
         token.type = TokenType::STRING_LITERAL;
-        token.start = startLocation;
-        token.end = endLocation;
+        token.sourceRange = { startLocation, endLocation };
         token.value = content.str();
         return true;
     }

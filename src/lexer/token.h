@@ -3,7 +3,7 @@
 #include <string>
 #include <climits>
 #include <cfloat>
-#include "../common/source_location.h"
+#include "../common/source_range.h"
 
 namespace klong {
     enum class TokenType {
@@ -150,8 +150,7 @@ namespace klong {
             return NumberConversionResult::OK;
         }
 
-        SourceLocation start;
-        SourceLocation end;
+        SourceRange sourceRange = { nullptr, nullptr };
         TokenType type = TokenType::NONE;
         std::string value = "";
         NumberType numberType = NumberType::NONE;

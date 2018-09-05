@@ -6,9 +6,17 @@
 namespace klong {
     class ParseException : public std::exception {
         public:
-            ParseException(Token token, std::string message):
-                _token(token), _message(message) {
+            ParseException(SourceRange sourceRange, std::string message):
+                _sourceRange(sourceRange), _message(message) {
 
+            }
+
+            static ParseException from(Token token, const std::string& message) {
+                return ParseException(token.sourceRange, message);
+            }
+
+            SourceRange sourceRange() const {
+                return _sourceRange;
             }
 
             const char* what () const throw () {
@@ -16,7 +24,7 @@ namespace klong {
             }
 
         private:
-            Token _token;
+            SourceRange _sourceRange;
             std::string _message;
     };
 

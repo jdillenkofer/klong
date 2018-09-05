@@ -22,25 +22,35 @@ namespace klong {
     
     class Expr {
         public:
-            Expr(ExprKind kind): _kind(kind) {
+            Expr(ExprKind kind, SourceRange sourceRange): _kind(kind),
+                _sourceRange(sourceRange) {
 
             }
+
             virtual ~Expr() = default;
+
             virtual void accept(Visitor* visitor) = 0;
+
             ExprKind kind() const {
                 return _kind;
             }
+
+            SourceRange sourceRange() const {
+                return _sourceRange;
+            }
+
         private:
             ExprKind _kind;
+            SourceRange _sourceRange;
     };
 
     using ExprPtr = std::shared_ptr<Expr>;
 
     class Assign : public Expr {
         public:
-            Assign(Token name, ExprPtr value): 
-                Expr(ExprKind::ASSIGN),
-                _name(name), _value(value) {
+            Assign(SourceRange sourceRange, const std::string& target, ExprPtr value):
+                Expr(ExprKind::ASSIGN, sourceRange),
+                _target(target), _value(value) {
 
             }
 
@@ -48,15 +58,32 @@ namespace klong {
                 visitor->visitAssignExpr(this);
             }
 
+            const std::string& target() const {
+                return _target;
+            }
+
         private:
-            Token _name;
+            std::string _target;
             ExprPtr _value;
+    };
+
+    enum class BinaryOperation {
+        PLUS,
+        MINUS,
+        MULTIPLICATION,
+        DIVISION,
+        EQUALITY,
+        INEQUALITY,
+        GREATER_THAN,
+        GREATER_EQUAL,
+        LESS_THAN,
+        LESS_EQUAL
     };
     
     class Binary : public Expr {
         public:
-            Binary(ExprPtr left, Token op, ExprPtr right):
-                Expr(ExprKind::BINARY),
+            Binary(SourceRange sourceRange, ExprPtr left, BinaryOperation op, ExprPtr right):
+                Expr(ExprKind::BINARY, sourceRange),
                 _left(left), _op(op), _right(right) {
 
             }
@@ -67,16 +94,15 @@ namespace klong {
 
         private:
             ExprPtr _left;
-            Token _op;
+            BinaryOperation _op;
             ExprPtr _right;
     };
     
     class Call : public Expr {
         public:
-            Call(ExprPtr callee, Token paren, std::vector<ExprPtr>&& args):
-                Expr(ExprKind::CALL),
-                _callee(callee), _paren(paren), _args(args) {
-
+            Call(SourceRange sourceRange, ExprPtr callee, std::vector<ExprPtr>&& args):
+                Expr(ExprKind::CALL, sourceRange),
+                _callee(callee), _args(args) {
             }
 
             void accept(Visitor* visitor) {
@@ -85,14 +111,13 @@ namespace klong {
 
         private:
             ExprPtr _callee;
-            Token _paren;
             std::vector<ExprPtr> _args;
     };
     
     class Grouping : public Expr {
         public:
-            Grouping(ExprPtr expr):
-                Expr(ExprKind::GROUPING),
+            Grouping(SourceRange sourceRange, ExprPtr expr):
+                Expr(ExprKind::GROUPING, sourceRange),
                 _expr(expr) {
 
             }
@@ -104,12 +129,26 @@ namespace klong {
         private:
             ExprPtr _expr;
     };
+
+    enum class LiteralType {
+        INT,
+        UINT,
+        BOOL,
+        STRING,
+        CHAR
+    };
     
     class Literal : public Expr {
         public:
-            Literal(Token value):
-                Expr(ExprKind::LITERAL),
-                _value(value) {
+            Literal(SourceRange sourceRange, LiteralType literalType):
+                Expr(ExprKind::LITERAL, sourceRange),
+                _literalType(literalType) {
+
+            }
+
+            Literal(LiteralType literalType):
+                Expr(ExprKind::LITERAL, SourceRange {nullptr, nullptr}),
+                _literalType(literalType) {
 
             }
 
@@ -117,14 +156,23 @@ namespace klong {
                 visitor->visitLiteralExpr(this);
             }
 
+            LiteralType literalType() const {
+                return _literalType;
+            }
+
         private:
-            Token _value;
+            LiteralType _literalType;
+    };
+
+    enum class LogicalOperation {
+        OR,
+        AND
     };
     
     class Logical : public Expr {
         public:
-            Logical(ExprPtr left, Token op, ExprPtr right):
-                Expr(ExprKind::LOGICAL),
+            Logical(SourceRange sourceRange, ExprPtr left, LogicalOperation op, ExprPtr right):
+                Expr(ExprKind::LOGICAL, sourceRange),
                 _left(left), _op(op), _right(right) {
 
             }
@@ -135,14 +183,19 @@ namespace klong {
 
         private:
             ExprPtr _left;
-            Token _op;
+            LogicalOperation _op;
             ExprPtr _right;
     };
-    
+
+    enum class UnaryOperation {
+        NOT,
+        MINUS
+    };
+
     class Unary : public Expr {
         public:
-            Unary(Token op, ExprPtr right):
-                Expr(ExprKind::UNARY),
+            Unary(SourceRange sourceRange, UnaryOperation op, ExprPtr right):
+                Expr(ExprKind::UNARY, sourceRange),
                 _op(op), _right(right) {
 
             }
@@ -152,14 +205,14 @@ namespace klong {
             }
 
         private:
-            Token _op;
+            UnaryOperation _op;
             ExprPtr _right;
     };
 
     class Variable : public Expr {
         public:
-            Variable(Token name):
-                Expr(ExprKind::VARIABLE),
+            Variable(SourceRange sourceRange, const std::string& name):
+                Expr(ExprKind::VARIABLE, sourceRange),
                 _name(name) {
 
             }
@@ -168,11 +221,11 @@ namespace klong {
                 visitor->visitVariableExpr(this);
             }
 
-            Token name() {
+            const std::string& name() const {
                 return _name;
             }
 
         private:
-            Token _name;
+            std::string _name;
     };
 }

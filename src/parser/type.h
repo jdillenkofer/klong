@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../lexer/token.h"
+#include "../common/source_range.h"
 #include "visitor.h"
 
 #include <vector>
@@ -15,7 +16,8 @@ namespace klong {
 
     class Type {
         public:
-            Type(TypeKind kind): _kind(kind) {
+            Type(TypeKind kind, SourceRange sourceRange):
+                _kind(kind), _sourceRange(sourceRange) {
 
             }
 
@@ -27,6 +29,10 @@ namespace klong {
                 return _kind;
             }
 
+            SourceRange sourceRange() const {
+                return _sourceRange;
+            }
+
             bool operator==(const Type& type) const {
                 return this->isEqual(&type);
             }
@@ -35,20 +41,21 @@ namespace klong {
 
         private:
             TypeKind _kind;
+            SourceRange _sourceRange;
     };
 
     using TypePtr = std::shared_ptr<Type>;
 
     class FunctionType : public Type {
         public:
-            FunctionType(std::vector<TypePtr>&& paramTypes, TypePtr returnType):
-                Type(TypeKind::FUNCTION),
+            FunctionType(SourceRange sourceRange, std::vector<TypePtr>&& paramTypes, TypePtr returnType):
+                Type(TypeKind::FUNCTION, sourceRange),
                 _paramTypes(paramTypes),
                 _returnType(returnType) {
                 if (returnType == nullptr) {
-                    Token voidToken { nullptr, nullptr, TokenType::VOID };
+                    Token voidToken { { nullptr, nullptr }, TokenType::VOID };
                     _returnType = std::static_pointer_cast<Type>(
-                        std::make_shared<PrimitiveType>(voidToken));
+                        std::make_shared<PrimitiveType>(SourceRange{ nullptr, nullptr }, voidToken));
                 }
             }
 
@@ -96,8 +103,8 @@ namespace klong {
 
     class PrimitiveType : public Type {
         public:
-            PrimitiveType(Token token):
-                Type(TypeKind::PRIMITIVE),
+            PrimitiveType(SourceRange sourceRange, Token token):
+                Type(TypeKind::PRIMITIVE, sourceRange),
                 _token(token) {
 
             }
@@ -124,8 +131,8 @@ namespace klong {
 
     class SimpleType : public Type {
         public:
-            SimpleType(Token token):
-                Type(TypeKind::SIMPLE),
+            SimpleType(SourceRange sourceRange, Token token):
+                Type(TypeKind::SIMPLE, sourceRange),
                 _token(token) {
 
             }
