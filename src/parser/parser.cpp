@@ -110,9 +110,11 @@ namespace klong {
                 TypePtr type = typeDeclaration();
                                 
                 // TODO: refactor this cast
-                std::shared_ptr<BuiltInType> builtInType = std::dynamic_pointer_cast<BuiltInType>(type); 
-                if (builtInType != nullptr && builtInType->token().type == TokenType::VOID) {
-                    throw ParseException(builtInType->token(), "Illegal type 'void' in argument list.");
+                if (type->kind() == TypeKind::PRIMITIVE) {
+                    std::shared_ptr<PrimitiveType> primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+                    if (primitiveType->token().type == TokenType::VOID) {
+                        throw ParseException(primitiveType->token(), "Illegal type 'void' in argument list.");
+                    }
                 }
                 paramTypes.push_back(type);
             } while(match(TokenType::COMMA));
@@ -198,11 +200,11 @@ namespace klong {
             case TokenType::F32:
             case TokenType::F64:
             {
-                return std::make_shared<BuiltInType>(type);
+                return std::make_shared<PrimitiveType>(type);
             }
             case TokenType::IDENTIFIER:
             {
-                return std::make_shared<UserDefinedType>(type);
+                return std::make_shared<SimpleType>(type);
             }
             default:
                 throw new ParseException(peek(), "Expect type after ':'.");
@@ -321,8 +323,8 @@ namespace klong {
         if (match(TokenType::ASSIGN_OP)) {
             Token assign = previous();
             ExprPtr value = assignmentExpr();
-            auto variable = std::dynamic_pointer_cast<Variable>(expr);
-            if (variable != nullptr) {
+            if (value->kind() == ExprKind::VARIABLE) {
+                auto variable = std::dynamic_pointer_cast<Variable>(expr);
                 Token name = variable->name();
                 return std::make_shared<Assign>(name, value);
             }

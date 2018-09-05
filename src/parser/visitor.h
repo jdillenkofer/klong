@@ -29,8 +29,8 @@ namespace klong {
 
     // Types
     class FunctionType;
-    class BuiltInType;
-    class UserDefinedType;
+    class PrimitiveType;
+    class SimpleType;
 
     class Visitor {
         public:
@@ -62,7 +62,7 @@ namespace klong {
 
             // Types
             virtual void visitFunctionType(FunctionType* type) = 0;
-            virtual void visitBuiltInType(BuiltInType* type) = 0;
-            virtual void visitUserDefinedType(UserDefinedType* type) = 0;
+            virtual void visitPrimitiveType(PrimitiveType *type) = 0;
+            virtual void visitSimpleType(SimpleType *type) = 0;
     };
 }

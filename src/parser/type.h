@@ -7,14 +7,34 @@
 #include <memory>
 
 namespace klong {
+    enum class TypeKind {
+        FUNCTION,
+        PRIMITIVE,
+        SIMPLE
+    };
+
     class Type {
         public:
+            Type(TypeKind kind): _kind(kind) {
+
+            }
+
             virtual ~Type() = default;
+
             virtual void accept(Visitor* visitor) = 0;
+
+            TypeKind kind() const {
+                return _kind;
+            }
+
             bool operator==(const Type& type) const {
                 return this->isEqual(&type);
             }
+
             virtual bool isEqual(const Type* other) const = 0;
+
+        private:
+            TypeKind _kind;
     };
 
     using TypePtr = std::shared_ptr<Type>;
@@ -22,12 +42,13 @@ namespace klong {
     class FunctionType : public Type {
         public:
             FunctionType(std::vector<TypePtr>&& paramTypes, TypePtr returnType):
-                _paramTypes(paramTypes), 
+                Type(TypeKind::FUNCTION),
+                _paramTypes(paramTypes),
                 _returnType(returnType) {
                 if (returnType == nullptr) {
                     Token voidToken { nullptr, nullptr, TokenType::VOID };
                     _returnType = std::static_pointer_cast<Type>(
-                        std::make_shared<BuiltInType>(voidToken));
+                        std::make_shared<PrimitiveType>(voidToken));
                 }
             }
 
@@ -44,8 +65,8 @@ namespace klong {
             }
 
             bool isEqual(const Type* other) const {
-                auto otherFunctionType = dynamic_cast<const FunctionType*>(other);
-                if (otherFunctionType != nullptr) {
+                if (other->kind() == TypeKind::FUNCTION) {
+                    auto otherFunctionType = dynamic_cast<const FunctionType*>(other);
                     if (this->_paramTypes.size() != otherFunctionType->_paramTypes.size()) {
                         return false;
                     }
@@ -73,15 +94,16 @@ namespace klong {
             TypePtr _returnType;
     };
 
-    class BuiltInType : public Type {
+    class PrimitiveType : public Type {
         public:
-            BuiltInType(Token token):
+            PrimitiveType(Token token):
+                Type(TypeKind::PRIMITIVE),
                 _token(token) {
 
             }
 
             void accept(Visitor* visitor) {
-                visitor->visitBuiltInType(this);
+                visitor->visitPrimitiveType(this);
             }
 
             Token token() const {
@@ -89,9 +111,9 @@ namespace klong {
             }
 
             bool isEqual(const Type* other) const {
-                auto otherBuiltInType = dynamic_cast<const BuiltInType*>(other);
-                if (otherBuiltInType != nullptr) {
-                    return this->token().type == otherBuiltInType->token().type;                    
+                if (other->kind() == TypeKind::PRIMITIVE) {
+                    auto otherPrimitiveType = dynamic_cast<const PrimitiveType*>(other);
+                    return this->token().type == otherPrimitiveType->token().type;
                 }
                 return false;
             }
@@ -100,15 +122,16 @@ namespace klong {
             Token _token;
     };
 
-    class UserDefinedType : public Type {
+    class SimpleType : public Type {
         public:
-            UserDefinedType(Token token):
+            SimpleType(Token token):
+                Type(TypeKind::SIMPLE),
                 _token(token) {
 
             }
 
             void accept(Visitor* visitor) {
-                visitor->visitUserDefinedType(this);
+                visitor->visitSimpleType(this);
             }
 
             Token token() const {
@@ -119,9 +142,9 @@ namespace klong {
                 // TODO: rework this
                 // maybe we need a symbol table here!?
                 // how to support typedefs?
-                auto otherUserDefinedType = dynamic_cast<const UserDefinedType*>(other);
-                if (otherUserDefinedType != nullptr) {
-                    return this->token().value == otherUserDefinedType->token().value;
+                if (other->kind() == TypeKind::SIMPLE) {
+                    auto otherSimpleType = dynamic_cast<const SimpleType*>(other);
+                    return this->token().value == otherSimpleType->token().value;
                 }
                 return false;
             }

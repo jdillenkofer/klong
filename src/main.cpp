@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 
 #include "common/source_file.h"
 #include "lexer/lexer.h"

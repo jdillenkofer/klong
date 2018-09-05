@@ -2,16 +2,36 @@
 
 #include "visitor.h"
 #include "../lexer/token.h"
+#include "type.h"
 
 #include <vector>
 #include <memory>
 
 namespace klong {
+
+    enum class ExprKind {
+        ASSIGN,
+        BINARY,
+        CALL,
+        GROUPING,
+        LITERAL,
+        LOGICAL,
+        UNARY,
+        VARIABLE
+    };
     
     class Expr {
         public:
+            Expr(ExprKind kind): _kind(kind) {
+
+            }
             virtual ~Expr() = default;
             virtual void accept(Visitor* visitor) = 0;
+            ExprKind kind() const {
+                return _kind;
+            }
+        private:
+            ExprKind _kind;
     };
 
     using ExprPtr = std::shared_ptr<Expr>;
@@ -19,6 +39,7 @@ namespace klong {
     class Assign : public Expr {
         public:
             Assign(Token name, ExprPtr value): 
+                Expr(ExprKind::ASSIGN),
                 _name(name), _value(value) {
 
             }
@@ -34,7 +55,8 @@ namespace klong {
     
     class Binary : public Expr {
         public:
-            Binary(ExprPtr left, Token op, ExprPtr right): 
+            Binary(ExprPtr left, Token op, ExprPtr right):
+                Expr(ExprKind::BINARY),
                 _left(left), _op(op), _right(right) {
 
             }
@@ -51,7 +73,8 @@ namespace klong {
     
     class Call : public Expr {
         public:
-            Call(ExprPtr callee, Token paren, std::vector<ExprPtr>&& args): 
+            Call(ExprPtr callee, Token paren, std::vector<ExprPtr>&& args):
+                Expr(ExprKind::CALL),
                 _callee(callee), _paren(paren), _args(args) {
 
             }
@@ -68,7 +91,9 @@ namespace klong {
     
     class Grouping : public Expr {
         public:
-            Grouping(ExprPtr expr): _expr(expr) {
+            Grouping(ExprPtr expr):
+                Expr(ExprKind::GROUPING),
+                _expr(expr) {
 
             }
 
@@ -82,7 +107,9 @@ namespace klong {
     
     class Literal : public Expr {
         public:
-            Literal(Token value): _value(value) {
+            Literal(Token value):
+                Expr(ExprKind::LITERAL),
+                _value(value) {
 
             }
 
@@ -96,7 +123,8 @@ namespace klong {
     
     class Logical : public Expr {
         public:
-            Logical(ExprPtr left, Token op, ExprPtr right): 
+            Logical(ExprPtr left, Token op, ExprPtr right):
+                Expr(ExprKind::LOGICAL),
                 _left(left), _op(op), _right(right) {
 
             }
@@ -114,6 +142,7 @@ namespace klong {
     class Unary : public Expr {
         public:
             Unary(Token op, ExprPtr right):
+                Expr(ExprKind::UNARY),
                 _op(op), _right(right) {
 
             }
@@ -129,7 +158,8 @@ namespace klong {
 
     class Variable : public Expr {
         public:
-            Variable(Token name): 
+            Variable(Token name):
+                Expr(ExprKind::VARIABLE),
                 _name(name) {
 
             }

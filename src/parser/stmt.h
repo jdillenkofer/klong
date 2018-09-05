@@ -11,11 +11,32 @@
 namespace klong {
 
     class Expr;
+
+    enum class StatementKind {
+        BLOCK,
+        EXPRESSION,
+        FUNCTION,
+        IF,
+        PRINT,
+        RETURN,
+        LET,
+        CONST,
+        WHILE,
+        FOR,
+        COMMENT
+    };
     
     class Stmt {
         public:
+            Stmt(StatementKind kind): _kind(kind) {
+            }
             virtual ~Stmt() = default;
             virtual void accept(Visitor* visitor) = 0;
+            StatementKind kind() const {
+                return _kind;
+            }
+        private:
+            StatementKind _kind;
     };
 
     using StmtPtr = std::shared_ptr<Stmt>;
@@ -24,6 +45,7 @@ namespace klong {
     class Block : public Stmt {
         public:
             Block(std::vector<StmtPtr>&& statements):
+                Stmt(StatementKind::BLOCK),
                 _statements(statements) {
 
             }
@@ -38,7 +60,8 @@ namespace klong {
 
     class Expression : public Stmt {
         public:
-            Expression(ExprPtr expression): 
+            Expression(ExprPtr expression):
+                Stmt(StatementKind::EXPRESSION),
                 _expression(expression) {
 
             }
@@ -55,7 +78,11 @@ namespace klong {
         public:
             Function(Token name, std::vector<Token>&& params, 
                 std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body):
-                _name(name), _params(params), _functionType(functionType), _body(body) {
+                Stmt(StatementKind::FUNCTION),
+                _name(name),
+                _params(params),
+                _functionType(functionType),
+                _body(body) {
 
             }
             void accept(Visitor* visitor) {
@@ -72,7 +99,10 @@ namespace klong {
     class If : public Stmt {
         public:
             If(ExprPtr condition, StmtPtr thenBranch, StmtPtr elseBranch):
-                _condition(condition), _thenBranch(thenBranch), _elseBranch(elseBranch) {
+                Stmt(StatementKind::IF),
+                _condition(condition),
+                _thenBranch(thenBranch),
+                _elseBranch(elseBranch) {
 
             }
             void accept(Visitor* visitor) {
@@ -87,7 +117,9 @@ namespace klong {
 
     class Print : public Stmt {
         public:
-            Print(ExprPtr expression): _expression(expression) {
+            Print(ExprPtr expression):
+                Stmt(StatementKind::PRINT),
+                _expression(expression) {
 
             }
 
@@ -101,8 +133,9 @@ namespace klong {
 
     class Return : public Stmt {
         public:
-            Return(Token keyword, ExprPtr value): 
-            _keyword(keyword), _value(value) {
+            Return(Token keyword, ExprPtr value):
+                Stmt(StatementKind::RETURN),
+                _keyword(keyword), _value(value) {
 
             }
 
@@ -118,7 +151,10 @@ namespace klong {
     class Let : public Stmt {
         public:
             Let(Token name, TypePtr type, ExprPtr initializer):
-                _name(name), _type(type), _initializer(initializer) {
+                Stmt(StatementKind::LET),
+                _name(name),
+                _type(type),
+                _initializer(initializer) {
 
             }
 
@@ -134,8 +170,11 @@ namespace klong {
 
     class Const : public Stmt {
         public:
-            Const(Token name, TypePtr type, ExprPtr initializer): 
-                _name(name), _type(type), _initializer(initializer) {
+            Const(Token name, TypePtr type, ExprPtr initializer):
+                Stmt(StatementKind::CONST),
+                _name(name),
+                _type(type),
+                _initializer(initializer) {
 
             }
 
@@ -151,7 +190,8 @@ namespace klong {
 
     class While : public Stmt {
         public:
-            While(ExprPtr condition, StmtPtr body): 
+            While(ExprPtr condition, StmtPtr body):
+                Stmt(StatementKind::WHILE),
                 _condition(condition), _body(body) {
                 
             }
@@ -167,8 +207,12 @@ namespace klong {
 
     class For : public Stmt {
         public:
-            For(StmtPtr initializer, ExprPtr condition, ExprPtr increment, StmtPtr body): 
-                _initializer(initializer), _condition(condition), _increment(increment), _body(body) {
+            For(StmtPtr initializer, ExprPtr condition, ExprPtr increment, StmtPtr body):
+                Stmt(StatementKind::FOR),
+                _initializer(initializer),
+                _condition(condition),
+                _increment(increment),
+                _body(body) {
                 
             }
 
@@ -185,7 +229,8 @@ namespace klong {
 
     class Comment : public Stmt {
         public:
-            Comment(Token name): 
+            Comment(Token name):
+                Stmt(StatementKind::COMMENT),
                 _name(name) {
 
             }
