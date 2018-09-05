@@ -14,6 +14,22 @@ namespace klong {
         SIMPLE
     };
 
+    enum class PrimitiveTypeKind {
+        VOID,
+        STRING,
+        BOOL,
+        I8,
+        I16,
+        I32,
+        I64,
+        U8,
+        U16,
+        U32,
+        U64,
+        F32,
+        F64
+    };
+
     class Type {
         public:
             Type(TypeKind kind, SourceRange sourceRange):
@@ -53,9 +69,8 @@ namespace klong {
                 _paramTypes(paramTypes),
                 _returnType(returnType) {
                 if (returnType == nullptr) {
-                    Token voidToken { { nullptr, nullptr }, TokenType::VOID };
                     _returnType = std::static_pointer_cast<Type>(
-                        std::make_shared<PrimitiveType>(SourceRange{ nullptr, nullptr }, voidToken));
+                        std::make_shared<PrimitiveType>(SourceRange{ nullptr, nullptr }, PrimitiveTypeKind::VOID));
                 }
             }
 
@@ -103,9 +118,8 @@ namespace klong {
 
     class PrimitiveType : public Type {
         public:
-            PrimitiveType(SourceRange sourceRange, Token token):
-                Type(TypeKind::PRIMITIVE, sourceRange),
-                _token(token) {
+            PrimitiveType(SourceRange sourceRange, PrimitiveTypeKind type):
+                Type(TypeKind::PRIMITIVE, sourceRange), _type(type) {
 
             }
 
@@ -113,27 +127,27 @@ namespace klong {
                 visitor->visitPrimitiveType(this);
             }
 
-            Token token() const {
-                return _token;
+            PrimitiveTypeKind type() const {
+                return _type;
             }
 
             bool isEqual(const Type* other) const {
                 if (other->kind() == TypeKind::PRIMITIVE) {
                     auto otherPrimitiveType = dynamic_cast<const PrimitiveType*>(other);
-                    return this->token().type == otherPrimitiveType->token().type;
+                    return this->type() == otherPrimitiveType->type();
                 }
                 return false;
             }
 
         private:
-            Token _token;
+            PrimitiveTypeKind _type;
     };
 
     class SimpleType : public Type {
         public:
-            SimpleType(SourceRange sourceRange, Token token):
+            SimpleType(SourceRange sourceRange, std::string name):
                 Type(TypeKind::SIMPLE, sourceRange),
-                _token(token) {
+                _name(std::move(name)) {
 
             }
 
@@ -141,8 +155,8 @@ namespace klong {
                 visitor->visitSimpleType(this);
             }
 
-            Token token() const {
-                return _token;
+            const std::string& name() const {
+                return _name;
             }
 
             bool isEqual(const Type* other) const {
@@ -151,12 +165,12 @@ namespace klong {
                 // how to support typedefs?
                 if (other->kind() == TypeKind::SIMPLE) {
                     auto otherSimpleType = dynamic_cast<const SimpleType*>(other);
-                    return this->token().value == otherSimpleType->token().value;
+                    return this->name() == otherSimpleType->name();
                 }
                 return false;
             }
 
         private:
-            Token _token;
+            std::string _name;
     };
 }

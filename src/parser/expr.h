@@ -2,7 +2,6 @@
 
 #include "visitor.h"
 #include "../lexer/token.h"
-#include "type.h"
 
 #include <vector>
 #include <memory>
@@ -138,23 +137,16 @@ namespace klong {
         private:
             ExprPtr _expr;
     };
-
-    enum class LiteralType {
-        NUMBER,
-        BOOL,
-        STRING,
-        CHAR
-    };
     
     class Literal : public Expr {
         public:
-            Literal(SourceRange sourceRange, LiteralType literalType):
+            Literal(SourceRange sourceRange, PrimitiveTypeKind literalType):
                 Expr(ExprKind::LITERAL, sourceRange),
                 _literalType(literalType) {
 
             }
 
-            Literal(LiteralType literalType):
+            Literal(PrimitiveTypeKind literalType):
                 Expr(ExprKind::LITERAL, SourceRange {nullptr, nullptr}),
                 _literalType(literalType) {
 
@@ -162,33 +154,29 @@ namespace klong {
 
             void accept(Visitor* visitor) = 0;
 
-            LiteralType literalType() const {
+            PrimitiveTypeKind literalType() const {
                 return _literalType;
             }
 
         private:
-            LiteralType _literalType;
+            PrimitiveTypeKind _literalType;
     };
 
     class NumberLiteral: public Literal {
         public:
             NumberLiteral(SourceRange sourceRange, double value):
-                    Literal(sourceRange, LiteralType::NUMBER), _type(NumberType::F64) {
+                    Literal(sourceRange, PrimitiveTypeKind::F64) {
                 _value.f = value;
             }
 
             NumberLiteral(SourceRange sourceRange, int64_t value):
-                    Literal(sourceRange, LiteralType::NUMBER), _type(NumberType::I64) {
+                    Literal(sourceRange, PrimitiveTypeKind::I64) {
                 _value.i = value;
             }
 
             NumberLiteral(SourceRange sourceRange, uint64_t value):
-                Literal(sourceRange, LiteralType::NUMBER), _type(NumberType::U64) {
+                Literal(sourceRange, PrimitiveTypeKind::U64) {
                 _value.u = value;
-            }
-
-            NumberType numberType() const {
-                return _type;
             }
 
             double f64() const {
@@ -212,17 +200,16 @@ namespace klong {
                 int64_t i;
                 uint64_t u;
             } _value;
-            NumberType _type;
     };
 
     class BoolLiteral: public Literal {
         public:
             BoolLiteral(SourceRange sourceRange, bool value):
-                Literal(sourceRange, LiteralType::BOOL), _value(value) {
+                Literal(sourceRange, PrimitiveTypeKind::BOOL), _value(value) {
             }
 
             BoolLiteral(bool value):
-                    Literal(SourceRange { nullptr, nullptr }, LiteralType::BOOL), _value(value) {
+                    Literal(SourceRange { nullptr, nullptr }, PrimitiveTypeKind::BOOL), _value(value) {
             }
 
             bool value() const {
@@ -239,7 +226,7 @@ namespace klong {
     class StringLiteral: public Literal {
         public:
             StringLiteral(SourceRange sourceRange, std::string value):
-                Literal(sourceRange, LiteralType::STRING), _value(std::move(value)) {
+                Literal(sourceRange, PrimitiveTypeKind::STRING), _value(std::move(value)) {
             }
 
             const std::string& value() const {
@@ -256,7 +243,7 @@ namespace klong {
     class CharacterLiteral: public Literal {
         public:
             CharacterLiteral(SourceRange sourceRange, char value):
-                Literal(sourceRange, LiteralType::CHAR), _value(value) {
+                Literal(sourceRange, PrimitiveTypeKind::I8), _value(value) {
             }
 
             char value() const {

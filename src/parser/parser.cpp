@@ -71,6 +71,54 @@ namespace klong {
         }
     }
 
+    std::shared_ptr<PrimitiveType> Parser::getPrimitiveTypefromToken(Token token) {
+        PrimitiveTypeKind primitiveTypeKind;
+        switch (token.type) {                    
+            case TokenType::VOID:
+                primitiveTypeKind = PrimitiveTypeKind::VOID;
+                break;
+            case TokenType::STRING:
+                primitiveTypeKind = PrimitiveTypeKind::STRING;
+                break;
+            case TokenType::BOOL:
+                primitiveTypeKind = PrimitiveTypeKind::BOOL;
+                break;
+            case TokenType::I8:
+                primitiveTypeKind = PrimitiveTypeKind::I8;
+                break;
+            case TokenType::I16:
+                primitiveTypeKind = PrimitiveTypeKind::I16;
+                break;
+            case TokenType::I32:
+                primitiveTypeKind = PrimitiveTypeKind::I32;
+                break;
+            case TokenType::I64:
+                primitiveTypeKind = PrimitiveTypeKind::I64;
+                break;
+            case TokenType::U8:
+                primitiveTypeKind = PrimitiveTypeKind::U8;
+                break;
+            case TokenType::U16:
+                primitiveTypeKind = PrimitiveTypeKind::U16;
+                break;
+            case TokenType::U32:
+                primitiveTypeKind = PrimitiveTypeKind::U32;
+                break;
+            case TokenType::U64:
+                primitiveTypeKind = PrimitiveTypeKind::U64;
+                break;
+            case TokenType::F32:
+                primitiveTypeKind = PrimitiveTypeKind::F32;
+                break;
+            case TokenType::F64:
+                primitiveTypeKind = PrimitiveTypeKind::F64;
+                break;
+            default:
+                throw ParseException(token.sourceRange, "Illegal builtin type.");
+        }
+        return std::make_shared<PrimitiveType>(token.sourceRange, primitiveTypeKind);
+    }
+
     StmtPtr Parser::declarationStmt() {
         try {
             if (match(TokenType::FUN)) {
@@ -114,7 +162,7 @@ namespace klong {
 
                 if (type->kind() == TypeKind::PRIMITIVE) {
                     std::shared_ptr<PrimitiveType> primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
-                    if (primitiveType->token().type == TokenType::VOID) {
+                    if (primitiveType->type() == PrimitiveTypeKind::VOID) {
                         throw ParseException(primitiveType->sourceRange(), "Illegal type 'void' in argument list.");
                     }
                 }
@@ -212,11 +260,11 @@ namespace klong {
             case TokenType::F32:
             case TokenType::F64:
             {
-                return std::make_shared<PrimitiveType>(type.sourceRange, type);
+                return getPrimitiveTypefromToken(type);
             }
             case TokenType::IDENTIFIER:
             {
-                return std::make_shared<SimpleType>(type.sourceRange, type);
+                return std::make_shared<SimpleType>(type.sourceRange, type.value);
             }
             default:
                 throw ParseException::from(peek(), "Expect type after ':'.");

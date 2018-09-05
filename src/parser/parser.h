@@ -41,6 +41,7 @@ namespace klong {
             Token advance();
             bool isAtEnd();
             void synchronize();
+            std::shared_ptr<PrimitiveType> getPrimitiveTypefromToken(Token token);
 
             StmtPtr declarationStmt();
             std::shared_ptr<Function> function(const std::string& kind);
