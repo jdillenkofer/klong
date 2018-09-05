@@ -397,7 +397,7 @@ namespace klong {
         }
 
         token.radix = 16;
-        token.numberType = NumberType::INTEGER;
+        token.numberType = NumberType::U64;
         return true;
     }
 
@@ -416,7 +416,7 @@ namespace klong {
         }
 
         token.radix = 2;
-        token.numberType = NumberType::INTEGER;
+        token.numberType = NumberType::U64;
         return true;
     }
 
@@ -447,9 +447,14 @@ namespace klong {
 
             // TODO: allow 1.7976931348623157E+308 notation
 
-            token.numberType = NumberType::FLOAT;
+            token.numberType = NumberType::F64;
         } else {
-            token.numberType = NumberType::INTEGER;
+            if (read(false) == 'u') {
+                _currentPosition++;
+                token.numberType = NumberType ::U64;
+            } else {
+                token.numberType = NumberType::I64;
+            }
         }
         token.radix = 10;
         return true;

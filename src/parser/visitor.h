@@ -22,10 +22,15 @@ namespace klong {
     class Binary;
     class Call;
     class Grouping;
-    class Literal;
     class Logical;
     class Unary;
     class Variable;
+
+    // Literals
+    class NumberLiteral;
+    class BoolLiteral;
+    class StringLiteral;
+    class CharacterLiteral;
 
     // Types
     class FunctionType;
@@ -55,10 +60,15 @@ namespace klong {
             virtual void visitBinaryExpr(Binary* expr) = 0;
             virtual void visitCallExpr(Call* expr) = 0;
             virtual void visitGroupingExpr(Grouping* expr) = 0;
-            virtual void visitLiteralExpr(Literal* expr) = 0;
             virtual void visitLogicalExpr(Logical* expr) = 0;
             virtual void visitUnaryExpr(Unary* expr) = 0;
             virtual void visitVariableExpr(Variable* expr) = 0;
+
+            // Literals
+            virtual void visitNumberLiteral(NumberLiteral* expr) = 0;
+            virtual void visitBoolLiteral(BoolLiteral* expr) = 0;
+            virtual void visitStringLiteral(StringLiteral* expr) = 0;
+            virtual void visitCharacterLiteral(CharacterLiteral* expr) = 0;
 
             // Types
             virtual void visitFunctionType(FunctionType* type) = 0;

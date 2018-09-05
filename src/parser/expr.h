@@ -35,12 +35,21 @@ namespace klong {
                 return _kind;
             }
 
+            void type(TypePtr type) {
+                _type = type;
+            }
+
+            TypePtr type() const {
+                return _type;
+            }
+
             SourceRange sourceRange() const {
                 return _sourceRange;
             }
 
         private:
             ExprKind _kind;
+            TypePtr _type = nullptr;
             SourceRange _sourceRange;
     };
 
@@ -131,8 +140,7 @@ namespace klong {
     };
 
     enum class LiteralType {
-        INT,
-        UINT,
+        NUMBER,
         BOOL,
         STRING,
         CHAR
@@ -152,9 +160,7 @@ namespace klong {
 
             }
 
-            void accept(Visitor* visitor) {
-                visitor->visitLiteralExpr(this);
-            }
+            void accept(Visitor* visitor) = 0;
 
             LiteralType literalType() const {
                 return _literalType;
@@ -162,6 +168,106 @@ namespace klong {
 
         private:
             LiteralType _literalType;
+    };
+
+    class NumberLiteral: public Literal {
+        public:
+            NumberLiteral(SourceRange sourceRange, double value):
+                    Literal(sourceRange, LiteralType::NUMBER), _type(NumberType::F64) {
+                _value.f = value;
+            }
+
+            NumberLiteral(SourceRange sourceRange, int64_t value):
+                    Literal(sourceRange, LiteralType::NUMBER), _type(NumberType::I64) {
+                _value.i = value;
+            }
+
+            NumberLiteral(SourceRange sourceRange, uint64_t value):
+                Literal(sourceRange, LiteralType::NUMBER), _type(NumberType::U64) {
+                _value.u = value;
+            }
+
+            NumberType numberType() const {
+                return _type;
+            }
+
+            double f64() const {
+                return _value.f;
+            }
+
+            uint64_t i64() const {
+                return _value.i;
+            };
+
+            int64_t u64() const {
+                return _value.u;
+            }
+
+            void accept(Visitor* visitor) {
+                visitor->visitNumberLiteral(this);
+            };
+    private:
+            union {
+                double f;
+                int64_t i;
+                uint64_t u;
+            } _value;
+            NumberType _type;
+    };
+
+    class BoolLiteral: public Literal {
+        public:
+            BoolLiteral(SourceRange sourceRange, bool value):
+                Literal(sourceRange, LiteralType::BOOL), _value(value) {
+            }
+
+            BoolLiteral(bool value):
+                    Literal(SourceRange { nullptr, nullptr }, LiteralType::BOOL), _value(value) {
+            }
+
+            bool value() const {
+                return _value;
+            }
+
+            void accept(Visitor* visitor) {
+                visitor->visitBoolLiteral(this);
+            };
+        private:
+            bool _value;
+    };
+
+    class StringLiteral: public Literal {
+        public:
+            StringLiteral(SourceRange sourceRange, std::string value):
+                Literal(sourceRange, LiteralType::STRING), _value(std::move(value)) {
+            }
+
+            const std::string& value() const {
+                return _value;
+            }
+
+            void accept(Visitor* visitor) {
+                visitor->visitStringLiteral(this);
+            };
+        private:
+            std::string _value;
+    };
+
+    class CharacterLiteral: public Literal {
+        public:
+            CharacterLiteral(SourceRange sourceRange, char value):
+                Literal(sourceRange, LiteralType::CHAR), _value(value) {
+            }
+
+            char value() const {
+                return _value;
+            }
+
+            void accept(Visitor* visitor) {
+                visitor->visitCharacterLiteral(this);
+            };
+        private:
+            char _value;
     };
 
     enum class LogicalOperation {

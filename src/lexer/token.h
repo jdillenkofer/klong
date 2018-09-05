@@ -94,8 +94,9 @@ namespace klong {
 
     enum class NumberType {
         NONE,
-        INTEGER,
-        FLOAT
+        I64,
+        U64,
+        F64
     };
 
     enum class NumberConversionResult {
