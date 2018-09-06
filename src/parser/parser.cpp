@@ -206,7 +206,7 @@ namespace klong {
             initializer = expression();
         }
         
-        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
+        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let declaration.");
         return std::make_shared<Let>(SourceRange { let.sourceRange.start, semicolon.sourceRange.end },
                 name.value, type, initializer);
     }
@@ -219,12 +219,10 @@ namespace klong {
         if (match(TokenType::COLON)) {
             type = typeDeclaration();
         }
-        ExprPtr initializer = nullptr;
-        if (match(TokenType::ASSIGN_OP)) {
-            initializer = expression();
-        }
-        
-        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
+        consume(TokenType::ASSIGN_OP, "'const' declarations must be initialized.");
+        ExprPtr initializer = expression();
+
+        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after const declaration.");
         return std::make_shared<Const>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
                 name.value, type, initializer);
     }
@@ -403,9 +401,8 @@ namespace klong {
             ExprPtr value = assignmentExpr();
             if (value->kind() == ExprKind::VARIABLE) {
                 auto variable = std::dynamic_pointer_cast<Variable>(expr);
-                auto name = variable->name();
                 return std::make_shared<Assign>(SourceRange { expr->sourceRange().start, variable->sourceRange().end },
-                        name, value);
+                        variable, value);
             }
 
             throw ParseException::from(assign, "Invalid assign target");

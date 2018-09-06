@@ -1,3 +1,7 @@
+fun test(a: i32, b: i32): i32 {
+    return a + b;
+}
+
 fun main() {
     // a */ b c
     let a: i32 = 5;
@@ -5,10 +9,6 @@ fun main() {
 
     let res: i32 = test(a, b);
     return;
-}
-
-fun test(a: i32, b: i32): i32 {
-    return a + b;
 }
 
 main();

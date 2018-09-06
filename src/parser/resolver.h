@@ -1,16 +1,49 @@
 #pragma once
 
+#include <stack>
+#include <map>
+
 #include "visitor.h"
 #include "stmt.h"
 #include "expr.h"
 
 namespace klong {
+    class ResolveException : public std::exception {
+        public:
+            ResolveException(SourceRange sourceRange, std::string message):
+                    _sourceRange(sourceRange), _message(message) {
+
+            }
+
+            SourceRange sourceRange() const {
+                return _sourceRange;
+            }
+
+            const char* what () const throw () {
+                return _message.c_str();
+            }
+
+        private:
+            SourceRange _sourceRange;
+            std::string _message;
+    };
+
+    enum class DeclarationType {
+        CONST,
+        LET,
+        PARAM_DECL,
+        FUNCTION_DECL
+    };
+
+    struct SymbolInfo {
+        Stmt* declarationStmt;
+        DeclarationType declarationType;
+        bool initialized = false;
+    };
+
     class Resolver : public Visitor {
         public:
             Resolver() = default;
-
-            void resolve(const StmtPtr& stmt);
-            void resolve(const ExprPtr& expr);
 
             // Module
             void visitModule(Module* module) override;
@@ -47,5 +80,22 @@ namespace klong {
             void visitFunctionType(FunctionType* type) override;
             void visitPrimitiveType(PrimitiveType *type) override;
             void visitSimpleType(SimpleType *type) override;
+
+        private:
+            void resolve(const StmtPtr& stmt);
+            void resolve(const ExprPtr& expr);
+
+            void resolveLocal(Variable* variable);
+
+            void resolveFunction(Function* stmt);
+
+            void enterScope();
+            void exitScope();
+
+            void declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType);
+            void define(std::string name);
+
+        private:
+            std::deque<std::map<std::string, SymbolInfo>> _scopes;
     };
 }

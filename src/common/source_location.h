@@ -6,44 +6,50 @@
 namespace klong {
     class SourceLocation {
         public:
-            SourceLocation(): _source(nullptr) {
+            SourceLocation(): _source(nullptr), _valid(false) {
                 
             }
             
-            SourceLocation(SourceFile* source): _source(source) {
+            SourceLocation(SourceFile* source): _source(source), _valid(true) {
             }
 
-            inline void incLine() {
+            void incLine() {
                 _line++;
                 _column = 1;
                 _charPos++;
             }
 
-            inline void incCol() {
+            void incCol() {
                 _column++;
                 _charPos++;
             }
 
-            inline const std::string& filepath() const {
+            const std::string& filepath() const {
                 return _source->path();
             }
 
-            inline size_t column() const {
+            size_t column() const {
                 return _column;
             }
 
-            inline size_t line() const {
+            size_t line() const {
                 return _line;
             }
 
-            inline size_t charPos() const {
+            size_t charPos() const {
                 return _charPos;
             }
+
+            bool valid() const {
+                return _valid;
+            }
+
 
         private:
             SourceFile* _source;
             size_t _line = 1;
             size_t _column = 1;
             size_t _charPos = 0;
+            bool _valid;
     };
 }

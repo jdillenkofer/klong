@@ -70,7 +70,7 @@ namespace klong {
                 _returnType(returnType) {
                 if (returnType == nullptr) {
                     _returnType = std::static_pointer_cast<Type>(
-                        std::make_shared<PrimitiveType>(SourceRange{ nullptr, nullptr }, PrimitiveTypeKind::VOID));
+                        std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::VOID));
                 }
             }
 

@@ -151,7 +151,7 @@ namespace klong {
             return NumberConversionResult::OK;
         }
 
-        SourceRange sourceRange = { nullptr, nullptr };
+        SourceRange sourceRange;
         TokenType type = TokenType::NONE;
         std::string value = "";
         NumberType numberType = NumberType::NONE;

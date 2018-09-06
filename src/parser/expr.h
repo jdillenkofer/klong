@@ -57,7 +57,7 @@ namespace klong {
 
     class Assign : public Expr {
         public:
-            Assign(SourceRange sourceRange, std::string target, ExprPtr value):
+            Assign(SourceRange sourceRange, std::shared_ptr<Variable> target, ExprPtr value):
                 Expr(ExprKind::ASSIGN, sourceRange),
                 _target(std::move(target)), _value(std::move(value)) {
 
@@ -67,7 +67,7 @@ namespace klong {
                 visitor->visitAssignExpr(this);
             }
 
-            std::string target() const {
+            std::shared_ptr<Variable> target() const {
                 return _target;
             }
 
@@ -76,7 +76,7 @@ namespace klong {
             }
 
         private:
-            std::string _target;
+            std::shared_ptr<Variable> _target;
             ExprPtr _value;
     };
 
@@ -172,7 +172,7 @@ namespace klong {
             }
 
             Literal(PrimitiveTypeKind literalType):
-                Expr(ExprKind::LITERAL, SourceRange {nullptr, nullptr}),
+                Expr(ExprKind::LITERAL, SourceRange()),
                 _literalType(literalType) {
 
             }
@@ -234,7 +234,7 @@ namespace klong {
             }
 
             BoolLiteral(bool value):
-                    Literal(SourceRange { nullptr, nullptr }, PrimitiveTypeKind::BOOL), _value(value) {
+                    Literal(SourceRange(), PrimitiveTypeKind::BOOL), _value(value) {
             }
 
             bool value() const {
@@ -343,6 +343,8 @@ namespace klong {
             ExprPtr _right;
     };
 
+    class Stmt;
+
     class Variable : public Expr {
         public:
             Variable(SourceRange sourceRange, std::string name):
@@ -359,7 +361,12 @@ namespace klong {
                 return _name;
             }
 
+            void resolvesTo(Stmt* resolvesTo) {
+                _resolvesTo = resolvesTo;
+            }
+
         private:
             std::string _name;
+            Stmt* _resolvesTo = nullptr;
     };
 }
