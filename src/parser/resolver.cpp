@@ -18,6 +18,20 @@ namespace klong {
         }
     }
 
+    void Resolver::resolve(const std::vector<StmtPtr>& statements) {
+        for (const auto& statement : statements) {
+            if (statement->kind() == StatementKind::FUNCTION) {
+                std::shared_ptr<Function> stmt = std::dynamic_pointer_cast<Function>(statement);
+                declare(stmt.get(), stmt->name(), DeclarationType::FUNCTION_DECL);
+                define(stmt->name());
+            }
+        }
+
+        for (const auto& statement : statements) {
+            resolve(statement);
+        }
+    }
+
     void Resolver::resolveLocal(Variable* variable) {
         for (int64_t i = _scopes.size() - 1; i >= 0; i--) {
             std::map<std::string, SymbolInfo> scope = _scopes[i];
@@ -45,7 +59,7 @@ namespace klong {
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
         if (scope.find(name) != scope.end()) {
             throw ResolveException(declarationStmt->sourceRange(),
-                    "Variable with name '" + name + "' already declared in this scope");
+                    "Symbol with name '" + name + "' already declared in this scope");
         }
         scope.insert(std::pair<std::string, SymbolInfo>(name, SymbolInfo { declarationStmt, declarationType, false }));
     }
@@ -62,18 +76,14 @@ namespace klong {
     // Module
     void Resolver::visitModule(Module* module) {
         enterScope();
-        for (auto& statement : module->statements()) {
-            resolve(statement);
-        }
+        resolve(module->statements());
         exitScope();
     }
 
     // Stmt
     void Resolver::visitBlockStmt(Block* stmt) {
         enterScope();
-        for (auto& statement : stmt->statements()) {
-            resolve(statement);
-        }
+        resolve(stmt->statements());
         exitScope();
     }
 
@@ -82,9 +92,6 @@ namespace klong {
     }
 
     void Resolver::visitFunctionStmt(Function* stmt) {
-        declare(stmt, stmt->name(), DeclarationType::FUNCTION_DECL);
-        define(stmt->name());
-
         resolveFunction(stmt, true);
     }
 
@@ -101,9 +108,7 @@ namespace klong {
             resolve(param);
         }
 
-        for (const auto& statement : stmt->body()) {
-            resolve(statement);
-        }
+        resolve(stmt->body());
         exitScope();
         _isInsideFunction = enclosingFunction;
     }
@@ -174,7 +179,7 @@ namespace klong {
 
     void Resolver::visitCallExpr(Call* expr) {
         resolve(expr->callee());
-        for (auto& arg : expr->args()) {
+        for (const auto& arg : expr->args()) {
             resolve(arg);
         }
     }

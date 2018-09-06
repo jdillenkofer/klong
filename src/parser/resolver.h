@@ -85,6 +85,7 @@ namespace klong {
         private:
             void resolve(const StmtPtr& stmt);
             void resolve(const ExprPtr& expr);
+            void resolve(const std::vector<StmtPtr>& statements);
 
             void resolveLocal(Variable* variable);
 

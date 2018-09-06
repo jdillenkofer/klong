@@ -1,6 +1,4 @@
-fun test(a: i32, b: i32): i32 {
-    return a + b;
-}
+main();
 
 fun main() {
     // a */ b c
@@ -11,4 +9,6 @@ fun main() {
     return;
 }
 
-main();
+fun test(a: i32, b: i32): i32 {
+    return a + b;
+}
