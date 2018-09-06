@@ -151,12 +151,12 @@ namespace klong {
         Token fun = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
         Token leftPar = consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
-        std::vector<Token> params;
+        std::vector<std::string> params;
         std::vector<TypePtr> paramTypes;
         if (!check(TokenType::RIGHT_PAR)) {
             do {
                 Token identifier = consume(TokenType::IDENTIFIER, "Expect parameter name.");
-                params.push_back(identifier);
+                params.push_back(identifier.value);
                 consume(TokenType::COLON, "Expect ':' after parameter name.");
                 TypePtr type = typeDeclaration();
 
@@ -182,7 +182,7 @@ namespace klong {
             returnType ? returnType->sourceRange().end : rightPar.sourceRange.end
             }, std::move(paramTypes), returnType);
         return std::make_shared<Function>(SourceRange { fun.sourceRange.start, rightCurlyBrace.sourceRange.end },
-                name, std::move(params), functionType, std::move(body));
+                name.value, std::move(params), functionType, std::move(body));
     }
 
     std::vector<StmtPtr> Parser::blockStmt() {
@@ -208,7 +208,7 @@ namespace klong {
         
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
         return std::make_shared<Let>(SourceRange { let.sourceRange.start, semicolon.sourceRange.end },
-                name, type, initializer);
+                name.value, type, initializer);
     }
 
     std::shared_ptr<Const> Parser::constDeclaration() {
@@ -226,7 +226,7 @@ namespace klong {
         
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let statement.");
         return std::make_shared<Const>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
-                name, type, initializer);
+                name.value, type, initializer);
     }
 
     TypePtr Parser::typeDeclaration() {
@@ -307,7 +307,7 @@ namespace klong {
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after return value.");
         return std::make_shared<Return>(
                 SourceRange { keyword.sourceRange.start, semicolon.sourceRange.end },
-                keyword, value);
+                value);
     }
 
     std::shared_ptr<While> Parser::whileStmt() {
@@ -606,7 +606,7 @@ namespace klong {
         if (match(TokenType::NUMBER_LITERAL)) {
             // TODO: enhance conversion result error handling
             switch (literal.numberType) {
-                case NumberType::I64:
+                case NumberType::INT:
                 {
                     int64_t i;
                     auto conversionResult = literal.parse(i);
@@ -615,7 +615,7 @@ namespace klong {
                     }
                     break;
                 }
-                case NumberType::U64:
+                case NumberType::UINT:
                 {
                     uint64_t u;
                     auto conversionResult = literal.parse(u);
@@ -624,7 +624,7 @@ namespace klong {
                     }
                     break;
                 }
-                case NumberType::F64:
+                case NumberType::FLOAT:
                 {
                     double d;
                     auto conversionResult = literal.parse(d);

@@ -70,7 +70,7 @@ namespace klong {
         public:
             Expression(SourceRange sourceRange, ExprPtr expression):
                 Stmt(StatementKind::EXPRESSION, sourceRange),
-                _expression(expression) {
+                _expression(std::move(expression)) {
 
             }
 
@@ -84,12 +84,12 @@ namespace klong {
 
     class Function : public Stmt {
         public:
-            Function(SourceRange sourceRange, Token name, std::vector<Token>&& params,
+            Function(SourceRange sourceRange, std::string name, std::vector<std::string>&& params,
                 std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body):
                 Stmt(StatementKind::FUNCTION, sourceRange),
-                _name(name),
+                _name(std::move(name)),
                 _params(params),
-                _functionType(functionType),
+                _functionType(std::move(functionType)),
                 _body(body) {
 
             }
@@ -98,8 +98,8 @@ namespace klong {
             }
 
         private:
-            Token _name;
-            std::vector<Token> _params;
+            std::string _name;
+            std::vector<std::string> _params;
             std::shared_ptr<FunctionType> _functionType;
             std::vector<StmtPtr> _body;
     };
@@ -108,9 +108,9 @@ namespace klong {
         public:
             If(SourceRange sourceRange, ExprPtr condition, StmtPtr thenBranch, StmtPtr elseBranch):
                 Stmt(StatementKind::IF, sourceRange),
-                _condition(condition),
-                _thenBranch(thenBranch),
-                _elseBranch(elseBranch) {
+                _condition(std::move(condition)),
+                _thenBranch(std::move(thenBranch)),
+                _elseBranch(std::move(elseBranch)) {
 
             }
             void accept(Visitor* visitor) {
@@ -127,7 +127,7 @@ namespace klong {
         public:
             Print(SourceRange sourceRange, ExprPtr expression):
                 Stmt(StatementKind::PRINT, sourceRange),
-                _expression(expression) {
+                _expression(std::move(expression)) {
 
             }
 
@@ -141,9 +141,8 @@ namespace klong {
 
     class Return : public Stmt {
         public:
-            Return(SourceRange sourceRange, Token keyword, ExprPtr value):
-                Stmt(StatementKind::RETURN, sourceRange),
-                _keyword(keyword), _value(value) {
+            Return(SourceRange sourceRange, ExprPtr value):
+                Stmt(StatementKind::RETURN, sourceRange), _value(std::move(value)) {
 
             }
 
@@ -152,17 +151,16 @@ namespace klong {
             }
 
         private:
-            Token _keyword;
             ExprPtr _value;
     };
 
     class Let : public Stmt {
         public:
-            Let(SourceRange sourceRange, Token name, TypePtr type, ExprPtr initializer):
+            Let(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer):
                 Stmt(StatementKind::LET, sourceRange),
-                _name(name),
-                _type(type),
-                _initializer(initializer) {
+                _name(std::move(name)),
+                _type(std::move(type)),
+                _initializer(std::move(initializer)) {
 
             }
 
@@ -171,18 +169,18 @@ namespace klong {
             }
 
         private:
-            Token _name;
+            std::string _name;
             TypePtr _type;
             ExprPtr _initializer;
     };
 
     class Const : public Stmt {
         public:
-            Const(SourceRange sourceRange, Token name, TypePtr type, ExprPtr initializer):
+            Const(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer):
                 Stmt(StatementKind::CONST, sourceRange),
-                _name(name),
-                _type(type),
-                _initializer(initializer) {
+                _name(std::move(name)),
+                _type(std::move(type)),
+                _initializer(std::move(initializer)) {
 
             }
 
@@ -191,7 +189,7 @@ namespace klong {
             }
 
         private:
-            Token _name;
+            std::string _name;
             TypePtr _type;
             ExprPtr _initializer;
     };
@@ -200,7 +198,7 @@ namespace klong {
         public:
             While(SourceRange sourceRange, ExprPtr condition, StmtPtr body):
                 Stmt(StatementKind::WHILE, sourceRange),
-                _condition(condition), _body(body) {
+                _condition(std::move(condition)), _body(std::move(body)) {
                 
             }
 
@@ -217,10 +215,10 @@ namespace klong {
         public:
             For(SourceRange sourceRange, StmtPtr initializer, ExprPtr condition, ExprPtr increment, StmtPtr body):
                 Stmt(StatementKind::FOR, sourceRange),
-                _initializer(initializer),
-                _condition(condition),
-                _increment(increment),
-                _body(body) {
+                _initializer(std::move(initializer)),
+                _condition(std::move(condition)),
+                _increment(std::move(increment)),
+                _body(std::move(body)) {
                 
             }
 
@@ -242,9 +240,9 @@ namespace klong {
 
     class Comment : public Stmt {
         public:
-            Comment(SourceRange sourceRange, const std::string& text, CommentType type):
+            Comment(SourceRange sourceRange, std::string text, CommentType type):
                 Stmt(StatementKind::COMMENT, sourceRange),
-                _text(text),
+                _text(std::move(text)),
                 _type(type){
 
             }

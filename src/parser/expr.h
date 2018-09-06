@@ -1,7 +1,8 @@
 #pragma once
 
 #include "visitor.h"
-#include "../lexer/token.h"
+#include "../common/source_range.h"
+#include "type.h"
 
 #include <vector>
 #include <memory>
@@ -56,9 +57,9 @@ namespace klong {
 
     class Assign : public Expr {
         public:
-            Assign(SourceRange sourceRange, const std::string& target, ExprPtr value):
+            Assign(SourceRange sourceRange, std::string target, ExprPtr value):
                 Expr(ExprKind::ASSIGN, sourceRange),
-                _target(target), _value(value) {
+                _target(std::move(target)), _value(std::move(value)) {
 
             }
 
@@ -92,7 +93,7 @@ namespace klong {
         public:
             Binary(SourceRange sourceRange, ExprPtr left, BinaryOperation op, ExprPtr right):
                 Expr(ExprKind::BINARY, sourceRange),
-                _left(left), _op(op), _right(right) {
+                _left(std::move(left)), _op(op), _right(std::move(right)) {
 
             }
 
@@ -110,7 +111,7 @@ namespace klong {
         public:
             Call(SourceRange sourceRange, ExprPtr callee, std::vector<ExprPtr>&& args):
                 Expr(ExprKind::CALL, sourceRange),
-                _callee(callee), _args(args) {
+                _callee(std::move(callee)), _args(args) {
             }
 
             void accept(Visitor* visitor) {
@@ -126,7 +127,7 @@ namespace klong {
         public:
             Grouping(SourceRange sourceRange, ExprPtr expr):
                 Expr(ExprKind::GROUPING, sourceRange),
-                _expr(expr) {
+                _expr(std::move(expr)) {
 
             }
 
@@ -183,11 +184,11 @@ namespace klong {
                 return _value.f;
             }
 
-            uint64_t i64() const {
+            int64_t i64() const {
                 return _value.i;
             };
 
-            int64_t u64() const {
+            uint64_t u64() const {
                 return _value.u;
             }
 
@@ -266,7 +267,7 @@ namespace klong {
         public:
             Logical(SourceRange sourceRange, ExprPtr left, LogicalOperation op, ExprPtr right):
                 Expr(ExprKind::LOGICAL, sourceRange),
-                _left(left), _op(op), _right(right) {
+                _left(std::move(left)), _op(op), _right(std::move(right)) {
 
             }
 
@@ -289,7 +290,7 @@ namespace klong {
         public:
             Unary(SourceRange sourceRange, UnaryOperation op, ExprPtr right):
                 Expr(ExprKind::UNARY, sourceRange),
-                _op(op), _right(right) {
+                _op(op), _right(std::move(right)) {
 
             }
 
@@ -304,9 +305,9 @@ namespace klong {
 
     class Variable : public Expr {
         public:
-            Variable(SourceRange sourceRange, const std::string& name):
+            Variable(SourceRange sourceRange, std::string name):
                 Expr(ExprKind::VARIABLE, sourceRange),
-                _name(name) {
+                _name(std::move(name)) {
 
             }
 
