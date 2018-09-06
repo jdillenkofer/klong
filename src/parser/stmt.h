@@ -16,6 +16,7 @@ namespace klong {
         BLOCK,
         EXPRESSION,
         FUNCTION,
+        PARAMETER,
         IF,
         PRINT,
         RETURN,
@@ -90,9 +91,37 @@ namespace klong {
             ExprPtr _expression;
     };
 
+    class Parameter : public Stmt {
+        public:
+            Parameter(SourceRange sourceRange, std::string name, TypePtr type):
+                Stmt(StatementKind::PARAMETER, sourceRange),
+                _name(std::move(name)),
+                _type(type) {
+
+            }
+
+            void accept(Visitor* visitor) {
+                visitor->visitParameterStmt(this);
+            }
+
+            std::string name() const {
+                return _name;
+            }
+
+            TypePtr type() const {
+                return _type;
+            }
+
+        private:
+            std::string _name;
+            TypePtr _type;
+    };
+
+    using ParameterPtr = std::shared_ptr<Parameter>;
+
     class Function : public Stmt {
         public:
-            Function(SourceRange sourceRange, std::string name, std::vector<std::string>&& params,
+            Function(SourceRange sourceRange, std::string name, std::vector<ParameterPtr>&& params,
                 std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body):
                 Stmt(StatementKind::FUNCTION, sourceRange),
                 _name(std::move(name)),
@@ -109,7 +138,7 @@ namespace klong {
                 return _name;
             }
 
-            std::vector<std::string> params() const {
+            std::vector<ParameterPtr> params() const {
                 return _params;
             }
 
@@ -123,7 +152,7 @@ namespace klong {
 
         private:
             std::string _name;
-            std::vector<std::string> _params;
+            std::vector<ParameterPtr> _params;
             std::shared_ptr<FunctionType> _functionType;
             std::vector<StmtPtr> _body;
     };

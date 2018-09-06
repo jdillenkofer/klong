@@ -365,6 +365,10 @@ namespace klong {
                 _resolvesTo = resolvesTo;
             }
 
+            Stmt* resolvesTo() const {
+                return _resolvesTo;
+            }
+
         private:
             std::string _name;
             Stmt* _resolvesTo = nullptr;

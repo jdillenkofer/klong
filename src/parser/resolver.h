@@ -52,6 +52,7 @@ namespace klong {
             void visitBlockStmt(Block* stmt) override;
             void visitExpressionStmt(Expression* stmt) override;
             void visitFunctionStmt(Function* stmt) override;
+            void visitParameterStmt(Parameter* stmt) override;
             void visitIfStmt(If* stmt) override;
             void visitPrintStmt(Print* stmt) override;
             void visitReturnStmt(Return* stmt) override;
@@ -87,7 +88,7 @@ namespace klong {
 
             void resolveLocal(Variable* variable);
 
-            void resolveFunction(Function* stmt);
+            void resolveFunction(Function* stmt, bool insideFunction);
 
             void enterScope();
             void exitScope();
@@ -97,5 +98,6 @@ namespace klong {
 
         private:
             std::deque<std::map<std::string, SymbolInfo>> _scopes;
+            bool _isInsideFunction = false;
     };
 }

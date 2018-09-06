@@ -43,6 +43,10 @@ namespace klong {
             return;
         }
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
+        if (scope.find(name) != scope.end()) {
+            throw ResolveException(declarationStmt->sourceRange(),
+                    "Variable with name '" + name + "' already declared in this scope");
+        }
         scope.insert(std::pair<std::string, SymbolInfo>(name, SymbolInfo { declarationStmt, declarationType, false }));
     }
 
@@ -81,20 +85,27 @@ namespace klong {
         declare(stmt, stmt->name(), DeclarationType::FUNCTION_DECL);
         define(stmt->name());
 
-        resolveFunction(stmt);
+        resolveFunction(stmt, true);
     }
 
-    void Resolver::resolveFunction(klong::Function *stmt) {
+    void Resolver::visitParameterStmt(Parameter* stmt) {
+        declare(stmt, stmt->name(), DeclarationType::PARAM_DECL);
+        define(stmt->name());
+    }
+
+    void Resolver::resolveFunction(klong::Function *stmt, bool insideFunction) {
+        bool enclosingFunction = _isInsideFunction;
+        _isInsideFunction = insideFunction;
         enterScope();
-        for (auto param : stmt->params()) {
-            declare(nullptr, param, DeclarationType::PARAM_DECL);
-            define(param);
+        for (const auto& param : stmt->params()) {
+            resolve(param);
         }
 
-        for (auto& statement : stmt->body()) {
+        for (const auto& statement : stmt->body()) {
             resolve(statement);
         }
         exitScope();
+        _isInsideFunction = enclosingFunction;
     }
 
     void Resolver::visitIfStmt(If* stmt) {
@@ -108,6 +119,9 @@ namespace klong {
     }
 
     void Resolver::visitReturnStmt(Return* stmt) {
+        if (!_isInsideFunction) {
+            throw ResolveException(stmt->sourceRange(), "Cannot return from top-level code.");
+        }
         resolve(stmt->value());
     }
 
@@ -148,6 +162,9 @@ namespace klong {
     void Resolver::visitAssignExpr(Assign* expr) {
         resolve(expr->value());
         resolveLocal(expr->target().get());
+        if (expr->target()->resolvesTo()->kind() == StatementKind::CONST) {
+            throw ResolveException(expr->sourceRange(), "Cannot reassign 'const'.");
+        }
     }
 
     void Resolver::visitBinaryExpr(Binary* expr) {

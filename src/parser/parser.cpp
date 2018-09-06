@@ -151,14 +151,19 @@ namespace klong {
         Token fun = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
         Token leftPar = consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
-        std::vector<std::string> params;
+        std::vector<ParameterPtr> params;
         std::vector<TypePtr> paramTypes;
         if (!check(TokenType::RIGHT_PAR)) {
             do {
                 Token identifier = consume(TokenType::IDENTIFIER, "Expect parameter name.");
-                params.push_back(identifier.value);
                 consume(TokenType::COLON, "Expect ':' after parameter name.");
                 TypePtr type = typeDeclaration();
+
+                params.push_back(
+                        std::make_shared<Parameter>(
+                                SourceRange { identifier.sourceRange.start, type->sourceRange().end },
+                                identifier.value,
+                                type));
 
                 if (type->kind() == TypeKind::PRIMITIVE) {
                     std::shared_ptr<PrimitiveType> primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
@@ -399,7 +404,7 @@ namespace klong {
         if (match(TokenType::ASSIGN_OP)) {
             Token assign = previous();
             ExprPtr value = assignmentExpr();
-            if (value->kind() == ExprKind::VARIABLE) {
+            if (expr->kind() == ExprKind::VARIABLE) {
                 auto variable = std::dynamic_pointer_cast<Variable>(expr);
                 return std::make_shared<Assign>(SourceRange { expr->sourceRange().start, variable->sourceRange().end },
                         variable, value);
