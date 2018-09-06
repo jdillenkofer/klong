@@ -67,8 +67,12 @@ namespace klong {
                 visitor->visitAssignExpr(this);
             }
 
-            const std::string& target() const {
+            std::string target() const {
                 return _target;
+            }
+
+            ExprPtr  value() const {
+                return _value;
             }
 
         private:
@@ -101,6 +105,14 @@ namespace klong {
                 visitor->visitBinaryExpr(this);
             }
 
+            ExprPtr left() const {
+                return _left;
+            }
+
+            ExprPtr right() const {
+                return _right;
+            }
+
         private:
             ExprPtr _left;
             BinaryOperation _op;
@@ -118,6 +130,14 @@ namespace klong {
                 visitor->visitCallExpr(this);
             }
 
+            ExprPtr callee() const {
+                return _callee;
+            }
+
+            std::vector<ExprPtr> args() const {
+                return _args;
+            }
+
         private:
             ExprPtr _callee;
             std::vector<ExprPtr> _args;
@@ -133,6 +153,10 @@ namespace klong {
 
             void accept(Visitor* visitor) {
                 visitor->visitGroupingExpr(this);
+            }
+
+            ExprPtr expression() const {
+                return _expr;
             }
 
         private:
@@ -275,6 +299,14 @@ namespace klong {
                 visitor->visitLogicalExpr(this);
             }
 
+            ExprPtr left() const {
+                return _left;
+            }
+
+            ExprPtr right() const {
+                return _right;
+            }
+
         private:
             ExprPtr _left;
             LogicalOperation _op;
@@ -296,6 +328,14 @@ namespace klong {
 
             void accept(Visitor* visitor) {
                 visitor->visitUnaryExpr(this);
+            }
+
+            UnaryOperation operation() const {
+                return _op;
+            }
+
+            ExprPtr right() const {
+                return _right;
             }
 
         private:

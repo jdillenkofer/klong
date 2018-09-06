@@ -39,6 +39,7 @@ set(SOURCE_FILES
     src/main.cpp
     src/lexer/lexer.cpp
     src/parser/parser.cpp
+    src/parser/resolver.cpp
 )
 
 set(HEADER_FILES
@@ -54,6 +55,7 @@ set(HEADER_FILES
     src/parser/iparser.h
     src/parser/type.h
     src/common/source_range.h
+    src/parser/resolver.h
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES} ${HEADER_FILES})

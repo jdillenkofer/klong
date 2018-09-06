@@ -22,6 +22,10 @@ namespace klong {
                 visitor->visitModule(this);
             };
 
+            std::vector<StmtPtr> statements() const {
+                return _statements;
+            }
+
         private:
             std::vector<StmtPtr> _statements;
     };

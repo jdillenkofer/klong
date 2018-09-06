@@ -1,4 +1,5 @@
 #include <iostream>
+#include <parser/resolver.h>
 
 #include "common/source_file.h"
 #include "lexer/lexer.h"
@@ -23,5 +24,7 @@ int main(int argc, char* argv[]) {
     auto lexer = Lexer(sourceFile);
     auto parser = Parser(&lexer);
     auto module = parser.parse();
+    auto resolver = Resolver();
+    module->accept(&resolver);
     return 0;
 }

@@ -62,6 +62,10 @@ namespace klong {
                 visitor->visitBlockStmt(this);
             }
 
+            std::vector<StmtPtr> statements() const {
+                return _statements;
+            }
+
         private:
             std::vector<StmtPtr> _statements;
     };
@@ -76,6 +80,10 @@ namespace klong {
 
             void accept(Visitor* visitor) {
                 visitor->visitExpressionStmt(this);
+            }
+
+            ExprPtr expression() const {
+                return _expression;
             }
 
         private:
@@ -95,6 +103,22 @@ namespace klong {
             }
             void accept(Visitor* visitor) {
                 visitor->visitFunctionStmt(this);
+            }
+
+            std::string name() const {
+                return _name;
+            }
+
+            std::vector<std::string> params() const {
+                return _params;
+            }
+
+            std::shared_ptr<FunctionType> functionType() const {
+                return _functionType;
+            }
+
+            std::vector<StmtPtr> body() const {
+                return _body;
             }
 
         private:
@@ -117,6 +141,18 @@ namespace klong {
                 visitor->visitIfStmt(this);
             }
 
+            ExprPtr condition() const {
+                return _condition;
+            }
+
+            StmtPtr thenBranch() const {
+                return _thenBranch;
+            }
+
+            StmtPtr elseBranch() const {
+                return _elseBranch;
+            }
+
         private:
             ExprPtr _condition;
             StmtPtr _thenBranch;
@@ -135,6 +171,10 @@ namespace klong {
                 visitor->visitPrintStmt(this);
             }
 
+            ExprPtr expression() const {
+                return _expression;
+            }
+
         private:
             ExprPtr _expression;
     };
@@ -148,6 +188,10 @@ namespace klong {
 
             void accept(Visitor* visitor) {
                 visitor->visitReturnStmt(this);
+            }
+
+            ExprPtr value() const {
+                return _value;
             }
 
         private:
@@ -166,6 +210,18 @@ namespace klong {
 
             void accept(Visitor* visitor) {
                 visitor->visitLetStmt(this);
+            }
+
+            std::string name() const {
+                return _name;
+            }
+
+            TypePtr type() const {
+                return _type;
+            }
+
+            ExprPtr initializer() const {
+                return _initializer;
             }
 
         private:
@@ -188,6 +244,18 @@ namespace klong {
                 visitor->visitConstStmt(this);
             }
 
+            std::string name() const {
+                return _name;
+            }
+
+            TypePtr type() const {
+                return _type;
+            }
+
+            ExprPtr initializer() const {
+                return _initializer;
+            }
+
         private:
             std::string _name;
             TypePtr _type;
@@ -204,6 +272,14 @@ namespace klong {
 
             void accept(Visitor* visitor) {
                 visitor->visitWhileStmt(this);
+            }
+
+            ExprPtr condition() const {
+                return _condition;
+            }
+
+            StmtPtr body() const {
+                return _body;
             }
 
         private:
@@ -224,6 +300,22 @@ namespace klong {
 
             void accept(Visitor* visitor) {
                 visitor->visitForStmt(this);
+            }
+
+            StmtPtr initializer() const {
+                return _initializer;
+            }
+
+            ExprPtr condition() const {
+                return _condition;
+            };
+
+            ExprPtr increment() const {
+                return _increment;
+            }
+
+            StmtPtr body() const {
+                return _body;
             }
 
         private:
