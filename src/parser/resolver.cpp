@@ -152,10 +152,12 @@ namespace klong {
     }
 
     void Resolver::visitForStmt(For* stmt) {
+        enterScope();
         resolve(stmt->initializer().get());
         resolve(stmt->condition().get());
         resolve(stmt->increment().get());
         resolve(stmt->body().get());
+        exitScope();
     }
 
     void Resolver::visitCommentStmt(Comment* expr) {
