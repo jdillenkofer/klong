@@ -5,6 +5,7 @@
 #include "parser/parser.h"
 #include "parser/resolver.h"
 #include "parser/type_checker.h"
+#include "terp/treewalk_terp.h"
 
 using namespace klong;
 
@@ -29,5 +30,7 @@ int main(int argc, char* argv[]) {
     module->accept(&resolver);
     auto typeChecker = TypeChecker();
     module->accept(&typeChecker);
+    auto interpreter = TreewalkTerp();
+    module->accept(&interpreter);
     return 0;
 }

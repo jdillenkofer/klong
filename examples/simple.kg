@@ -1,7 +1,12 @@
+for(let i = 0; i < 2000000; i = i + 1) {
+    print("Test\n");
+}
+
+/*
 main();
 
 fun main() {
-    // a */ b c
+    // a b c
     let a: i64 = 5;
     const b: i64 = 5;
 
@@ -12,3 +17,4 @@ fun main() {
 fun test(a: i64, b: i64): i64 {
     return a + b;
 }
+*/

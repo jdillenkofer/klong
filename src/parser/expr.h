@@ -311,6 +311,10 @@ namespace klong {
                 return _right;
             }
 
+            LogicalOperation op() const {
+                return _op;
+            }
+
         private:
             ExprPtr _left;
             LogicalOperation _op;
