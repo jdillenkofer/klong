@@ -36,7 +36,7 @@ namespace klong {
             }
 
             void type(TypePtr type) {
-                _type = type;
+                _type = std::move(type);
             }
 
             TypePtr type() const {
@@ -71,7 +71,7 @@ namespace klong {
                 return _target;
             }
 
-            ExprPtr  value() const {
+            ExprPtr value() const {
                 return _value;
             }
 

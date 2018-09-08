@@ -22,7 +22,7 @@ namespace klong {
         for (const auto& statement : statements) {
             if (statement->kind() == StatementKind::FUNCTION) {
                 std::shared_ptr<Function> stmt = std::dynamic_pointer_cast<Function>(statement);
-                declare(stmt.get(), stmt->name(), DeclarationType::FUNCTION_DECL);
+                declare(stmt.get(), stmt->name(), DeclarationType::FUNCTION);
                 define(stmt->name());
             }
         }
@@ -96,7 +96,7 @@ namespace klong {
     }
 
     void Resolver::visitParameterStmt(Parameter* stmt) {
-        declare(stmt, stmt->name(), DeclarationType::PARAM_DECL);
+        declare(stmt, stmt->name(), DeclarationType::PARAM);
         define(stmt->name());
     }
 

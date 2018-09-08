@@ -1,49 +1,13 @@
 #pragma once
 
-#include <stack>
-#include <map>
-
 #include "visitor.h"
 #include "stmt.h"
 #include "expr.h"
 
 namespace klong {
-    class ResolveException : public std::exception {
+    class TypeChecker : public Visitor {
         public:
-            ResolveException(SourceRange sourceRange, std::string message):
-                    _sourceRange(sourceRange), _message(message) {
-
-            }
-
-            SourceRange sourceRange() const {
-                return _sourceRange;
-            }
-
-            const char* what () const throw () {
-                return _message.c_str();
-            }
-
-        private:
-            SourceRange _sourceRange;
-            std::string _message;
-    };
-
-    enum class DeclarationType {
-        CONST,
-        LET,
-        PARAM,
-        FUNCTION
-    };
-
-    struct SymbolInfo {
-        Stmt* declarationStmt;
-        DeclarationType declarationType;
-        bool initialized = false;
-    };
-
-    class Resolver : public Visitor {
-        public:
-            Resolver() = default;
+            TypeChecker() = default;
 
             // Module
             void visitModule(Module* module) override;
@@ -83,22 +47,10 @@ namespace klong {
             void visitSimpleType(SimpleType *type) override;
 
         private:
-            void resolve(const StmtPtr& stmt);
-            void resolve(const ExprPtr& expr);
-            void resolve(const std::vector<StmtPtr>& statements);
+            void check(const std::vector<StmtPtr>& statements);
+            void check(const StmtPtr& stmt);
+            void check(const ExprPtr& expr);
 
-            void resolveLocal(Variable* variable);
-
-            void resolveFunction(Function* stmt, bool insideFunction);
-
-            void enterScope();
-            void exitScope();
-
-            void declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType);
-            void define(std::string name);
-
-        private:
-            std::deque<std::map<std::string, SymbolInfo>> _scopes;
-            bool _isInsideFunction = false;
+            bool isBoolean(const ExprPtr& expr);
     };
 }

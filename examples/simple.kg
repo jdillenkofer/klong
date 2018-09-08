@@ -4,6 +4,9 @@ fun main() {
     // a */ b c
     let a: i32 = 5;
     const b: i32 = 5;
+    if (5) {
+        return;
+    }
 
     let res: i32 = test(a, b);
     return;

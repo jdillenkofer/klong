@@ -1,9 +1,10 @@
 #include <iostream>
-#include <parser/resolver.h>
 
 #include "common/source_file.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include "parser/resolver.h"
+#include "parser/type_checker.h"
 
 using namespace klong;
 
@@ -26,5 +27,7 @@ int main(int argc, char* argv[]) {
     auto module = parser.parse();
     auto resolver = Resolver();
     module->accept(&resolver);
+    auto typeChecker = TypeChecker();
+    module->accept(&typeChecker);
     return 0;
 }
