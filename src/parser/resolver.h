@@ -11,7 +11,7 @@ namespace klong {
     class ResolveException : public std::exception {
         public:
             ResolveException(SourceRange sourceRange, std::string message):
-                    _sourceRange(sourceRange), _message(message) {
+                    _sourceRange(sourceRange), _message(std::move(message)) {
 
             }
 
@@ -83,8 +83,8 @@ namespace klong {
             void visitSimpleType(SimpleType *type) override;
 
         private:
-            void resolve(const StmtPtr& stmt);
-            void resolve(const ExprPtr& expr);
+            void resolve(Stmt* stmt);
+            void resolve(Expr* expr);
             void resolve(const std::vector<StmtPtr>& statements);
 
             void resolveLocal(Variable* variable);

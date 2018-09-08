@@ -2,16 +2,13 @@ main();
 
 fun main() {
     // a */ b c
-    let a: i32 = 5;
-    const b: i32 = 5;
-    if (5) {
-        return;
-    }
+    let a: i64 = 5;
+    const b: i64 = 5;
 
-    let res: i32 = test(a, b);
+    let res = test(a, b);
     return;
 }
 
-fun test(a: i32, b: i32): i32 {
+fun test(a: i64, b: i64): i64 {
     return a + b;
 }

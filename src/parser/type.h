@@ -55,6 +55,8 @@ namespace klong {
 
             virtual bool isEqual(const Type* other) const = 0;
 
+            virtual Type* clone() const = 0;
+
         private:
             TypeKind _kind;
             SourceRange _sourceRange;
@@ -102,6 +104,10 @@ namespace klong {
                 return false;
             }
 
+            Type* clone() const {
+                return new FunctionType(SourceRange(), this->paramTypes(), this->returnType());
+            }
+
             bool matchesSignature(const std::vector<TypePtr>& callSignature) const {
                 for (size_t i = 0; i < this->_paramTypes.size(); i++) {
                     if (!this->_paramTypes[i]->isEqual(callSignature[i].get())) {
@@ -139,6 +145,11 @@ namespace klong {
                 return false;
             }
 
+
+            Type* clone() const {
+                return new PrimitiveType(SourceRange(), this->type());
+            }
+
         private:
             PrimitiveTypeKind _type;
     };
@@ -168,6 +179,10 @@ namespace klong {
                     return this->name() == otherSimpleType->name();
                 }
                 return false;
+            }
+
+            Type* clone() const {
+                return new SimpleType(SourceRange(), this->name());
             }
 
         private:

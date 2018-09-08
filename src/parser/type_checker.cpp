@@ -1,3 +1,5 @@
+#include <functional>
+
 #include "type_checker.h"
 
 #include "resolver.h"
@@ -10,28 +12,63 @@ namespace klong {
 
     void TypeChecker::check(const std::vector<StmtPtr>& statements) {
         for (const auto& stmt : statements) {
-            check(stmt);
+            check(stmt.get());
         }
     }
 
-    void TypeChecker::check(const StmtPtr& stmt) {
+    void TypeChecker::check(Stmt* stmt) {
         if (stmt != nullptr) {
             stmt->accept(this);
         }
     }
 
-    void TypeChecker::check(const ExprPtr& expr) {
+    void TypeChecker::check(Expr* expr) {
         if (expr != nullptr) {
             expr->accept(this);
         }
     }
 
-    bool TypeChecker::isBoolean(const ExprPtr& expr) {
+    bool TypeChecker::isBoolean(Expr* expr) {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
             if (primitiveType->type() == PrimitiveTypeKind::BOOL) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    bool TypeChecker::isNumber(Expr* expr) {
+        TypePtr type = expr->type();
+        if (type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+            switch(primitiveType->type()) {
+                case PrimitiveTypeKind::U8:
+                case PrimitiveTypeKind::U16:
+                case PrimitiveTypeKind::U32:
+                case PrimitiveTypeKind::U64:
+                case PrimitiveTypeKind::I8:
+                case PrimitiveTypeKind::I16:
+                case PrimitiveTypeKind::I32:
+                case PrimitiveTypeKind::I64:
+                    return true;
+                default:
+                    break;
+            }
+        }
+        return false;
+    }
+
+    bool TypeChecker::isString(Expr* expr) {
+        TypePtr type = expr->type();
+        if (type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+            switch(primitiveType->type()) {
+                case PrimitiveTypeKind::STRING:
+                    return true;
+                default:
+                    break;
             }
         }
         return false;
@@ -48,123 +85,187 @@ namespace klong {
     }
 
     void TypeChecker::visitExpressionStmt(Expression* stmt) {
-        check(stmt->expression());
+        check(stmt->expression().get());
     }
 
     void TypeChecker::visitFunctionStmt(Function* stmt) {
-        // TODO: set functionVariable in this visitor, so that the returnStmt knows which function it is in
+        auto previousFunction = currentFunction;
+        currentFunction = stmt;
         check(stmt->body());
+        currentFunction = previousFunction;
     }
 
     void TypeChecker::visitParameterStmt(Parameter* stmt) {
-        // TODO:
+        // nothing to do here
         (void) stmt;
     }
 
     void TypeChecker::visitIfStmt(If* stmt) {
-        check(stmt->condition());
-        if (!isBoolean(stmt->condition())) {
-            // TODO: throw
+        check(stmt->condition().get());
+        if (!isBoolean(stmt->condition().get())) {
+            throw TypeCheckException(stmt->condition()->sourceRange(), "Expect bool condition in if-statement.");
         }
-        check(stmt->thenBranch());
-        check(stmt->elseBranch());
+        check(stmt->thenBranch().get());
+        check(stmt->elseBranch().get());
     }
 
     void TypeChecker::visitPrintStmt(Print* stmt) {
-        check(stmt->expression());
+        // TODO: which types to support in print
+        check(stmt->expression().get());
+        if (!isString(stmt->expression().get())) {
+            throw TypeCheckException(stmt->sourceRange(), "Expect string type in print stmt.");
+        }
     }
 
     void TypeChecker::visitReturnStmt(Return* stmt) {
-        // TODO we need a reference to the function this return stmt is in
-        // to check if functionType == returnType
-        check(stmt->value());
+        check(stmt->value().get());
+        if (stmt->value() != nullptr) {
+            if (!currentFunction->functionType()->returnType()->isEqual(stmt->value()->type().get())) {
+                throw TypeCheckException(stmt->sourceRange(), "Expect return statement type to match the function returnType.");
+            }
+        }
     }
 
     void TypeChecker::visitLetStmt(Let* stmt) {
-        check(stmt->initializer());
+        check(stmt->initializer().get());
         if (stmt->type() == nullptr) {
-            // type propagation
+            stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
         } else {
-            if (stmt->initializer() && stmt->type() != stmt->initializer()->type()) {
-                // TODO: throw
+            if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type().get())) {
+                throw TypeCheckException(stmt->sourceRange(), "initializerType doesn't match let type.");
             }
         }
     }
 
     void TypeChecker::visitConstStmt(Const* stmt) {
-        check(stmt->initializer());
+        check(stmt->initializer().get());
         if (stmt->type() == nullptr) {
-            // type propagation
+            stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
         } else {
-            if (stmt->type() != stmt->initializer()->type()) {
-                // TODO: throw
+            if (!stmt->type()->isEqual(stmt->initializer()->type().get())) {
+                throw TypeCheckException(stmt->sourceRange(), "initializerType doesn't match const type.");
             }
         }
     }
 
     void TypeChecker::visitWhileStmt(While* stmt) {
-        check(stmt->condition());
-        if (!isBoolean(stmt->condition())) {
-            // TODO: throw
+        check(stmt->condition().get());
+        if (!isBoolean(stmt->condition().get())) {
+            throw TypeCheckException(stmt->condition()->sourceRange(), "while condition expects bool type.");
         }
-        check(stmt->body());
+        check(stmt->body().get());
     }
 
     void TypeChecker::visitForStmt(For* stmt) {
-        check(stmt->initializer());
-        check(stmt->condition());
-        if (!isBoolean(stmt->condition())) {
-            // TODO: throw
+        check(stmt->initializer().get());
+        check(stmt->condition().get());
+        if (!isBoolean(stmt->condition().get())) {
+            throw TypeCheckException(stmt->condition()->sourceRange(), "for condition expects bool type.");
         }
-        check(stmt->increment());
-        check(stmt->body());
+        check(stmt->increment().get());
+        check(stmt->body().get());
     }
 
-    void TypeChecker::visitCommentStmt(Comment* expr) {
+    void TypeChecker::visitCommentStmt(Comment* stmt) {
         // empty on purpose
-        (void) expr;
+        (void) stmt;
     }
 
     // Expr
     void TypeChecker::visitAssignExpr(Assign* expr) {
-        check(expr->target());
-        check(expr->value());
+        check(expr->target().get());
+        check(expr->value().get());
         if (!expr->target()->type()->isEqual(expr->value()->type().get())) {
-            // TODO: throw
+            throw TypeCheckException(expr->value()->sourceRange(), "Expect valid type in assignment.");
         }
-        // TODO: copy types without sourceRange
-        expr->type(expr->value()->type());
+        expr->type(std::shared_ptr<Type>(expr->value()->type()->clone()));
     }
 
     void TypeChecker::visitBinaryExpr(Binary* expr) {
-        check(expr->left());
-        check(expr->right());
-        // TODO: check all possible valid type combinations
+        check(expr->left().get());
+        check(expr->right().get());
+        if (isNumber(expr->left().get()) && isNumber(expr->right().get())) {
+            switch(expr->op()) {
+                case BinaryOperation::PLUS:
+                case BinaryOperation::MINUS:
+                case BinaryOperation::MULTIPLICATION:
+                case BinaryOperation::DIVISION:
+                {
+                    // TODO: cast to biggest number type
+                    expr->type(std::shared_ptr<Type>(expr->left()->type()->clone()));
+                    break;
+                }
+                case BinaryOperation::LESS_THAN:
+                case BinaryOperation::LESS_EQUAL:
+                case BinaryOperation::EQUALITY:
+                case BinaryOperation::INEQUALITY:
+                case BinaryOperation::GREATER_THAN:
+                case BinaryOperation::GREATER_EQUAL:
+                {
+                    expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
+                    break;
+                }
+            }
+            return;
+        }
+
+        if (expr->op() == BinaryOperation::PLUS) {
+            std::function<bool(Expr*)> isValidOtherType = [this](Expr* exprPtr) {
+                return isNumber(exprPtr) || isBoolean(exprPtr);
+            };
+            if ((isString(expr->left().get()) && isValidOtherType(expr->right().get()))
+                || (isValidOtherType(expr->left().get()) && isString(expr->right().get()))) {
+                expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::STRING));
+                return;
+            }
+        }
+        throw TypeCheckException(expr->sourceRange(), "Illegal type in binary operation.");
     }
 
     void TypeChecker::visitCallExpr(Call* expr) {
-        check(expr->callee());
+        check(expr->callee().get());
+        std::vector<TypePtr> callParamTypes;
         for (const auto& arg : expr->args()) {
-            check(arg);
+            check(arg.get());
+            callParamTypes.push_back(arg->type());
         }
-
-        // TODO: create functionType and check with expr->resolvesTo
+        if (expr->callee()->type()->kind() == TypeKind::FUNCTION) {
+            auto functionType = std::dynamic_pointer_cast<FunctionType>(expr->callee()->type());
+            if (!functionType->matchesSignature(callParamTypes)) {
+                throw TypeCheckException(expr->sourceRange(), "Call Expr doesn't match function signature.");
+            }
+            expr->type(std::shared_ptr<Type>(functionType->returnType()->clone()));
+            return;
+        }
+        throw TypeCheckException(expr->sourceRange(), "Callee doesn't resolve to function expression.");
     }
 
     void TypeChecker::visitGroupingExpr(Grouping* expr) {
-        check(expr->expression());
+        check(expr->expression().get());
         expr->type(expr->expression()->type());
     }
 
     void TypeChecker::visitLogicalExpr(Logical* expr) {
-        check(expr->left());
-        check(expr->right());
-        // TODO: check all possible valid type combinations
+        check(expr->left().get());
+        if (!isBoolean(expr->left().get())) {
+            throw TypeCheckException(expr->left()->sourceRange(), "Expect boolean expr.");
+        }
+        check(expr->right().get());
+        if (!isBoolean(expr->right().get())) {
+            throw TypeCheckException(expr->right()->sourceRange(), "Expect boolean expr.");
+        }
+        expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
     }
 
     void TypeChecker::visitUnaryExpr(Unary* expr) {
-        check(expr->right());
-        // TODO: check all possible valid type combinations
+        check(expr->right().get());
+        if (expr->operation() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
+            throw TypeCheckException(expr->sourceRange(), "'!' expects boolean expression.");
+        }
+        if (expr->operation() == UnaryOperation::MINUS && !isNumber(expr->right().get())) {
+            throw TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression.");
+        }
+        expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));
     }
 
     void TypeChecker::visitVariableExpr(Variable* expr) {
@@ -173,26 +274,30 @@ namespace klong {
             case StatementKind::FUNCTION:
             {
                 auto function = dynamic_cast<Function*>(resolvesTo);
-                expr->type(function->functionType());
+                expr->type(std::shared_ptr<Type>(function->functionType()->clone()));
                 break;
             }
             case StatementKind::CONST:
             {
                 auto constStmt = dynamic_cast<Const*>(resolvesTo);
-                expr->type(constStmt->type());
+                expr->type(std::shared_ptr<Type>(constStmt->type()->clone()));
                 break;
             }
             case StatementKind::LET:
             {
                 auto letStmt = dynamic_cast<Let*>(resolvesTo);
-                expr->type(letStmt->type());
+                expr->type(std::shared_ptr<Type>(letStmt->type()->clone()));
+                break;
+            }
+            case StatementKind::PARAMETER:
+            {
+                auto paramStmt = dynamic_cast<Parameter*>(resolvesTo);
+                expr->type(std::shared_ptr<Type>(paramStmt->type()->clone()));
                 break;
             }
             default:
-                // TODO: throw
-                break;
+                throw TypeCheckException(expr->sourceRange(), "Variable resolves to invalid kind.");
         }
-        // TODO: get type of resolvesTo and assign it to variable
     }
 
     // Literals

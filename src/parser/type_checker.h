@@ -5,6 +5,26 @@
 #include "expr.h"
 
 namespace klong {
+    class TypeCheckException : public std::exception {
+        public:
+            TypeCheckException(SourceRange sourceRange, std::string message):
+                    _sourceRange(sourceRange), _message(message) {
+
+            }
+
+            SourceRange sourceRange() const {
+                return _sourceRange;
+            }
+
+            const char* what () const throw () {
+                return _message.c_str();
+            }
+
+        private:
+            SourceRange _sourceRange;
+            std::string _message;
+    };
+
     class TypeChecker : public Visitor {
         public:
             TypeChecker() = default;
@@ -24,7 +44,7 @@ namespace klong {
             void visitConstStmt(Const* stmt) override;
             void visitWhileStmt(While* stmt) override;
             void visitForStmt(For* stmt) override;
-            void visitCommentStmt(Comment* expr) override;
+            void visitCommentStmt(Comment* stmt) override;
 
             // Expr
             void visitAssignExpr(Assign* expr) override;
@@ -48,9 +68,13 @@ namespace klong {
 
         private:
             void check(const std::vector<StmtPtr>& statements);
-            void check(const StmtPtr& stmt);
-            void check(const ExprPtr& expr);
+            void check(Stmt* stmt);
+            void check(Expr* expr);
 
-            bool isBoolean(const ExprPtr& expr);
+            bool isBoolean(Expr* expr);
+            bool isNumber(Expr* expr);
+            bool isString(Expr* expr);
+        private:
+            Function* currentFunction = nullptr;
     };
 }

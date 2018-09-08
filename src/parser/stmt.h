@@ -249,6 +249,10 @@ namespace klong {
                 return _type;
             }
 
+            void type(TypePtr type) {
+                _type = std::move(type);
+            }
+
             ExprPtr initializer() const {
                 return _initializer;
             }
@@ -279,6 +283,10 @@ namespace klong {
 
             TypePtr type() const {
                 return _type;
+            }
+
+            void type(TypePtr type) {
+                _type = std::move(type);
             }
 
             ExprPtr initializer() const {

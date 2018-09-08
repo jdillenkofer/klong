@@ -6,13 +6,13 @@
 
 namespace klong {
 
-    void Resolver::resolve(const StmtPtr& stmt) {
+    void Resolver::resolve(Stmt* stmt) {
         if (stmt) {
             stmt->accept(this);
         }
     }
 
-    void Resolver::resolve(const ExprPtr& expr) {
+    void Resolver::resolve(Expr* expr) {
         if (expr) {
             expr->accept(this);
         }
@@ -28,7 +28,7 @@ namespace klong {
         }
 
         for (const auto& statement : statements) {
-            resolve(statement);
+            resolve(statement.get());
         }
     }
 
@@ -88,7 +88,7 @@ namespace klong {
     }
 
     void Resolver::visitExpressionStmt(Expression* stmt) {
-        resolve(stmt->expression());
+        resolve(stmt->expression().get());
     }
 
     void Resolver::visitFunctionStmt(Function* stmt) {
@@ -105,7 +105,7 @@ namespace klong {
         _isInsideFunction = insideFunction;
         enterScope();
         for (const auto& param : stmt->params()) {
-            resolve(param);
+            resolve(param.get());
         }
 
         resolve(stmt->body());
@@ -114,26 +114,26 @@ namespace klong {
     }
 
     void Resolver::visitIfStmt(If* stmt) {
-        resolve(stmt->condition());
-        resolve(stmt->thenBranch());
-        resolve(stmt->elseBranch());
+        resolve(stmt->condition().get());
+        resolve(stmt->thenBranch().get());
+        resolve(stmt->elseBranch().get());
     }
 
     void Resolver::visitPrintStmt(Print* stmt) {
-        resolve(stmt->expression());
+        resolve(stmt->expression().get());
     }
 
     void Resolver::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
             throw ResolveException(stmt->sourceRange(), "Cannot return from top-level code.");
         }
-        resolve(stmt->value());
+        resolve(stmt->value().get());
     }
 
     void Resolver::visitLetStmt(Let* stmt) {
         declare(stmt, stmt->name(), DeclarationType::LET);
         if (stmt->initializer()) {
-            resolve(stmt->initializer());
+            resolve(stmt->initializer().get());
             define(stmt->name());
         }
     }
@@ -141,21 +141,21 @@ namespace klong {
     void Resolver::visitConstStmt(Const* stmt) {
         declare(stmt, stmt->name(), DeclarationType::CONST);
         if (stmt->initializer()) {
-            resolve(stmt->initializer());
+            resolve(stmt->initializer().get());
             define(stmt->name());
         }
     }
 
     void Resolver::visitWhileStmt(While* stmt) {
-        resolve(stmt->condition());
-        resolve(stmt->body());
+        resolve(stmt->condition().get());
+        resolve(stmt->body().get());
     }
 
     void Resolver::visitForStmt(For* stmt) {
-        resolve(stmt->initializer());
-        resolve(stmt->condition());
-        resolve(stmt->increment());
-        resolve(stmt->body());
+        resolve(stmt->initializer().get());
+        resolve(stmt->condition().get());
+        resolve(stmt->increment().get());
+        resolve(stmt->body().get());
     }
 
     void Resolver::visitCommentStmt(Comment* expr) {
@@ -165,7 +165,7 @@ namespace klong {
 
     // Expr
     void Resolver::visitAssignExpr(Assign* expr) {
-        resolve(expr->value());
+        resolve(expr->value().get());
         resolveLocal(expr->target().get());
         if (expr->target()->resolvesTo()->kind() == StatementKind::CONST) {
             throw ResolveException(expr->sourceRange(), "Cannot reassign 'const'.");
@@ -173,28 +173,28 @@ namespace klong {
     }
 
     void Resolver::visitBinaryExpr(Binary* expr) {
-        resolve(expr->left());
-        resolve(expr->right());
+        resolve(expr->left().get());
+        resolve(expr->right().get());
     }
 
     void Resolver::visitCallExpr(Call* expr) {
-        resolve(expr->callee());
+        resolve(expr->callee().get());
         for (const auto& arg : expr->args()) {
-            resolve(arg);
+            resolve(arg.get());
         }
     }
 
     void Resolver::visitGroupingExpr(Grouping* expr) {
-        resolve(expr->expression());
+        resolve(expr->expression().get());
     }
 
     void Resolver::visitLogicalExpr(Logical* expr) {
-        resolve(expr->left());
-        resolve(expr->right());
+        resolve(expr->left().get());
+        resolve(expr->right().get());
     }
 
     void Resolver::visitUnaryExpr(Unary* expr) {
-        resolve(expr->right());
+        resolve(expr->right().get());
     }
 
     void Resolver::visitVariableExpr(Variable* expr) {

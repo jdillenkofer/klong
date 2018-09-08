@@ -109,6 +109,10 @@ namespace klong {
                 return _left;
             }
 
+            BinaryOperation op() const {
+                return _op;
+            }
+
             ExprPtr right() const {
                 return _right;
             }
