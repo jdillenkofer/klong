@@ -100,8 +100,8 @@ namespace klong {
     };
 
     enum class NumberConversionResult {
-        OVERFLOW,
-        UNDERFLOW,
+        OVERFLOWED,
+        UNDERFLOWED,
         INCONVERTIBLE,
         OK
     };
@@ -115,7 +115,7 @@ namespace klong {
             errno = 0;
             out = strtoll(str, &endPtr, radix);
             if (errno == ERANGE) {
-                return out == LONG_MAX ? NumberConversionResult::OVERFLOW : NumberConversionResult::UNDERFLOW;
+                return out == LONG_MAX ? NumberConversionResult::OVERFLOWED : NumberConversionResult::UNDERFLOWED;
             }
             if (*endPtr != '\0') {
                 return NumberConversionResult::INCONVERTIBLE;
@@ -129,7 +129,7 @@ namespace klong {
             errno = 0;
             out = strtoull(str, &endPtr, radix);
             if (errno == ERANGE) {
-                return out == ULONG_MAX ? NumberConversionResult::OVERFLOW : NumberConversionResult::UNDERFLOW;
+                return out == ULONG_MAX ? NumberConversionResult::OVERFLOWED : NumberConversionResult::UNDERFLOWED;
             }
             if (*endPtr != '\0') {
                 return NumberConversionResult::INCONVERTIBLE;
@@ -143,7 +143,7 @@ namespace klong {
             errno = 0;
             out = strtod(str, &endPtr);
             if (errno == ERANGE) {
-                return out == DBL_MAX ? NumberConversionResult::OVERFLOW : NumberConversionResult::UNDERFLOW;
+                return out == DBL_MAX ? NumberConversionResult::OVERFLOWED : NumberConversionResult::UNDERFLOWED;
             }
             if (*endPtr != '\0') {
                 return NumberConversionResult::INCONVERTIBLE;
