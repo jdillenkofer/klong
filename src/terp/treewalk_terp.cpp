@@ -74,9 +74,9 @@ namespace klong {
             getType(l, left, leftType);   \
             getType(r, right, rightType); \
             if (isSigned(leftType)) {     \
-                return u64l op u64r;      \
+                return i64l op i64r;      \
             }                             \
-            return i64l op i64r;          \
+            return u64l op u64r;          \
         }                                 \
     } while(false)                        \
 
@@ -158,12 +158,12 @@ namespace klong {
                 case PrimitiveTypeKind::U16:
                 case PrimitiveTypeKind::U32:
                 case PrimitiveTypeKind::U64:
-                    return true;
+                    return false;
                 case PrimitiveTypeKind::I8:
                 case PrimitiveTypeKind::I16:
                 case PrimitiveTypeKind::I32:
                 case PrimitiveTypeKind::I64:
-                    return false;
+                    return true;
                 default:
                     break;
             }
