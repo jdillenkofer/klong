@@ -91,7 +91,7 @@ namespace klong {
 
     void TreewalkTerp::executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> env) {
         std::shared_ptr<Environment> previous = this->_environment;
-        /*try {*/
+        try {
             this->_environment = env;
             // visit all functions of the current block first
             for (const auto& stmt : statements) {
@@ -105,10 +105,10 @@ namespace klong {
                 }
                 execute(stmt.get());
             }
-        /*} catch (const TerpException& exception) {
+        } catch (...) {
             this->_environment = previous;
-            throw exception;
-        }*/
+            throw;
+        }
         this->_environment = previous;
     }
 

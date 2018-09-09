@@ -2,9 +2,10 @@ main();
 
 fun main() {
     // a b c
-    const i: i64 = 2;
-    let res = fib(i);
-    print(res);
+    for (let i = 0; i < 30; i = i + 1) {
+        let res = fib(i);
+        print(res + "\n");
+    }
     return;
 }
 
