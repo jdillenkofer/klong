@@ -13,7 +13,7 @@
 namespace klong {
     class ReturnWrapper : public std::exception {
         public:
-            ReturnWrapper(std::any value): _value(std::move(value)) {
+            explicit ReturnWrapper(std::any value): _value(std::move(value)) {
 
             }
 
@@ -65,12 +65,25 @@ namespace klong {
             void visitFunctionType(FunctionType* type) override;
             void visitPrimitiveType(PrimitiveType *type) override;
             void visitSimpleType(SimpleType *type) override;
+
+            void executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> env);
         private:
             std::any evaluate(Expr* expr);
             void execute(Stmt* stmt);
-            void executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> env);
             bool isTruthy(std::any value);
-            std::string stringify(std::any value);
+            bool isFloat(Type* type);
+            bool isInteger(Type *type);
+            bool isSigned(Type* type);
+            std::string stringify(std::any value, Type* type);
+            std::any isEqual(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any isLessThan(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any isLessThanEqual(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any isGreaterThan(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any isGreaterThanEqual(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any minus(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any plus(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any multiplication(std::any left, Type* leftType, std::any right, Type* rightType);
+            std::any division(std::any left, Type* leftType, std::any right, Type* rightType);
         private:
             std::any _valueOfLastExpr;
             std::shared_ptr<Environment> _globals = std::make_shared<Environment>();

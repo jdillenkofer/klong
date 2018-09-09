@@ -1,20 +1,22 @@
-for(let i = 0; i < 2000000; i = i + 1) {
-    print("Test\n");
-}
-
-/*
 main();
 
 fun main() {
     // a b c
-    let a: i64 = 5;
-    const b: i64 = 5;
-
-    let res = test(a, b);
+    const i: i64 = 2;
+    let res = fib(i);
+    print(res);
     return;
 }
 
-fun test(a: i64, b: i64): i64 {
-    return a + b;
+fun fib(n : i64): i64 {
+    print("n == 0: " + (n == 0) + "\n");
+    if (n == 0) {
+        return 0;
+    }
+
+    print("n == 1: " + (n == 1) + "\n");
+    if (n == 1) {
+        return 1;
+    }
+    return fib(n - 1) + fib(n - 2);
 }
-*/

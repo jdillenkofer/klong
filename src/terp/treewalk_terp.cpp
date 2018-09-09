@@ -2,7 +2,83 @@
 
 #include <iostream>
 
+#include "klong_function.h"
+
 namespace klong {
+
+#define getType(nameSuffix, anyVarName, typeVarName) \
+    PrimitiveTypeKind kind##nameSuffix; \
+    uint8_t u8##nameSuffix = 0; \
+    uint16_t u16##nameSuffix = 0; \
+    uint32_t u32##nameSuffix = 0; \
+    uint64_t u64##nameSuffix = 0; \
+    int8_t i8##nameSuffix = 0; \
+    int16_t i16##nameSuffix = 0; \
+    int32_t i32##nameSuffix = 0; \
+    int64_t i64##nameSuffix = 0; \
+    float f32##nameSuffix = 0.0f; \
+    double f64##nameSuffix = 0.0f; \
+    std::string str##nameSuffix; \
+    bool boolean##nameSuffix = false; \
+    if (typeVarName->kind() == TypeKind::PRIMITIVE) { \
+        auto primType = dynamic_cast<PrimitiveType*>(typeVarName); \
+        kind##nameSuffix = primType->type(); \
+        switch (kind##nameSuffix) { \
+            case PrimitiveTypeKind::U8: \
+                u8##nameSuffix = std::any_cast<uint8_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::U16: \
+                u16##nameSuffix = std::any_cast<uint16_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::U32: \
+                u32##nameSuffix = std::any_cast<uint32_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::U64: \
+                u64##nameSuffix = std::any_cast<uint32_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::I8: \
+                i8##nameSuffix = std::any_cast<int8_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::I16: \
+                i16##nameSuffix = std::any_cast<int16_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::I32: \
+                i32##nameSuffix = std::any_cast<int32_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::I64: \
+                i64##nameSuffix = std::any_cast<int64_t>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::F32: \
+                f32##nameSuffix = std::any_cast<float>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::F64: \
+                f64##nameSuffix = std::any_cast<double>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::STRING: \
+                str##nameSuffix = std::any_cast<std::string>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::BOOL: \
+                boolean##nameSuffix = std::any_cast<bool>(anyVarName); \
+                break; \
+            case PrimitiveTypeKind::VOID: \
+                throw TerpException("Cannot extract from void type."); \
+        } \
+    } else { \
+        throw TerpException("Cannot extract non primitive type from any."); \
+    } \
+
+#define runBinaryNumberOperation(op)      \
+    do {                                  \
+        if (isInteger(leftType)           \
+            && isInteger(rightType)) {    \
+            getType(l, left, leftType);   \
+            getType(r, right, rightType); \
+            if (isSigned(leftType)) {     \
+                return u64l op u64r;      \
+            }                             \
+            return i64l op i64r;          \
+        }                                 \
+    } while(false)                        \
 
     std::any TreewalkTerp::evaluate(Expr* expr) {
         expr->accept(this);
@@ -15,15 +91,24 @@ namespace klong {
 
     void TreewalkTerp::executeBlock(const std::vector<StmtPtr>& statements, std::shared_ptr<Environment> env) {
         std::shared_ptr<Environment> previous = this->_environment;
-        try {
+        /*try {*/
             this->_environment = env;
+            // visit all functions of the current block first
             for (const auto& stmt : statements) {
+                if (stmt->kind() == StatementKind::FUNCTION) {
+                    execute(stmt.get());
+                }
+            }
+            for (const auto& stmt : statements) {
+                if (stmt->kind() == StatementKind::FUNCTION) {
+                    continue;
+                }
                 execute(stmt.get());
             }
-        } catch (const std::exception& exception) {
+        /*} catch (const TerpException& exception) {
             this->_environment = previous;
             throw exception;
-        }
+        }*/
         this->_environment = previous;
     }
 
@@ -31,7 +116,91 @@ namespace klong {
         return std::any_cast<bool>(value);
     }
 
-    std::string TreewalkTerp::stringify(std::any value) {
+    bool TreewalkTerp::isFloat(Type* type) {
+        if (type->kind() == TypeKind::PRIMITIVE) {
+            auto primType = dynamic_cast<PrimitiveType*>(type);
+            switch (primType->type()) {
+                case PrimitiveTypeKind::F32:
+                case PrimitiveTypeKind::F64:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
+
+    bool TreewalkTerp::isInteger(Type *type) {
+        if (type->kind() == TypeKind::PRIMITIVE) {
+            auto primType = dynamic_cast<PrimitiveType*>(type);
+            switch (primType->type()) {
+                case PrimitiveTypeKind::U8:
+                case PrimitiveTypeKind::U16:
+                case PrimitiveTypeKind::U32:
+                case PrimitiveTypeKind::U64:
+                case PrimitiveTypeKind::I8:
+                case PrimitiveTypeKind::I16:
+                case PrimitiveTypeKind::I32:
+                case PrimitiveTypeKind::I64:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
+
+    bool TreewalkTerp::isSigned(Type* type) {
+        if (type->kind() == TypeKind::PRIMITIVE) {
+            auto primType = dynamic_cast<PrimitiveType*>(type);
+            switch (primType->type()) {
+                case PrimitiveTypeKind::U8:
+                case PrimitiveTypeKind::U16:
+                case PrimitiveTypeKind::U32:
+                case PrimitiveTypeKind::U64:
+                    return true;
+                case PrimitiveTypeKind::I8:
+                case PrimitiveTypeKind::I16:
+                case PrimitiveTypeKind::I32:
+                case PrimitiveTypeKind::I64:
+                    return false;
+                default:
+                    break;
+            }
+        }
+        throw TerpException("Checking signed on an non number type");
+    }
+
+    std::string TreewalkTerp::stringify(std::any value, Type* type) {
+        getType(x, value, type);
+        switch(kindx) {
+            case PrimitiveTypeKind::STRING:
+                return strx;
+            case PrimitiveTypeKind::I8:
+                return std::to_string(i8x);
+            case PrimitiveTypeKind::I16:
+                return std::to_string(i16x);
+            case PrimitiveTypeKind::I32:
+                return std::to_string(i32x);
+            case PrimitiveTypeKind::I64:
+                return std::to_string(i64x);
+            case PrimitiveTypeKind::U8:
+                return std::to_string(u8x);
+            case PrimitiveTypeKind::U16:
+                return std::to_string(u16x);
+            case PrimitiveTypeKind::U32:
+                return std::to_string(u32x);
+            case PrimitiveTypeKind::U64:
+                return std::to_string(u64x);
+            case PrimitiveTypeKind::F32:
+                return std::to_string(f32x);
+            case PrimitiveTypeKind::F64:
+                return std::to_string(f64x);
+            case PrimitiveTypeKind::BOOL:
+                return booleanx ? "true" : "false";
+            default:
+                throw TerpException("Cannot stringify void type.");
+        }
         return std::any_cast<std::string>(value);
     }
 
@@ -48,7 +217,8 @@ namespace klong {
     }
 
     void TreewalkTerp::visitFunctionStmt(Function* stmt) {
-        // TODO:
+        auto function = std::make_shared<KlongFunction>(stmt, _environment);
+        _environment->define(stmt, function);
     }
 
     void TreewalkTerp::visitParameterStmt(Parameter* stmt) {
@@ -65,7 +235,7 @@ namespace klong {
 
     void TreewalkTerp::visitPrintStmt(Print* stmt) {
         std::any value = evaluate(stmt->expression().get());
-        std::cout << stringify(value) << std::flush;
+        std::cout << stringify(value, stmt->expression()->type().get()) << std::flush;
     }
 
     void TreewalkTerp::visitReturnStmt(Return* stmt) {
@@ -119,47 +289,102 @@ namespace klong {
         _valueOfLastExpr = value;
     }
 
+    std::any TreewalkTerp::isEqual(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(==);
+        throw TerpException("Illegal isEqual. Maybe the typechecker has a bug.");
+    }
+
+    std::any TreewalkTerp::isLessThan(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(<);
+        throw TerpException("Illegal isLessThan. Maybe the typechecker has a bug.");
+    }
+
+    std::any TreewalkTerp::isLessThanEqual(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(<=);
+        throw TerpException("Illegal isLessThanEqual. Maybe the typechecker has a bug.");
+    }
+
+    std::any TreewalkTerp::isGreaterThan(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(>);
+        throw TerpException("Illegal isGreaterThan. Maybe the typechecker has a bug.");
+    }
+
+    std::any TreewalkTerp::isGreaterThanEqual(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(>=);
+        throw TerpException("Illegal isGreaterThanEqual. Maybe the typechecker has a bug.");
+    }
+
+    std::any TreewalkTerp::minus(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(-);
+        throw TerpException("Illegal minus. Maybe the typechecker has a bug.");
+    }
+
+    std::any TreewalkTerp::plus(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(+);
+        auto strl = stringify(left, leftType);
+        auto strr = stringify(right, rightType);
+        return strl + strr;
+    }
+
+    std::any TreewalkTerp::multiplication(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(*);
+        throw TerpException("Illegal multiplication. Maybe the typechecker has a bug.");
+    }
+
+    std::any TreewalkTerp::division(std::any left, Type* leftType, std::any right, Type* rightType) {
+        runBinaryNumberOperation(/);
+        throw TerpException("Illegal division. Maybe the typechecker has a bug.");
+    }
+
     void TreewalkTerp::visitBinaryExpr(Binary* expr) {
         std::any left = evaluate(expr->left().get());
         std::any right = evaluate(expr->right().get());
-        int64_t leftNumber = std::any_cast<int64_t>(left);
-        int64_t rightNumber = std::any_cast<int64_t>(right);
         switch(expr->op()) {
             case BinaryOperation::EQUALITY:
-                _valueOfLastExpr = leftNumber == rightNumber;
+                _valueOfLastExpr = std::any_cast<bool>(
+                        isEqual(left, expr->left()->type().get(), right, expr->right()->type().get()));
                 return;
             case BinaryOperation::INEQUALITY:
-                _valueOfLastExpr = leftNumber != rightNumber;
+                _valueOfLastExpr =
+                        !std::any_cast<bool>(
+                                isEqual(left, expr->left()->type().get(), right, expr->right()->type().get()));
                 return;
             case BinaryOperation::LESS_THAN:
-                _valueOfLastExpr = leftNumber < rightNumber;
+                _valueOfLastExpr = isLessThan(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
             case BinaryOperation::LESS_EQUAL:
-                _valueOfLastExpr = leftNumber <= rightNumber;
+                _valueOfLastExpr = isLessThanEqual(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
             case BinaryOperation::GREATER_THAN:
-                _valueOfLastExpr = leftNumber > rightNumber;
+                _valueOfLastExpr = isGreaterThan(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
             case BinaryOperation::GREATER_EQUAL:
-                _valueOfLastExpr = leftNumber >= rightNumber;
+                _valueOfLastExpr = isGreaterThanEqual(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
             case BinaryOperation::MINUS:
-                _valueOfLastExpr = leftNumber - rightNumber;
+                _valueOfLastExpr = minus(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
             case BinaryOperation::PLUS:
-                _valueOfLastExpr = leftNumber + rightNumber;
+                _valueOfLastExpr = plus(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
             case BinaryOperation::MULTIPLICATION:
-                _valueOfLastExpr = leftNumber * rightNumber;
+                _valueOfLastExpr = multiplication(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
             case BinaryOperation::DIVISION:
-                _valueOfLastExpr = leftNumber / rightNumber;
+                _valueOfLastExpr = division(left, expr->left()->type().get(), right, expr->right()->type().get());
                 return;
         }
     }
 
     void TreewalkTerp::visitCallExpr(Call* expr) {
-        // TODO:
+        std::any callee = evaluate(expr->callee().get());
+
+        std::vector<std::any> args;
+        for (auto& argument : expr->args()) {
+            args.push_back(evaluate(argument.get()));
+        }
+        auto function = std::any_cast<std::shared_ptr<KlongFunction>>(callee);
+        _valueOfLastExpr = function->call(this, std::move(args));
     }
 
     void TreewalkTerp::visitGroupingExpr(Grouping* expr) {
@@ -181,7 +406,6 @@ namespace klong {
         }
 
         _valueOfLastExpr = evaluate(expr->right().get());
-        return;
     }
 
     void TreewalkTerp::visitUnaryExpr(Unary* expr) {

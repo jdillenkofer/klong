@@ -39,7 +39,22 @@ namespace klong {
         return false;
     }
 
-    bool TypeChecker::isNumber(Expr* expr) {
+    bool TypeChecker::isFloat(Expr* expr) {
+        TypePtr type = expr->type();
+        if (type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+            switch(primitiveType->type()) {
+                case PrimitiveTypeKind::F32:
+                case PrimitiveTypeKind::F64:
+                    return true;
+                default:
+                    break;
+            }
+        }
+        return false;
+    }
+
+    bool TypeChecker::isInteger(Expr* expr) {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
@@ -110,10 +125,10 @@ namespace klong {
     }
 
     void TypeChecker::visitPrintStmt(Print* stmt) {
-        // TODO: which types to support in print
-        check(stmt->expression().get());
-        if (!isString(stmt->expression().get())) {
-            throw TypeCheckException(stmt->sourceRange(), "Expect string type in print stmt.");
+        Expr* expr = stmt->expression().get();
+        check(expr);
+        if (!isString(expr) && !isInteger(expr) && !isFloat(expr) && !isBoolean(expr)) {
+            throw TypeCheckException(stmt->sourceRange(), "Expect string, integer, float or boolean type in print stmt.");
         }
     }
 
@@ -184,7 +199,8 @@ namespace klong {
     void TypeChecker::visitBinaryExpr(Binary* expr) {
         check(expr->left().get());
         check(expr->right().get());
-        if (isNumber(expr->left().get()) && isNumber(expr->right().get())) {
+        // TODO: doubles and primitive type hierarchie
+        if (isInteger(expr->left().get()) && isInteger(expr->right().get())) {
             switch(expr->op()) {
                 case BinaryOperation::PLUS:
                 case BinaryOperation::MINUS:
@@ -211,10 +227,11 @@ namespace klong {
 
         if (expr->op() == BinaryOperation::PLUS) {
             std::function<bool(Expr*)> isValidOtherType = [this](Expr* exprPtr) {
-                return isNumber(exprPtr) || isBoolean(exprPtr);
+                return isInteger(exprPtr) || isBoolean(exprPtr);
             };
             if ((isString(expr->left().get()) && isValidOtherType(expr->right().get()))
-                || (isValidOtherType(expr->left().get()) && isString(expr->right().get()))) {
+                || (isValidOtherType(expr->left().get()) && isString(expr->right().get()))
+                || (isString(expr->left().get()) && isString(expr->right().get()))) {
                 expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::STRING));
                 return;
             }
@@ -262,7 +279,7 @@ namespace klong {
         if (expr->operation() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
             throw TypeCheckException(expr->sourceRange(), "'!' expects boolean expression.");
         }
-        if (expr->operation() == UnaryOperation::MINUS && !isNumber(expr->right().get())) {
+        if (expr->operation() == UnaryOperation::MINUS && !isInteger(expr->right().get())) {
             throw TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression.");
         }
         expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));

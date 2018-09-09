@@ -63,6 +63,7 @@ set(HEADER_FILES
     src/terp/treewalk_terp.h
     src/terp/environment.h
     src/terp/terp_exception.h
+    src/terp/klong_function.h
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES} ${HEADER_FILES})

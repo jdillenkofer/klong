@@ -72,7 +72,8 @@ namespace klong {
             void check(Expr* expr);
 
             bool isBoolean(Expr* expr);
-            bool isNumber(Expr* expr);
+            bool isInteger(Expr* expr);
+            bool isFloat(Expr* expr);
             bool isString(Expr* expr);
         private:
             Function* currentFunction = nullptr;
