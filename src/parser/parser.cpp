@@ -176,7 +176,7 @@ namespace klong {
         }
         Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after parameters.");
         TypePtr returnType = nullptr;
-        if (match(TokenType::COLON)) {
+		if (match(TokenType::ARROW)) {
             returnType = typeDeclaration();   
         }
         consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' before " + kind + " body.");
