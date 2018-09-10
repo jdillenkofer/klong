@@ -61,6 +61,7 @@ namespace klong {
         {'*', std::bind(&Lexer::asterisk, std::placeholders::_1, std::placeholders::_2)},
 
         // ampersand
+		{'&', std::bind(&Lexer::and, std::placeholders::_1, std::placeholders::_2) },
         {'&', std::bind(&Lexer::ampersand, std::placeholders::_1, std::placeholders::_2)},
 
         // equal, assignOp
@@ -75,7 +76,8 @@ namespace klong {
         {'<', std::bind(&Lexer::lessThanEqual, std::placeholders::_1, std::placeholders::_2)},
         {'<', std::bind(&Lexer::lessThan, std::placeholders::_1, std::placeholders::_2)},
 
-        // pipe
+        // pipe, or
+		{'|', std::bind(&Lexer:: or , std::placeholders::_1, std::placeholders::_2) },
         {'|', std::bind(&Lexer::pipe, std::placeholders::_1, std::placeholders::_2)},
 
         // block-braces
@@ -96,8 +98,6 @@ namespace klong {
         {'r', std::bind(&Lexer::returnKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // control flow keyword
-        {'a', std::bind(&Lexer::andOp, std::placeholders::_1, std::placeholders::_2)},
-        {'o', std::bind(&Lexer::orOp, std::placeholders::_1, std::placeholders::_2)},
         {'i', std::bind(&Lexer::ifKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'e', std::bind(&Lexer::elseKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'w', std::bind(&Lexer::whileKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -592,8 +592,23 @@ namespace klong {
         return readSingleLineToken(token, TokenType::PIPE);
     }
 
-    bool Lexer::orOp(Token& token) {
-        return matchesKeyword(token, "or", TokenType::OR);
+    bool Lexer::or(Token& token) {
+		auto orStart = _currentPosition;
+		auto startLocation = _sourceLocation;
+		// ignore first |
+		read();
+		if (read() != '|') {
+			_currentPosition = orStart;
+			return false;
+		}
+
+		auto orEnd = _currentPosition;
+		updateLocation();
+		auto endLocation = _sourceLocation;
+		token.type = TokenType::OR;
+		token.sourceRange = { startLocation, endLocation };
+		token.value = _code.substr(orStart, orEnd - orStart);
+		return true;
     }
 
     bool Lexer::minus(Token& token) {
@@ -664,8 +679,23 @@ namespace klong {
         return readSingleLineToken(token, TokenType::AMPERSAND);
     }
 
-    bool Lexer::andOp(Token& token) {
-        return matchesKeyword(token, "and", TokenType::AND);
+    bool Lexer::and(Token& token) {
+		auto andStart = _currentPosition;
+		auto startLocation = _sourceLocation;
+		// ignore first &
+		read();
+		if (read() != '&') {
+			_currentPosition = andStart;
+			return false;
+		}
+
+		auto andEnd = _currentPosition;
+		updateLocation();
+		auto endLocation = _sourceLocation;
+		token.type = TokenType::AND;
+		token.sourceRange = { startLocation, endLocation };
+		token.value = _code.substr(andStart, andEnd - andStart);
+		return true;
     }
 
     bool Lexer::assignOp(Token& token) {
