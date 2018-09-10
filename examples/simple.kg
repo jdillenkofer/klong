@@ -1,13 +1,4 @@
-fun fib(n : i64): i64 {
-    if (n == 0) {
-        return 0;
-    }
-
-    if (n == 1) {
-        return 1;
-    }
-    return fib(n - 1) + fib(n - 2);
-}
+main();
 
 fun main() {
     // a b c
@@ -18,4 +9,13 @@ fun main() {
     return;
 }
 
-main();
+fun fib(n : i64): i64 {
+    if (n == 0) {
+        return 0;
+    }
+
+    if (n == 1) {
+        return 1;
+    }
+    return fib(n - 1) + fib(n - 2);
+}

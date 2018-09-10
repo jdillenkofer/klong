@@ -93,7 +93,16 @@ namespace klong {
         std::shared_ptr<Environment> previous = this->_environment;
         try {
             this->_environment = env;
+            // visit all functions of the current block first
             for (const auto& stmt : statements) {
+                if (stmt->kind() == StatementKind::FUNCTION) {
+                    execute(stmt.get());
+                }
+            }
+            for (const auto& stmt : statements) {
+                if (stmt->kind() == StatementKind::FUNCTION) {
+                    continue;
+                }
                 execute(stmt.get());
             }
         } catch (...) {

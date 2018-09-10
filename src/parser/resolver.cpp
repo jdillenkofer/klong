@@ -20,6 +20,14 @@ namespace klong {
 
     void Resolver::resolve(const std::vector<StmtPtr>& statements) {
         for (const auto& statement : statements) {
+            if (statement->kind() == StatementKind::FUNCTION) {
+                std::shared_ptr<Function> stmt = std::dynamic_pointer_cast<Function>(statement);
+                declare(stmt.get(), stmt->name(), DeclarationType::FUNCTION);
+                define(stmt->name());
+            }
+        }
+
+        for (const auto& statement : statements) {
             resolve(statement.get());
         }
     }
@@ -84,8 +92,6 @@ namespace klong {
     }
 
     void Resolver::visitFunctionStmt(Function* stmt) {
-		declare(stmt, stmt->name(), DeclarationType::FUNCTION);
-		define(stmt->name());
         resolveFunction(stmt, true);
     }
 
