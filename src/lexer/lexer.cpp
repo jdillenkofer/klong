@@ -61,7 +61,7 @@ namespace klong {
         {'*', std::bind(&Lexer::asterisk, std::placeholders::_1, std::placeholders::_2)},
 
         // ampersand
-		{'&', std::bind(&Lexer::and, std::placeholders::_1, std::placeholders::_2) },
+		{'&', std::bind(&Lexer::andOp, std::placeholders::_1, std::placeholders::_2) },
         {'&', std::bind(&Lexer::ampersand, std::placeholders::_1, std::placeholders::_2)},
 
         // equal, assignOp
@@ -77,7 +77,7 @@ namespace klong {
         {'<', std::bind(&Lexer::lessThan, std::placeholders::_1, std::placeholders::_2)},
 
         // pipe, or
-		{'|', std::bind(&Lexer:: or , std::placeholders::_1, std::placeholders::_2) },
+		{'|', std::bind(&Lexer::orOp, std::placeholders::_1, std::placeholders::_2) },
         {'|', std::bind(&Lexer::pipe, std::placeholders::_1, std::placeholders::_2)},
 
         // block-braces
@@ -592,7 +592,7 @@ namespace klong {
         return readSingleLineToken(token, TokenType::PIPE);
     }
 
-    bool Lexer::or(Token& token) {
+    bool Lexer::orOp(Token& token) {
 		auto orStart = _currentPosition;
 		auto startLocation = _sourceLocation;
 		// ignore first |
@@ -679,7 +679,7 @@ namespace klong {
         return readSingleLineToken(token, TokenType::AMPERSAND);
     }
 
-    bool Lexer::and(Token& token) {
+    bool Lexer::andOp(Token& token) {
 		auto andStart = _currentPosition;
 		auto startLocation = _sourceLocation;
 		// ignore first &

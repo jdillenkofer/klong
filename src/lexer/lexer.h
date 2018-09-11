@@ -62,7 +62,7 @@ namespace klong {
             bool backslash(Token& token);
             bool backquote(Token& token);
             bool pipe(Token& token);
-            bool or(Token& token);
+            bool orOp(Token& token);
             bool slash(Token& token);
             bool caret(Token& token);
             bool tilde(Token& token);
@@ -74,7 +74,7 @@ namespace klong {
             bool question(Token& token);
             bool asterisk(Token& token);
             bool ampersand(Token& token);
-            bool and(Token& token);
+            bool andOp(Token& token);
             bool assignOp(Token& token);
             bool equal(Token& token);
             bool notEqual(Token& token);
