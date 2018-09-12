@@ -24,7 +24,7 @@ namespace klong {
                 _charPos++;
             }
 
-            const std::string& filepath() const {
+            std::string filepath() const {
                 return _source->path();
             }
 

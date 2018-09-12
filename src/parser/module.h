@@ -13,8 +13,8 @@ namespace klong {
     
     class Module {
         public:
-            Module(std::vector<StmtPtr>&& statements):
-                _statements(statements) {
+            Module(std::string filename, std::vector<StmtPtr>&& statements):
+                _statements(statements), _filename(filename) {
 
             }
 
@@ -26,8 +26,13 @@ namespace klong {
                 return _statements;
             }
 
+            std::string filename() const {
+                return _filename;
+            }
+
         private:
             std::vector<StmtPtr> _statements;
+            std::string _filename;
     };
 
     using ModulePtr = std::shared_ptr<Module>;

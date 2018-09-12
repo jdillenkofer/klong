@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.11)
 project(klong)
 
+find_package(LLVM REQUIRED CONFIG)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
 set(EXECUTABLE_NAME
     klong
 )
@@ -30,7 +35,7 @@ if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" ST
      -Wmissing-field-initializers \
      -fno-common \
      -pedantic \
-     -std=c++2a")
+     -std=c++17")
 endif()
 
 if(MSVC)
@@ -38,6 +43,8 @@ if(MSVC)
 endif(MSVC)
 
 include_directories(src/)
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
 
 set(SOURCE_FILES
     src/main.cpp
@@ -47,7 +54,7 @@ set(SOURCE_FILES
     src/parser/type_checker.cpp
     src/terp/treewalk_terp.cpp
     src/terp/environment.cpp
-)
+    src/codegen/LLVMEmitter.cpp)
 
 set(HEADER_FILES
     src/common/source_file.h
@@ -68,6 +75,13 @@ set(HEADER_FILES
     src/terp/environment.h
     src/terp/terp_exception.h
     src/terp/klong_function.h
-)
+    src/codegen/LLVMEmitter.h)
+
+# Find the libraries that correspond to the LLVM components
+# that we wish to use
+llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+# Link against LLVM libraries
+target_link_libraries(${EXECUTABLE_NAME} ${llvm_libs})

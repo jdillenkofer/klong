@@ -32,9 +32,7 @@ namespace klong {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
-            if (primitiveType->type() == PrimitiveTypeKind::BOOL) {
-                return true;
-            }
+            return primitiveType->isBoolean();
         }
         return false;
     }
@@ -43,13 +41,7 @@ namespace klong {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
-            switch(primitiveType->type()) {
-                case PrimitiveTypeKind::F32:
-                case PrimitiveTypeKind::F64:
-                    return true;
-                default:
-                    break;
-            }
+            return primitiveType->isFloat();
         }
         return false;
     }
@@ -58,19 +50,7 @@ namespace klong {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
-            switch(primitiveType->type()) {
-                case PrimitiveTypeKind::U8:
-                case PrimitiveTypeKind::U16:
-                case PrimitiveTypeKind::U32:
-                case PrimitiveTypeKind::U64:
-                case PrimitiveTypeKind::I8:
-                case PrimitiveTypeKind::I16:
-                case PrimitiveTypeKind::I32:
-                case PrimitiveTypeKind::I64:
-                    return true;
-                default:
-                    break;
-            }
+            return primitiveType->isInteger();
         }
         return false;
     }
@@ -79,12 +59,7 @@ namespace klong {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
-            switch(primitiveType->type()) {
-                case PrimitiveTypeKind::STRING:
-                    return true;
-                default:
-                    break;
-            }
+            return primitiveType->isString();
         }
         return false;
     }
@@ -236,7 +211,7 @@ namespace klong {
                 return;
             }
         }
-        throw TypeCheckException(expr->sourceRange(), "Illegal type in binary operation.");
+        throw TypeCheckException(expr->sourceRange(), "Illegal type in binary op.");
     }
 
     void TypeChecker::visitCallExpr(Call* expr) {
@@ -276,10 +251,10 @@ namespace klong {
 
     void TypeChecker::visitUnaryExpr(Unary* expr) {
         check(expr->right().get());
-        if (expr->operation() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
+        if (expr->op() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
             throw TypeCheckException(expr->sourceRange(), "'!' expects boolean expression.");
         }
-        if (expr->operation() == UnaryOperation::MINUS && !isInteger(expr->right().get())) {
+        if (expr->op() == UnaryOperation::MINUS && !isInteger(expr->right().get())) {
             throw TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression.");
         }
         expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));

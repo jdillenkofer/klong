@@ -9,7 +9,12 @@ namespace klong {
         while(!isAtEnd()) {
             statements.push_back(std::move(declarationStmt()));
         }
-        return std::make_shared<Module>(std::move(statements));
+        Token lastToken = previous();
+        std::string moduleName = "defaultModule";
+        if (lastToken.sourceRange.start.valid()) {
+            moduleName = lastToken.sourceRange.start.filepath();
+        }
+        return std::make_shared<Module>(moduleName, std::move(statements));
     }
 
     Token Parser::consume(TokenType type, std::string errorMessage) {

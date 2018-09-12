@@ -338,7 +338,7 @@ namespace klong {
                 visitor->visitUnaryExpr(this);
             }
 
-            UnaryOperation operation() const {
+            UnaryOperation op() const {
                 return _op;
             }
 

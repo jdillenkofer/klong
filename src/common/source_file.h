@@ -7,17 +7,17 @@
 namespace klong {
     class SourceFile {
         public:
-        SourceFile(const std::string& path):
-            _path(path) {
+        SourceFile(std::string path):
+            _path(std::move(path)) {
         
         }
 
-        SourceFile(const std::string& path, const std::string& code):
-            _path(path), _code(code) {
+        SourceFile(std::string path, std::string code):
+            _path(std::move(path)), _code(std::move(code)) {
 
         }
 
-        inline bool loadFromFile() {
+        bool loadFromFile() {
             std::ifstream file(_path);
             std::stringstream input_buffer;
             if (!file) {
@@ -30,11 +30,11 @@ namespace klong {
             return true;
         }
 
-        inline const std::string& code() const {
+        const std::string& code() const {
             return _code;
         }
 
-        inline const std::string& path() const {
+        const std::string& path() const {
             return _path;
         }
 

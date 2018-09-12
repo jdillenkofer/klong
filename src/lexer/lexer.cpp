@@ -218,7 +218,7 @@ namespace klong {
         updateLocation();
 
         auto ch = read(false);
-        Token token {{ &_source, &_source }, TokenType::NONE, std::string(1, ch)};
+        Token token {{ _source, _source }, TokenType::NONE, std::string(1, ch)};
 
         auto case_range = cases.equal_range(ch);
         bool hasFoundMatchingCase = false;
@@ -803,7 +803,7 @@ namespace klong {
     }
 
     bool Lexer::characterLiteral(Token& token) {
-        auto code = _source.code();
+        auto code = _source->code();
         auto characterLiteralStart = _currentPosition;
         auto startLocation = _sourceLocation;
         char content;

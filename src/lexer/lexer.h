@@ -12,7 +12,8 @@ namespace klong {
         public:
             using LexerCaseCallable = std::function<bool (Lexer*, Token&)>;
 
-            Lexer(SourceFile source) : _source(source), _code(source.code()), _sourceLocation(&source) {
+            Lexer(SourceFile* source) : _source(source), _code(source->code()) {
+                _sourceLocation = SourceLocation(source);
             }
 
             bool hasNext() const;
@@ -114,7 +115,7 @@ namespace klong {
         private:
             static std::multimap<char, LexerCaseCallable> cases;
             
-            SourceFile _source;
+            SourceFile* _source;
             std::string _code;
             SourceLocation _sourceLocation;
             size_t _currentPosition = 0;

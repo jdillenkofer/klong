@@ -410,12 +410,12 @@ namespace klong {
 
     void TreewalkTerp::visitUnaryExpr(Unary* expr) {
         std::any value = evaluate(expr->right().get());
-        if (expr->operation() == UnaryOperation::NOT) {
+        if (expr->op() == UnaryOperation::NOT) {
             _valueOfLastExpr = !isTruthy(value);
             return;
         }
 
-        if (expr->operation() == UnaryOperation::MINUS) {
+        if (expr->op() == UnaryOperation::MINUS) {
             // TODO: fix this
             _valueOfLastExpr = -std::any_cast<int64_t>(value);
             return;

@@ -145,6 +145,60 @@ namespace klong {
                 return false;
             }
 
+            bool isBoolean() const {
+                return type() == PrimitiveTypeKind::BOOL;
+            }
+
+            bool isString() const {
+                switch(type()) {
+                    case PrimitiveTypeKind::STRING:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            bool isInteger() const {
+                switch(type()) {
+                    case PrimitiveTypeKind::U8:
+                    case PrimitiveTypeKind::U16:
+                    case PrimitiveTypeKind::U32:
+                    case PrimitiveTypeKind::U64:
+                    case PrimitiveTypeKind::I8:
+                    case PrimitiveTypeKind::I16:
+                    case PrimitiveTypeKind::I32:
+                    case PrimitiveTypeKind::I64:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            bool isSigned() const {
+                switch(type()) {
+                    case PrimitiveTypeKind::I8:
+                    case PrimitiveTypeKind::I16:
+                    case PrimitiveTypeKind::I32:
+                    case PrimitiveTypeKind::I64:
+                        return true;
+                    case PrimitiveTypeKind::U8:
+                    case PrimitiveTypeKind::U16:
+                    case PrimitiveTypeKind::U32:
+                    case PrimitiveTypeKind::U64:
+                    default:
+                        return false;
+                }
+            }
+
+            bool isFloat() const {
+                switch(type()) {
+                    case PrimitiveTypeKind::F32:
+                    case PrimitiveTypeKind::F64:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
 
             Type* clone() const {
                 return new PrimitiveType(SourceRange(), this->type());
