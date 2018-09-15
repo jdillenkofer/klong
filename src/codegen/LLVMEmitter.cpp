@@ -121,7 +121,28 @@ namespace klong {
     }
 
     void LLVMEmitter::visitWhileStmt(While* stmt) {
+        llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
 
+        llvm::BasicBlock* whileCondBB = llvm::BasicBlock::Create(context, "whileCond", function);
+        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(context, "whileBody");
+        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(context, "mergeWhile");
+
+        IRBuilder.CreateBr(whileCondBB);
+
+        IRBuilder.SetInsertPoint(whileCondBB);
+        llvm::Value* condV = emit(stmt->condition().get());
+        IRBuilder.CreateCondBr(condV, whileBodyBB, mergeWhileBB);
+        function->getBasicBlockList().push_back(whileBodyBB);
+
+        IRBuilder.SetInsertPoint(whileBodyBB);
+
+        emit(stmt->body().get());
+        IRBuilder.CreateBr(whileCondBB);
+
+
+        function->getBasicBlockList().push_back(mergeWhileBB);
+
+        IRBuilder.SetInsertPoint(mergeWhileBB);
     }
 
     void LLVMEmitter::visitForStmt(For* stmt) {

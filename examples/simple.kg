@@ -1,7 +1,12 @@
 fun main() -> i64 {
     // a b c
-    const i = 30;
-    return fib(i);
+    let i = 0;
+    let sum = 0;
+    while(i < 5) {
+        sum = sum + fib(i);
+        i = i + 1;
+    }
+    return sum;
 }
 
 fun fib(n : i64) -> i64 {
