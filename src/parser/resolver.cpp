@@ -75,6 +75,12 @@ namespace klong {
 
     // Module
     void Resolver::visitModule(Module* module) {
+        for (auto& stmt : module->statements()) {
+            if (stmt->kind() != StatementKind::FUNCTION && stmt->kind() != StatementKind::CONST
+            && stmt->kind() != StatementKind::LET && stmt->kind() != StatementKind::COMMENT) {
+                throw ResolveException(stmt->sourceRange(), "Illegal top level statement.");
+            }
+        }
         enterScope();
         resolve(module->statements());
         exitScope();

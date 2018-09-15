@@ -93,16 +93,7 @@ namespace klong {
         std::shared_ptr<Environment> previous = this->_environment;
         try {
             this->_environment = env;
-            // visit all functions of the current block first
             for (const auto& stmt : statements) {
-                if (stmt->kind() == StatementKind::FUNCTION) {
-                    execute(stmt.get());
-                }
-            }
-            for (const auto& stmt : statements) {
-                if (stmt->kind() == StatementKind::FUNCTION) {
-                    continue;
-                }
                 execute(stmt.get());
             }
         } catch (...) {
@@ -205,7 +196,32 @@ namespace klong {
     }
 
     void TreewalkTerp::visitModule(Module* module) {
-        executeBlock(module->statements(), std::make_shared<Environment>(_environment));
+        Function* mainFunction = nullptr;
+        // visit all functions of the current block first
+        for (const auto& stmt : module->statements()) {
+            if (stmt->kind() == StatementKind::FUNCTION
+                || stmt->kind() == StatementKind::LET
+                || stmt->kind() == StatementKind::CONST) {
+                execute(stmt.get());
+            }
+            if (stmt->kind() == StatementKind::FUNCTION) {
+                Function* func = dynamic_cast<Function*>(stmt.get());
+                if (func->name() == "main") {
+                    mainFunction = func;
+                }
+            }
+        }
+        for (const auto& stmt : module->statements()) {
+            if (stmt->kind() == StatementKind::FUNCTION
+                || stmt->kind() == StatementKind::LET
+                || stmt->kind() == StatementKind::CONST) {
+                continue;
+            }
+            execute(stmt.get());
+        }
+
+        auto functionCallable = std::any_cast<std::shared_ptr<KlongFunction>>(_environment->get(mainFunction));
+        functionCallable->call(this, std::vector<std::any>());
     }
 
     void TreewalkTerp::visitBlockStmt(Block* stmt) {

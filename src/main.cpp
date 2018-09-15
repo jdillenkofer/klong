@@ -31,10 +31,10 @@ int main(int argc, char* argv[]) {
     module->accept(&resolver);
     auto typeChecker = TypeChecker();
     module->accept(&typeChecker);
-//    auto interpreter = TreewalkTerp();
-//    module->accept(&interpreter);
-    auto llvmEmitter = LLVMEmitter();
-    module->accept(&llvmEmitter);
-    llvmEmitter.module()->print(llvm::outs(), nullptr);
+    auto interpreter = TreewalkTerp();
+    module->accept(&interpreter);
+//    auto llvmEmitter = LLVMEmitter();
+//    module->accept(&llvmEmitter);
+//    llvmEmitter.module()->print(llvm::outs(), nullptr);
     return 0;
 }
