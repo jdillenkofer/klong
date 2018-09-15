@@ -66,11 +66,12 @@ namespace klong {
 
         private:
             llvm::Value* emit(Expr* expr);
-            void emit(Stmt* stmt);
+            llvm::Value* emit(Stmt* stmt);
             void emitBlock(const std::vector<StmtPtr>& statements);
         private:
             std::unique_ptr<llvm::Module> _module;
             llvm::Value* _valueOfLastExpr;
-            llvm::BasicBlock* _currentBlock;
+            llvm::Type* _valueOfLastType;
+            std::map<Stmt*, llvm::Value*> _namedValues;
     };
 }
