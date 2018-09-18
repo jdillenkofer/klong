@@ -4,7 +4,7 @@ fun main() -> i64 {
     for(let i = 0; i < 5; i = i + 1) {
         sum = sum + fib(i);
     }
-    return sum;
+    return sum % 2; // 7 % 2 should return 1
 }
 
 fun fib(n : i64) -> i64 {

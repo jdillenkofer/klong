@@ -532,7 +532,7 @@ namespace klong {
     ExprPtr Parser::multiplicationExpr() {
         ExprPtr expr = unaryExpr();
 
-        while(match(TokenType::SLASH, TokenType::ASTERISK)) {
+        while(match(TokenType::SLASH, TokenType::ASTERISK, TokenType::PERCENT)) {
             Token op = previous();
             BinaryOperation binaryOperation;
             switch (op.type) {
@@ -541,6 +541,9 @@ namespace klong {
                     break;
                 case TokenType::ASTERISK:
                     binaryOperation = BinaryOperation::MULTIPLICATION;
+                    break;
+                case TokenType::PERCENT:
+                    binaryOperation = BinaryOperation::MODULO;
                     break;
                 default:
                     throw ParseException(op.sourceRange, "Expect '*' or '/' Token.");

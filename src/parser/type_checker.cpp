@@ -175,12 +175,14 @@ namespace klong {
         check(expr->left().get());
         check(expr->right().get());
         // TODO: doubles and primitive type hierarchie
-        if (isInteger(expr->left().get()) && isInteger(expr->right().get())) {
+        if ((isInteger(expr->left().get()) && isInteger(expr->right().get())) ||
+                (isFloat(expr->left().get()) && isFloat(expr->right().get()))) {
             switch(expr->op()) {
                 case BinaryOperation::PLUS:
                 case BinaryOperation::MINUS:
                 case BinaryOperation::MULTIPLICATION:
                 case BinaryOperation::DIVISION:
+                case BinaryOperation::MODULO:
                 {
                     // TODO: cast to biggest number type
                     expr->type(std::shared_ptr<Type>(expr->left()->type()->clone()));
@@ -202,7 +204,7 @@ namespace klong {
 
         if (expr->op() == BinaryOperation::PLUS) {
             std::function<bool(Expr*)> isValidOtherType = [this](Expr* exprPtr) {
-                return isInteger(exprPtr) || isBoolean(exprPtr);
+                return isFloat(exprPtr) || isInteger(exprPtr) || isBoolean(exprPtr);
             };
             if ((isString(expr->left().get()) && isValidOtherType(expr->right().get()))
                 || (isValidOtherType(expr->left().get()) && isString(expr->right().get()))

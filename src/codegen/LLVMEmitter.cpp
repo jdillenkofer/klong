@@ -237,6 +237,13 @@ namespace klong {
                         _valueOfLastExpr = IRBuilder.CreateUDiv(left, right);
                     }
                     break;
+                case BinaryOperation::MODULO:
+                    if (type->isSigned()) {
+                        _valueOfLastExpr = IRBuilder.CreateSRem(left, right);
+                    } else {
+                        _valueOfLastExpr = IRBuilder.CreateURem(left, right);
+                    }
+                    break;
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = IRBuilder.CreateICmpEQ(left, right);
                     break;
@@ -289,6 +296,9 @@ namespace klong {
                     break;
                 case BinaryOperation::DIVISION:
                     _valueOfLastExpr = IRBuilder.CreateFDiv(left, right);
+                    break;
+                case BinaryOperation::MODULO:
+                    _valueOfLastExpr = IRBuilder.CreateFRem(left, right);
                     break;
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = IRBuilder.CreateFCmpUEQ(left, right);

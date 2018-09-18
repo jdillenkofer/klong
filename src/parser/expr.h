@@ -85,6 +85,7 @@ namespace klong {
         MINUS,
         MULTIPLICATION,
         DIVISION,
+        MODULO,
         EQUALITY,
         INEQUALITY,
         GREATER_THAN,
