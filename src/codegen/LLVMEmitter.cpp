@@ -92,9 +92,9 @@ namespace klong {
             for (auto& arg : function->args()) {
                 stmt->params()[i]->type()->accept(this);
                 llvm::Type* paramType = _valueOfLastType;
-                auto paramAlloca = IRBuilder.CreateAlloca(paramType);
-                IRBuilder.CreateStore(&arg, paramAlloca);
-                _namedValues[stmt->params()[i].get()] = paramAlloca;
+                auto param = IRBuilder.CreateAlloca(paramType);
+                IRBuilder.CreateStore(&arg, param);
+                _namedValues[stmt->params()[i].get()] = param;
                 i++;
             }
         }
@@ -193,7 +193,9 @@ namespace klong {
         IRBuilder.CreateBr(forInitBB);
 
         IRBuilder.SetInsertPoint(forInitBB);
-        emit(stmt->initializer().get());
+        if (stmt->initializer() != nullptr) {
+            emit(stmt->initializer().get());
+        }
         IRBuilder.CreateBr(forCondBB);
 
         IRBuilder.SetInsertPoint(forCondBB);
@@ -203,7 +205,9 @@ namespace klong {
 
         IRBuilder.SetInsertPoint(forBodyBB);
         emit(stmt->body().get());
-        emit(stmt->increment().get());
+        if (stmt->increment() != nullptr) {
+            emit(stmt->increment().get());
+        }
         IRBuilder.CreateBr(forCondBB);
         function->getBasicBlockList().push_back(forBodyBB);
 
