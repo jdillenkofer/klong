@@ -52,8 +52,6 @@ set(SOURCE_FILES
     src/parser/parser.cpp
     src/parser/resolver.cpp
     src/parser/type_checker.cpp
-    src/terp/treewalk_terp.cpp
-    src/terp/environment.cpp
     src/codegen/LLVMEmitter.cpp)
 
 set(HEADER_FILES
@@ -71,10 +69,6 @@ set(HEADER_FILES
     src/common/source_range.h
     src/parser/resolver.h
     src/parser/type_checker.h
-    src/terp/treewalk_terp.h
-    src/terp/environment.h
-    src/terp/terp_exception.h
-    src/terp/klong_function.h
     src/codegen/LLVMEmitter.h)
 
 # Find the libraries that correspond to the LLVM components

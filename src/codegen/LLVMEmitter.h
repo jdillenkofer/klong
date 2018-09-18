@@ -1,18 +1,10 @@
 #pragma once
 
-#include <parser/stmt.h>
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
+#include "../parser/stmt.h"
+#include "../parser/visitor.h"
+
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "../parser/visitor.h"
 
 namespace klong {
 
@@ -21,7 +13,7 @@ namespace klong {
 
     class LLVMEmitter : public Visitor {
         public:
-            LLVMEmitter() = default;
+            LLVMEmitter();
 
             // Module
             void visitModule(Module* module) override;
@@ -60,9 +52,11 @@ namespace klong {
             void visitPrimitiveType(PrimitiveType *type) override;
             void visitSimpleType(SimpleType *type) override;
 
-            llvm::Module* module() const {
-                return _module.get();
-            }
+            void printIR();
+            bool generateObjectFile(std::string outputFilename,
+                                    std::string targetTriple = llvm::sys::getDefaultTargetTriple(),
+                                    std::string cpu = "generic",
+                                    std::string features = "");
 
         private:
             llvm::Value* emit(Expr* expr);
@@ -70,8 +64,9 @@ namespace klong {
             void emitBlock(const std::vector<StmtPtr>& statements);
         private:
             std::unique_ptr<llvm::Module> _module;
-            llvm::Value* _valueOfLastExpr;
-            llvm::Type* _valueOfLastType;
+            llvm::Value* _valueOfLastExpr = nullptr;
+            llvm::Type* _valueOfLastType = nullptr;
             std::map<Stmt*, llvm::Value*> _namedValues;
+            static bool _initialized;
     };
 }

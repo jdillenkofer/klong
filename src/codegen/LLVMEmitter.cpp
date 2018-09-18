@@ -4,7 +4,39 @@
 #include "../parser/stmt.h"
 #include "../parser/expr.h"
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
+
 namespace klong {
+
+    bool LLVMEmitter::_initialized = false;
+
+    LLVMEmitter::LLVMEmitter() {
+        if (!_initialized) {
+            llvm::InitializeAllTargetInfos();
+            llvm::InitializeAllTargets();
+            llvm::InitializeAllTargetMCs();
+            llvm::InitializeAllAsmParsers();
+            llvm::InitializeAllAsmPrinters();
+            _initialized = true;
+        }
+    }
 
     llvm::Value* LLVMEmitter::emit(Expr* expr) {
         expr->accept(this);
@@ -58,7 +90,11 @@ namespace klong {
         {
             size_t i = 0;
             for (auto& arg : function->args()) {
-                _namedValues[stmt->params()[i].get()] = &arg;
+                stmt->params()[i]->type()->accept(this);
+                llvm::Type* paramType = _valueOfLastType;
+                auto paramAlloca = IRBuilder.CreateAlloca(paramType);
+                IRBuilder.CreateStore(&arg, paramAlloca);
+                _namedValues[stmt->params()[i].get()] = paramAlloca;
                 i++;
             }
         }
@@ -304,6 +340,7 @@ namespace klong {
     void LLVMEmitter::visitVariableExpr(Variable* expr) {
         switch (expr->resolvesTo()->kind()) {
             case StatementKind::LET:
+            case StatementKind::PARAMETER:
             case StatementKind::FUNCTION:
             {
                 llvm::Value* value = _namedValues[expr->resolvesTo()];
@@ -311,7 +348,6 @@ namespace klong {
                 break;
             }
             case StatementKind::CONST:
-            case StatementKind::PARAMETER:
             default:
             {
                 _valueOfLastExpr = _namedValues[expr->resolvesTo()];
@@ -420,5 +456,40 @@ namespace klong {
     void LLVMEmitter::visitSimpleType(SimpleType *type) {
         // TODO: how to handle the other types
         throw 5;
+    }
+
+    void LLVMEmitter::printIR() {
+        _module->print(llvm::outs(), nullptr);
+    }
+
+    bool LLVMEmitter::generateObjectFile(
+            std::string outputFilename,
+            std::string targetTriple,
+            std::string cpu,
+            std::string features) {
+        std::string error;
+        auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
+
+        llvm::TargetOptions opt;
+        auto rm = llvm::Optional<llvm::Reloc::Model>();
+        auto targetMachine = target->createTargetMachine(targetTriple, cpu, features, opt, rm);
+
+        _module->setTargetTriple(targetTriple);
+        _module->setDataLayout(targetMachine->createDataLayout());
+
+        std::error_code error_code;
+        llvm::raw_fd_ostream destination(outputFilename, error_code, llvm::sys::fs::F_None);
+
+        llvm::legacy::PassManager pass;
+        auto fileType = llvm::TargetMachine::CGFT_ObjectFile;
+
+        if (targetMachine->addPassesToEmitFile(pass, destination, fileType)) {
+            llvm::errs() << "TheTargetMachine can't emit a file of this type";
+            return false;
+        }
+
+        pass.run(*_module);
+        destination.flush();
+        return true;
     }
 }
