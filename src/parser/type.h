@@ -109,6 +109,9 @@ namespace klong {
             }
 
             bool matchesSignature(const std::vector<TypePtr>& callSignature) const {
+                if (this->_paramTypes.size() != callSignature.size()) {
+                    return false;
+                }
                 for (size_t i = 0; i < this->_paramTypes.size(); i++) {
                     if (!this->_paramTypes[i]->isEqual(callSignature[i].get())) {
                         return false;
