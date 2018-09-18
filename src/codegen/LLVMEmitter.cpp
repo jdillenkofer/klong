@@ -134,7 +134,8 @@ namespace klong {
     }
 
     void LLVMEmitter::visitPrintStmt(Print* stmt) {
-
+        // TODO: strings and print
+        (void) stmt;
     }
 
     void LLVMEmitter::visitReturnStmt(Return* stmt) {
@@ -182,7 +183,32 @@ namespace klong {
     }
 
     void LLVMEmitter::visitForStmt(For* stmt) {
+        llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
 
+        llvm::BasicBlock* forInitBB = llvm::BasicBlock::Create(context, "forInit", function);
+        llvm::BasicBlock* forCondBB = llvm::BasicBlock::Create(context, "forCond");
+        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(context, "forBody");
+        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(context, "mergeFor");
+
+        IRBuilder.CreateBr(forInitBB);
+
+        IRBuilder.SetInsertPoint(forInitBB);
+        emit(stmt->initializer().get());
+        IRBuilder.CreateBr(forCondBB);
+
+        IRBuilder.SetInsertPoint(forCondBB);
+        llvm::Value* condV = emit(stmt->condition().get());
+        IRBuilder.CreateCondBr(condV, forBodyBB, mergeForBB);
+        function->getBasicBlockList().push_back(forCondBB);
+
+        IRBuilder.SetInsertPoint(forBodyBB);
+        emit(stmt->body().get());
+        emit(stmt->increment().get());
+        IRBuilder.CreateBr(forCondBB);
+        function->getBasicBlockList().push_back(forBodyBB);
+
+        function->getBasicBlockList().push_back(mergeForBB);
+        IRBuilder.SetInsertPoint(mergeForBB);
     }
 
     void LLVMEmitter::visitCommentStmt(Comment* stmt) {
@@ -198,10 +224,6 @@ namespace klong {
         llvm::Value* left = emit(expr->left().get());
         llvm::Value* right = emit(expr->right().get());
         PrimitiveType* type = dynamic_cast<PrimitiveType*>(expr->left()->type().get());
-        if (type == nullptr) {
-            // TODO: exception handling
-            return;
-        }
         if (type->isInteger()) {
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
@@ -455,7 +477,7 @@ namespace klong {
 
     void LLVMEmitter::visitSimpleType(SimpleType *type) {
         // TODO: how to handle the other types
-        throw 5;
+        (void) type;
     }
 
     void LLVMEmitter::printIR() {
