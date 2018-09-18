@@ -113,8 +113,8 @@ namespace klong {
         llvm::Value* condV = emit(stmt->condition().get());
         llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
         llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(context, "thenBranch", function);
-        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(context, "elseBranch");
-        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(context, "mergeBranch");
+        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(context, "elseBranch", function);
+        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(context, "mergeBranch", function);
 
         IRBuilder.CreateCondBr(condV, thenBB, elseBB);
 
@@ -127,9 +127,7 @@ namespace klong {
             emit(stmt->elseBranch().get());
         }
         IRBuilder.CreateBr(mergeBB);
-        function->getBasicBlockList().push_back(elseBB);
 
-        function->getBasicBlockList().push_back(mergeBB);
         IRBuilder.SetInsertPoint(mergeBB);
     }
 
@@ -161,23 +159,19 @@ namespace klong {
         llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
 
         llvm::BasicBlock* whileCondBB = llvm::BasicBlock::Create(context, "whileCond", function);
-        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(context, "whileBody");
-        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(context, "mergeWhile");
+        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(context, "whileBody", function);
+        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(context, "mergeWhile", function);
 
         IRBuilder.CreateBr(whileCondBB);
 
         IRBuilder.SetInsertPoint(whileCondBB);
         llvm::Value* condV = emit(stmt->condition().get());
         IRBuilder.CreateCondBr(condV, whileBodyBB, mergeWhileBB);
-        function->getBasicBlockList().push_back(whileBodyBB);
 
         IRBuilder.SetInsertPoint(whileBodyBB);
 
         emit(stmt->body().get());
         IRBuilder.CreateBr(whileCondBB);
-
-
-        function->getBasicBlockList().push_back(mergeWhileBB);
 
         IRBuilder.SetInsertPoint(mergeWhileBB);
     }
@@ -186,9 +180,9 @@ namespace klong {
         llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
 
         llvm::BasicBlock* forInitBB = llvm::BasicBlock::Create(context, "forInit", function);
-        llvm::BasicBlock* forCondBB = llvm::BasicBlock::Create(context, "forCond");
-        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(context, "forBody");
-        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(context, "mergeFor");
+        llvm::BasicBlock* forCondBB = llvm::BasicBlock::Create(context, "forCond", function);
+        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(context, "forBody", function);
+        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(context, "mergeFor", function);
 
         IRBuilder.CreateBr(forInitBB);
 
@@ -201,7 +195,6 @@ namespace klong {
         IRBuilder.SetInsertPoint(forCondBB);
         llvm::Value* condV = emit(stmt->condition().get());
         IRBuilder.CreateCondBr(condV, forBodyBB, mergeForBB);
-        function->getBasicBlockList().push_back(forCondBB);
 
         IRBuilder.SetInsertPoint(forBodyBB);
         emit(stmt->body().get());
@@ -209,9 +202,7 @@ namespace klong {
             emit(stmt->increment().get());
         }
         IRBuilder.CreateBr(forCondBB);
-        function->getBasicBlockList().push_back(forBodyBB);
 
-        function->getBasicBlockList().push_back(mergeForBB);
         IRBuilder.SetInsertPoint(mergeForBB);
     }
 
