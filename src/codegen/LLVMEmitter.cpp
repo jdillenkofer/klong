@@ -510,7 +510,7 @@ namespace klong {
         llvm::legacy::PassManager pass;
         auto fileType = llvm::TargetMachine::CGFT_ObjectFile;
 
-        if (targetMachine->addPassesToEmitFile(pass, destination, fileType)) {
+        if (targetMachine->addPassesToEmitFile(pass, destination, nullptr, fileType)) {
             llvm::errs() << "TheTargetMachine can't emit a file of this type";
             return false;
         }
