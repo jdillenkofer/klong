@@ -62,8 +62,9 @@ namespace klong {
                 std::shared_ptr<Function> function = std::dynamic_pointer_cast<Function>(stmt);
                 function->functionType()->accept(this);
                 auto functionType = (llvm::FunctionType*) _valueOfLastType;
-                llvm::Function::Create(functionType,
+                auto llvmFunction = llvm::Function::Create(functionType,
                         llvm::Function::ExternalLinkage, function->name(), _module.get());
+                _namedValues[stmt.get()] = llvmFunction;
             }
         }
 
@@ -147,8 +148,13 @@ namespace klong {
     void LLVMEmitter::visitLetStmt(Let* stmt) {
         stmt->type()->accept(this);
         llvm::Type* type = _valueOfLastType;
-        _namedValues[stmt] = IRBuilder.CreateAlloca(type);
-        IRBuilder.CreateStore(emit(stmt->initializer().get()), _namedValues[stmt]);
+        if (stmt->type()->kind() == TypeKind::FUNCTION) {
+            type = llvm::PointerType::getUnqual(type);
+        }
+        auto stackPtr = IRBuilder.CreateAlloca(type);
+        _namedValues[stmt] = stackPtr;
+        auto value = emit(stmt->initializer().get());
+        IRBuilder.CreateStore(value, stackPtr);
     }
 
     void LLVMEmitter::visitConstStmt(Const* stmt) {
@@ -326,8 +332,7 @@ namespace klong {
     }
 
     void LLVMEmitter::visitCallExpr(Call* expr) {
-        Variable* functionVar = dynamic_cast<Variable*>(expr->callee().get());
-        llvm::Function* calleeF = _module->getFunction(functionVar->name());
+        auto calleeF = emit(expr->callee().get());
         std::vector<llvm::Value*> argsV;
         for (auto& arg : expr->args()) {
             argsV.push_back(emit(arg.get()));
@@ -368,12 +373,12 @@ namespace klong {
         switch (expr->resolvesTo()->kind()) {
             case StatementKind::LET:
             case StatementKind::PARAMETER:
-            case StatementKind::FUNCTION:
             {
                 llvm::Value* value = _namedValues[expr->resolvesTo()];
                 _valueOfLastExpr = IRBuilder.CreateLoad(value);
                 break;
             }
+            case StatementKind::FUNCTION:
             case StatementKind::CONST:
             default:
             {
