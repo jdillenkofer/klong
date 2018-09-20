@@ -11,6 +11,7 @@ namespace klong {
     enum class TypeKind {
         FUNCTION,
         PRIMITIVE,
+        POINTER,
         SIMPLE
     };
 
@@ -209,6 +210,36 @@ namespace klong {
 
         private:
             PrimitiveTypeKind _type;
+    };
+
+    class PointerType : public Type {
+    public:
+        PointerType(SourceRange sourceRange, TypePtr type):
+                Type(TypeKind::POINTER, sourceRange), _type(type) {
+        }
+
+        void accept(Visitor* visitor) {
+            visitor->visitPointerType(this);
+        }
+
+        TypePtr pointsTo() const {
+            return _type;
+        }
+
+        bool isEqual(const Type* other) const {
+            if (other->kind() == TypeKind::POINTER) {
+                auto otherPointerType = dynamic_cast<const PointerType*>(other);
+                return this->pointsTo()->isEqual(otherPointerType->pointsTo().get());
+            }
+            return false;
+        }
+
+        Type* clone() const {
+            return new PointerType(SourceRange(), this->pointsTo());
+        }
+
+    private:
+        TypePtr _type;
     };
 
     class SimpleType : public Type {

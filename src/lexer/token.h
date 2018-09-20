@@ -77,6 +77,7 @@ namespace klong {
         FALSE_KEYWORD,
 
         // Types
+        PTR,
         VOID,
         STRING,
         BOOL,

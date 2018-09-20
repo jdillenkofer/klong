@@ -254,6 +254,15 @@ namespace klong {
                         SourceRange { type.sourceRange.start, returnType->sourceRange().end },
                         std::move(argTypes), returnType);
             }
+            case TokenType::PTR:
+            {
+                consume(TokenType::LT_OP, "Expect '<' after ptr keyword.");
+                auto pointsTo = typeDeclaration();
+                auto gtToken = consume(TokenType::GT_OP, "Expect '>' after ptr content.");
+                return std::make_shared<PointerType>(
+                        SourceRange { type.sourceRange.start, gtToken.sourceRange.end },
+                        pointsTo);
+            }
             case TokenType::VOID:
             case TokenType::STRING:
             case TokenType::BOOL:

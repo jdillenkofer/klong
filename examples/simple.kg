@@ -5,7 +5,7 @@ fun main() -> i64 {
     return sum(0, 5, funVariable) % 2; // should return 0
 }
 
-fun sum(from: i64, to: i64, func: (i64) -> i64) -> i64 {
+fun sum(from: i64, to: i64, func: ptr<(i64) -> i64>) -> i64 {
     let sum = 0;
     for(let i = from; i < to; i = i + 1) {
         sum = sum + func(i);

@@ -243,12 +243,17 @@ namespace klong {
         (void) type;
     }
 
-    void Resolver::visitPrimitiveType(PrimitiveType *type) {
+    void Resolver::visitPrimitiveType(PrimitiveType* type) {
         // nothing to do here
         (void) type;
     }
 
-    void Resolver::visitSimpleType(SimpleType *type) {
+    void Resolver::visitPointerType(klong::PointerType* type) {
+        // nothing to do here
+        (void) type;
+    }
+
+    void Resolver::visitSimpleType(SimpleType* type) {
         // nothing to do here
         (void) type;
     }

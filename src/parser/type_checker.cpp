@@ -223,15 +223,19 @@ namespace klong {
             check(arg.get());
             callParamTypes.push_back(arg->type());
         }
-        if (expr->callee()->type()->kind() == TypeKind::FUNCTION) {
-            auto functionType = std::dynamic_pointer_cast<FunctionType>(expr->callee()->type());
-            if (!functionType->matchesSignature(callParamTypes)) {
-                throw TypeCheckException(expr->sourceRange(), "Call Expr doesn't match function signature.");
+        auto calleeType = expr->callee()->type();
+        if (calleeType->kind() == TypeKind::POINTER) {
+            auto calleePointer = std::dynamic_pointer_cast<PointerType>(calleeType);
+            auto functionType = std::dynamic_pointer_cast<FunctionType>(calleePointer->pointsTo());
+            if (functionType != nullptr) {
+                if (!functionType->matchesSignature(callParamTypes)) {
+                    throw TypeCheckException(expr->sourceRange(), "Call Expr doesn't match function signature.");
+                }
+                expr->type(std::shared_ptr<Type>(functionType->returnType()->clone()));
+                return;
             }
-            expr->type(std::shared_ptr<Type>(functionType->returnType()->clone()));
-            return;
         }
-        throw TypeCheckException(expr->sourceRange(), "Callee doesn't resolve to function expression.");
+        throw TypeCheckException(expr->sourceRange(), "Callee doesn't resolve to function pointer expression.");
     }
 
     void TypeChecker::visitGroupingExpr(Grouping* expr) {
@@ -268,7 +272,9 @@ namespace klong {
             case StatementKind::FUNCTION:
             {
                 auto function = dynamic_cast<Function*>(resolvesTo);
-                expr->type(std::shared_ptr<Type>(function->functionType()->clone()));
+                auto clonedFunction = std::shared_ptr<Type>(function->functionType()->clone());
+                auto pointerToClonedFunction = std::make_shared<PointerType>(clonedFunction->sourceRange(), clonedFunction);
+                expr->type(pointerToClonedFunction);
                 break;
             }
             case StatementKind::CONST:
@@ -335,6 +341,11 @@ namespace klong {
     }
 
     void TypeChecker::visitPrimitiveType(PrimitiveType *type) {
+        // nothing to do here
+        (void) type;
+    }
+
+    void TypeChecker::visitPointerType(PointerType* type) {
         // nothing to do here
         (void) type;
     }

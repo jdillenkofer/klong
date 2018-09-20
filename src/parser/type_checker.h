@@ -63,7 +63,8 @@ namespace klong {
 
             // Types
             void visitFunctionType(FunctionType* type) override;
-            void visitPrimitiveType(PrimitiveType *type) override;
+            void visitPrimitiveType(PrimitiveType* type) override;
+            void visitPointerType(PointerType* type) override;
             void visitSimpleType(SimpleType *type) override;
 
         private:
