@@ -148,14 +148,38 @@ namespace klong {
     void LLVMEmitter::visitLetStmt(Let* stmt) {
         stmt->type()->accept(this);
         llvm::Type* type = _valueOfLastType;
-        auto stackPtr = IRBuilder.CreateAlloca(type);
-        _namedValues[stmt] = stackPtr;
-        auto value = emit(stmt->initializer().get());
-        IRBuilder.CreateStore(value, stackPtr);
+
+        if (stmt->isGlobal()) {
+            _module->getOrInsertGlobal(stmt->name(), type);
+            auto global = _module->getNamedGlobal(stmt->name());
+            global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+            global->setInitializer((llvm::Constant*) emit(stmt->initializer().get()));
+            _namedValues[stmt] = global;
+        } else {
+            auto stackPtr = IRBuilder.CreateAlloca(type);
+            _namedValues[stmt] = stackPtr;
+            auto value = emit(stmt->initializer().get());
+            IRBuilder.CreateStore(value, stackPtr);
+        }
     }
 
     void LLVMEmitter::visitConstStmt(Const* stmt) {
-        _namedValues[stmt] = emit(stmt->initializer().get());
+        stmt->type()->accept(this);
+        llvm::Type* type = _valueOfLastType;
+
+        if (stmt->isGlobal()) {
+            _module->getOrInsertGlobal(stmt->name(), type);
+            auto global = _module->getNamedGlobal(stmt->name());
+            global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+            global->setConstant(true);
+            global->setInitializer((llvm::Constant*) emit(stmt->initializer().get()));
+            _namedValues[stmt] = global;
+        } else {
+            auto stackPtr = IRBuilder.CreateAlloca(type);
+            _namedValues[stmt] = stackPtr;
+            auto value = emit(stmt->initializer().get());
+            IRBuilder.CreateStore(value, stackPtr);
+        }
     }
 
     void LLVMEmitter::visitWhileStmt(While* stmt) {
@@ -369,6 +393,7 @@ namespace klong {
     void LLVMEmitter::visitVariableExpr(Variable* expr) {
         switch (expr->resolvesTo()->kind()) {
             case StatementKind::LET:
+            case StatementKind::CONST:
             case StatementKind::PARAMETER:
             {
                 llvm::Value* value = _namedValues[expr->resolvesTo()];
@@ -376,7 +401,6 @@ namespace klong {
                 break;
             }
             case StatementKind::FUNCTION:
-            case StatementKind::CONST:
             default:
             {
                 _valueOfLastExpr = _namedValues[expr->resolvesTo()];

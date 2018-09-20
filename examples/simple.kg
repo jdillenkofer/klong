@@ -1,9 +1,12 @@
+const from = 0;
+const to = 5;
+
 fun main() -> i64 {
     // a b c
     let funVariable = fib;
     funVariable = fibDoubled;
     // allow shadowing
-    let sum = sum(0, 5, funVariable);
+    let sum = sum(from, to, funVariable);
     return sum % 2; // should return 0
 }
 

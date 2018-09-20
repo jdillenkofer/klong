@@ -153,6 +153,8 @@ namespace klong {
     }
     
     std::shared_ptr<Function> Parser::function(const std::string& kind) {
+        auto previousIsInsideFunction = _isInsideFunction;
+        _isInsideFunction = true;
         Token fun = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
         Token leftPar = consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
@@ -191,6 +193,9 @@ namespace klong {
             leftPar.sourceRange.start,
             returnType ? returnType->sourceRange().end : rightPar.sourceRange.end
             }, std::move(paramTypes), returnType);
+
+        _isInsideFunction = previousIsInsideFunction;
+
         return std::make_shared<Function>(SourceRange { fun.sourceRange.start, rightCurlyBrace.sourceRange.end },
                 name.value, std::move(params), functionType, std::move(body));
     }
@@ -215,10 +220,14 @@ namespace klong {
         if (match(TokenType::ASSIGN_OP)) {
             initializer = expression();
         }
+
+        if (!_isInsideFunction && dynamic_cast<Literal*>(initializer.get()) == nullptr) {
+            throw ParseException(initializer->sourceRange(), "Expect a literal as global let initializer.");
+        }
         
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let declaration.");
         return std::make_shared<Let>(SourceRange { let.sourceRange.start, semicolon.sourceRange.end },
-                name.value, type, initializer);
+                name.value, type, initializer, !_isInsideFunction);
     }
 
     std::shared_ptr<Const> Parser::constDeclaration() {
@@ -232,9 +241,13 @@ namespace klong {
         consume(TokenType::ASSIGN_OP, "'const' declarations must be initialized.");
         ExprPtr initializer = expression();
 
+        if (!_isInsideFunction && dynamic_cast<Literal*>(initializer.get()) == nullptr) {
+            throw ParseException(initializer->sourceRange(), "Expect a literal as global const initializer.");
+        }
+
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after const declaration.");
         return std::make_shared<Const>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
-                name.value, type, initializer);
+                name.value, type, initializer, !_isInsideFunction);
     }
 
     TypePtr Parser::typeDeclaration() {

@@ -229,11 +229,12 @@ namespace klong {
 
     class Let : public Stmt {
         public:
-            Let(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer):
+            Let(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer, bool isGlobal):
                 Stmt(StatementKind::LET, sourceRange),
                 _name(std::move(name)),
                 _type(std::move(type)),
-                _initializer(std::move(initializer)) {
+                _initializer(std::move(initializer)),
+                _isGlobal(isGlobal) {
 
             }
 
@@ -241,6 +242,10 @@ namespace klong {
                 visitor->visitLetStmt(this);
             }
 
+            bool isGlobal() {
+                return _isGlobal;
+            }
+
             std::string name() const {
                 return _name;
             }
@@ -261,15 +266,17 @@ namespace klong {
             std::string _name;
             TypePtr _type;
             ExprPtr _initializer;
+            bool _isGlobal;
     };
 
     class Const : public Stmt {
         public:
-            Const(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer):
+            Const(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer, bool isGlobal):
                 Stmt(StatementKind::CONST, sourceRange),
                 _name(std::move(name)),
                 _type(std::move(type)),
-                _initializer(std::move(initializer)) {
+                _initializer(std::move(initializer)),
+                _isGlobal(isGlobal) {
 
             }
 
@@ -277,6 +284,10 @@ namespace klong {
                 visitor->visitConstStmt(this);
             }
 
+            bool isGlobal() {
+                return _isGlobal;
+            }
+
             std::string name() const {
                 return _name;
             }
@@ -297,6 +308,7 @@ namespace klong {
             std::string _name;
             TypePtr _type;
             ExprPtr _initializer;
+            bool _isGlobal;
     };
 
     class While : public Stmt {

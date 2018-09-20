@@ -72,5 +72,6 @@ namespace klong {
             Token _current;
             Token _previous;
             ILexer* _lexer;
+            bool _isInsideFunction = false;
     };
 }
