@@ -93,6 +93,10 @@ namespace klong {
             for (auto& arg : function->args()) {
                 stmt->params()[i]->type()->accept(this);
                 llvm::Type* paramType = _valueOfLastType;
+                // TODO: remove this hack once function Vars are of type pointer to function
+                if (stmt->params()[i]->type()->kind() == TypeKind::FUNCTION) {
+                    paramType = llvm::PointerType::get(paramType, 0);
+                }
                 auto param = IRBuilder.CreateAlloca(paramType);
                 IRBuilder.CreateStore(&arg, param);
                 _namedValues[stmt->params()[i].get()] = param;
@@ -148,8 +152,9 @@ namespace klong {
     void LLVMEmitter::visitLetStmt(Let* stmt) {
         stmt->type()->accept(this);
         llvm::Type* type = _valueOfLastType;
+        // TODO: remove this hack once function Vars are of type pointer to function
         if (stmt->type()->kind() == TypeKind::FUNCTION) {
-            type = llvm::PointerType::getUnqual(type);
+            type = llvm::PointerType::get(type, 0);
         }
         auto stackPtr = IRBuilder.CreateAlloca(type);
         _namedValues[stmt] = stackPtr;
@@ -442,9 +447,17 @@ namespace klong {
         std::vector<llvm::Type*> paramTypes;
         for (auto& t : type->paramTypes()) {
             t->accept(this);
+            // TODO: remove this hack once function Vars are of type pointer to function
+            if (t->kind() == TypeKind::FUNCTION) {
+                _valueOfLastType = llvm::PointerType::get(_valueOfLastType, 0);
+            }
             paramTypes.push_back(_valueOfLastType);
         }
         type->returnType()->accept(this);
+        // TODO: remove this hack once function Vars are of type pointer to function
+        if (type->returnType()->kind() == TypeKind::FUNCTION) {
+            _valueOfLastType = llvm::PointerType::get(_valueOfLastType, 0);
+        }
         llvm::Type* returnType = _valueOfLastType;
         _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
     }

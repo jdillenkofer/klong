@@ -1,12 +1,16 @@
 fun main() -> i64 {
     // a b c
-    let sum = 0;
     let funVariable = fib;
     funVariable = fibDoubled;
-    for(let i = 0; i < 5; i = i + 1) {
-        sum = sum + funVariable(i);
+    return sum(0, 5, funVariable) % 2; // should return 0
+}
+
+fun sum(from: i64, to: i64, func: (i64) -> i64) -> i64 {
+    let sum = 0;
+    for(let i = from; i < to; i = i + 1) {
+        sum = sum + func(i);
     }
-    return sum % 2; // sum(0, 5, fibDoubled(n)) % 2 should return 0
+    return sum;
 }
 
 fun fib(n : i64) -> i64 {
