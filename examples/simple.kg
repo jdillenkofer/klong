@@ -2,7 +2,9 @@ fun main() -> i64 {
     // a b c
     let funVariable = fib;
     funVariable = fibDoubled;
-    return sum(0, 5, funVariable) % 2; // should return 0
+    // allow shadowing
+    let sum = sum(0, 5, funVariable);
+    return sum % 2; // should return 0
 }
 
 fun sum(from: i64, to: i64, func: ptr<(i64) -> i64>) -> i64 {
