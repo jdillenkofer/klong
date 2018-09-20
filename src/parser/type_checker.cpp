@@ -116,24 +116,13 @@ namespace klong {
         }
     }
 
-    void TypeChecker::visitLetStmt(Let* stmt) {
+    void TypeChecker::visitVarDeclStmt(VariableDeclaration* stmt) {
         check(stmt->initializer().get());
         if (stmt->type() == nullptr) {
             stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
         } else {
             if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type().get())) {
-                throw TypeCheckException(stmt->sourceRange(), "initializerType doesn't match let type.");
-            }
-        }
-    }
-
-    void TypeChecker::visitConstStmt(Const* stmt) {
-        check(stmt->initializer().get());
-        if (stmt->type() == nullptr) {
-            stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
-        } else {
-            if (!stmt->type()->isEqual(stmt->initializer()->type().get())) {
-                throw TypeCheckException(stmt->sourceRange(), "initializerType doesn't match const type.");
+                throw TypeCheckException(stmt->sourceRange(), "initializerType doesn't match declaration type.");
             }
         }
     }
@@ -277,16 +266,10 @@ namespace klong {
                 expr->type(pointerToClonedFunction);
                 break;
             }
-            case StatementKind::CONST:
+            case StatementKind::VAR_DECL:
             {
-                auto constStmt = dynamic_cast<Const*>(resolvesTo);
+                auto constStmt = dynamic_cast<VariableDeclaration*>(resolvesTo);
                 expr->type(std::shared_ptr<Type>(constStmt->type()->clone()));
-                break;
-            }
-            case StatementKind::LET:
-            {
-                auto letStmt = dynamic_cast<Let*>(resolvesTo);
-                expr->type(std::shared_ptr<Type>(letStmt->type()->clone()));
                 break;
             }
             case StatementKind::PARAMETER:

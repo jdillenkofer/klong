@@ -208,7 +208,7 @@ namespace klong {
         return statements;
     }
 
-    std::shared_ptr<Let> Parser::letDeclaration() {
+    std::shared_ptr<VariableDeclaration> Parser::letDeclaration() {
         Token let = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
@@ -226,11 +226,11 @@ namespace klong {
         }
         
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let declaration.");
-        return std::make_shared<Let>(SourceRange { let.sourceRange.start, semicolon.sourceRange.end },
-                name.value, type, initializer, !_isInsideFunction);
+        return std::make_shared<VariableDeclaration>(SourceRange { let.sourceRange.start, semicolon.sourceRange.end },
+                name.value, type, initializer, false, !_isInsideFunction);
     }
 
-    std::shared_ptr<Const> Parser::constDeclaration() {
+    std::shared_ptr<VariableDeclaration> Parser::constDeclaration() {
         Token constToken = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
@@ -246,8 +246,8 @@ namespace klong {
         }
 
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after const declaration.");
-        return std::make_shared<Const>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
-                name.value, type, initializer, !_isInsideFunction);
+        return std::make_shared<VariableDeclaration>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
+                name.value, type, initializer, true, !_isInsideFunction);
     }
 
     TypePtr Parser::typeDeclaration() {

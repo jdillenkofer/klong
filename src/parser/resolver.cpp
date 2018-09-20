@@ -76,8 +76,8 @@ namespace klong {
     // Module
     void Resolver::visitModule(Module* module) {
         for (auto& stmt : module->statements()) {
-            if (stmt->kind() != StatementKind::FUNCTION && stmt->kind() != StatementKind::CONST
-            && stmt->kind() != StatementKind::LET && stmt->kind() != StatementKind::COMMENT) {
+            if (stmt->kind() != StatementKind::FUNCTION && stmt->kind() != StatementKind::VAR_DECL
+                && stmt->kind() != StatementKind::COMMENT) {
                 throw ResolveException(stmt->sourceRange(), "Illegal top level statement.");
             }
         }
@@ -136,21 +136,12 @@ namespace klong {
         resolve(stmt->value().get());
     }
 
-    void Resolver::visitLetStmt(Let* stmt) {
+    void Resolver::visitVarDeclStmt(VariableDeclaration* stmt) {
         if (stmt->initializer()) {
             resolve(stmt->initializer().get());
         }
-        declare(stmt, stmt->name(), DeclarationType::LET);
-        if (stmt->initializer()) {
-            define(stmt->name());
-        }
-    }
-
-    void Resolver::visitConstStmt(Const* stmt) {
-        if (stmt->initializer()) {
-            resolve(stmt->initializer().get());
-        }
-        declare(stmt, stmt->name(), DeclarationType::CONST);
+        auto declType = stmt->isConst() ? DeclarationType::CONST : DeclarationType::LET;
+        declare(stmt, stmt->name(), declType);
         if (stmt->initializer()) {
             define(stmt->name());
         }
@@ -179,8 +170,12 @@ namespace klong {
     void Resolver::visitAssignExpr(Assign* expr) {
         resolve(expr->value().get());
         resolveLocal(expr->target().get());
-        if (expr->target()->resolvesTo()->kind() == StatementKind::CONST) {
-            throw ResolveException(expr->sourceRange(), "Cannot reassign 'const'.");
+        auto varDeclRes = expr->target()->resolvesTo();
+        if (varDeclRes->kind() == StatementKind::VAR_DECL) {
+            auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
+            if (varDecl->isConst()) {
+                throw ResolveException(expr->sourceRange(), "Cannot reassign 'const'.");
+            }
         }
     }
 

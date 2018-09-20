@@ -20,8 +20,7 @@ namespace klong {
         IF,
         PRINT,
         RETURN,
-        LET,
-        CONST,
+        VAR_DECL,
         WHILE,
         FOR,
         COMMENT
@@ -227,23 +226,25 @@ namespace klong {
             ExprPtr _value;
     };
 
-    class Let : public Stmt {
+    class VariableDeclaration : public Stmt {
         public:
-            Let(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer, bool isGlobal):
-                Stmt(StatementKind::LET, sourceRange),
+            VariableDeclaration(SourceRange sourceRange,
+                    std::string name,
+                    TypePtr type,
+                    ExprPtr initializer,
+                    bool isConst,
+                    bool isGlobal):
+                Stmt(StatementKind::VAR_DECL, sourceRange),
                 _name(std::move(name)),
                 _type(std::move(type)),
                 _initializer(std::move(initializer)),
+                _isConst(isConst),
                 _isGlobal(isGlobal) {
 
             }
 
             void accept(Visitor* visitor) {
-                visitor->visitLetStmt(this);
-            }
-
-            bool isGlobal() {
-                return _isGlobal;
+                visitor->visitVarDeclStmt(this);
             }
 
             std::string name() const {
@@ -262,52 +263,19 @@ namespace klong {
                 return _initializer;
             }
 
-        private:
-            std::string _name;
-            TypePtr _type;
-            ExprPtr _initializer;
-            bool _isGlobal;
-    };
-
-    class Const : public Stmt {
-        public:
-            Const(SourceRange sourceRange, std::string name, TypePtr type, ExprPtr initializer, bool isGlobal):
-                Stmt(StatementKind::CONST, sourceRange),
-                _name(std::move(name)),
-                _type(std::move(type)),
-                _initializer(std::move(initializer)),
-                _isGlobal(isGlobal) {
-
+            bool isConst() const {
+                return _isConst;
             }
 
-            void accept(Visitor* visitor) {
-                visitor->visitConstStmt(this);
-            }
-
-            bool isGlobal() {
+            bool isGlobal() const {
                 return _isGlobal;
             }
 
-            std::string name() const {
-                return _name;
-            }
-
-            TypePtr type() const {
-                return _type;
-            }
-
-            void type(TypePtr type) {
-                _type = std::move(type);
-            }
-
-            ExprPtr initializer() const {
-                return _initializer;
-            }
-
-        private:
+    private:
             std::string _name;
             TypePtr _type;
             ExprPtr _initializer;
+            bool _isConst;
             bool _isGlobal;
     };
 

@@ -46,8 +46,8 @@ namespace klong {
             StmtPtr declarationStmt();
             std::shared_ptr<Function> function(const std::string& kind);
             std::vector<StmtPtr> blockStmt();
-            std::shared_ptr<Let> letDeclaration();
-            std::shared_ptr<Const> constDeclaration();
+            std::shared_ptr<VariableDeclaration> letDeclaration();
+            std::shared_ptr<VariableDeclaration> constDeclaration();
             TypePtr typeDeclaration();
             std::shared_ptr<If> ifStmt();
             std::shared_ptr<Print> printStmt();

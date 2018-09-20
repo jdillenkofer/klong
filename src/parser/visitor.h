@@ -12,8 +12,7 @@ namespace klong {
     class If;
     class Print;
     class Return;
-    class Let;
-    class Const;
+    class VariableDeclaration;
     class While;
     class For;
     class Comment;
@@ -52,8 +51,7 @@ namespace klong {
             virtual void visitIfStmt(If* stmt) = 0;
             virtual void visitPrintStmt(Print* stmt) = 0;
             virtual void visitReturnStmt(Return* stmt) = 0;
-            virtual void visitLetStmt(Let* stmt) = 0;
-            virtual void visitConstStmt(Const* stmt) = 0;
+            virtual void visitVarDeclStmt(VariableDeclaration* stmt) = 0;
             virtual void visitWhileStmt(While* stmt) = 0;
             virtual void visitForStmt(For* stmt) = 0;
             virtual void visitCommentStmt(Comment* expr) = 0;
