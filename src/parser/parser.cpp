@@ -126,16 +126,28 @@ namespace klong {
 
     StmtPtr Parser::declarationStmt() {
         try {
+            bool isPublic = false;
+            Token pubToken;
+
+            if (match(TokenType::PUB)) {
+                isPublic = true;
+                pubToken = previous();
+            }
+
             if (match(TokenType::FUN)) {
-                return function("function");
+                return function("function", isPublic);
             }
 
             if (match(TokenType::LET)) {
-                return letDeclaration();
+                return letDeclaration(isPublic);
             }
 
             if (match(TokenType::CONST)) {
-                return constDeclaration();
+                return constDeclaration(isPublic);
+            }
+
+            if (isPublic) {
+                throw ParseException(pubToken.sourceRange, "Illegal pub Keyword.");
             }
 
             if (match(TokenType::LINE_COMMENT, TokenType::BLOCK_COMMENT)) {
@@ -152,7 +164,7 @@ namespace klong {
         }
     }
     
-    std::shared_ptr<Function> Parser::function(const std::string& kind) {
+    std::shared_ptr<Function> Parser::function(const std::string& kind, bool isPublic) {
         auto previousIsInsideFunction = _isInsideFunction;
         _isInsideFunction = true;
         Token fun = previous();
@@ -197,7 +209,7 @@ namespace klong {
         _isInsideFunction = previousIsInsideFunction;
 
         return std::make_shared<Function>(SourceRange { fun.sourceRange.start, rightCurlyBrace.sourceRange.end },
-                name.value, std::move(params), functionType, std::move(body));
+                name.value, std::move(params), functionType, std::move(body), isPublic);
     }
 
     std::vector<StmtPtr> Parser::blockStmt() {
@@ -208,7 +220,7 @@ namespace klong {
         return statements;
     }
 
-    std::shared_ptr<VariableDeclaration> Parser::letDeclaration() {
+    std::shared_ptr<VariableDeclaration> Parser::letDeclaration(bool isPublic) {
         Token let = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
@@ -227,10 +239,10 @@ namespace klong {
         
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let declaration.");
         return std::make_shared<VariableDeclaration>(SourceRange { let.sourceRange.start, semicolon.sourceRange.end },
-                name.value, type, initializer, false, !_isInsideFunction);
+                name.value, type, initializer, isPublic, false, !_isInsideFunction);
     }
 
-    std::shared_ptr<VariableDeclaration> Parser::constDeclaration() {
+    std::shared_ptr<VariableDeclaration> Parser::constDeclaration(bool isPublic) {
         Token constToken = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
@@ -247,7 +259,7 @@ namespace klong {
 
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after const declaration.");
         return std::make_shared<VariableDeclaration>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
-                name.value, type, initializer, true, !_isInsideFunction);
+                name.value, type, initializer, isPublic, true, !_isInsideFunction);
     }
 
     TypePtr Parser::typeDeclaration() {

@@ -15,6 +15,9 @@ namespace klong {
         LINE_COMMENT,
         BLOCK_COMMENT,
 
+        // Modifiers
+        PUB,
+
         // Functions
         FUN,
         PRINT,

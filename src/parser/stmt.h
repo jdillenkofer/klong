@@ -121,12 +121,13 @@ namespace klong {
     class Function : public Stmt {
         public:
             Function(SourceRange sourceRange, std::string name, std::vector<ParameterPtr>&& params,
-                std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body):
+                std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body, bool isPublic):
                 Stmt(StatementKind::FUNCTION, sourceRange),
                 _name(std::move(name)),
                 _params(params),
                 _functionType(std::move(functionType)),
-                _body(body) {
+                _body(body),
+                _isPublic(isPublic) {
 
             }
             void accept(Visitor* visitor) {
@@ -149,11 +150,16 @@ namespace klong {
                 return _body;
             }
 
+            bool isPublic() const {
+                return _isPublic;
+            }
+
         private:
             std::string _name;
             std::vector<ParameterPtr> _params;
             std::shared_ptr<FunctionType> _functionType;
             std::vector<StmtPtr> _body;
+            bool _isPublic;
     };
 
     class If : public Stmt {
@@ -232,12 +238,14 @@ namespace klong {
                     std::string name,
                     TypePtr type,
                     ExprPtr initializer,
+                    bool isPublic,
                     bool isConst,
                     bool isGlobal):
                 Stmt(StatementKind::VAR_DECL, sourceRange),
                 _name(std::move(name)),
                 _type(std::move(type)),
                 _initializer(std::move(initializer)),
+                _isPublic(isPublic),
                 _isConst(isConst),
                 _isGlobal(isGlobal) {
 
@@ -263,6 +271,10 @@ namespace klong {
                 return _initializer;
             }
 
+            bool isPublic() const {
+                return _isPublic;
+            }
+
             bool isConst() const {
                 return _isConst;
             }
@@ -275,6 +287,7 @@ namespace klong {
             std::string _name;
             TypePtr _type;
             ExprPtr _initializer;
+            bool _isPublic;
             bool _isConst;
             bool _isGlobal;
     };

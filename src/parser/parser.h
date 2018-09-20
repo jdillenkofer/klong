@@ -44,10 +44,10 @@ namespace klong {
             std::shared_ptr<PrimitiveType> getPrimitiveTypefromToken(Token token);
 
             StmtPtr declarationStmt();
-            std::shared_ptr<Function> function(const std::string& kind);
+            std::shared_ptr<Function> function(const std::string& kind, bool isPublic = false);
             std::vector<StmtPtr> blockStmt();
-            std::shared_ptr<VariableDeclaration> letDeclaration();
-            std::shared_ptr<VariableDeclaration> constDeclaration();
+            std::shared_ptr<VariableDeclaration> letDeclaration(bool isPublic = false);
+            std::shared_ptr<VariableDeclaration> constDeclaration(bool isPublic = false);
             TypePtr typeDeclaration();
             std::shared_ptr<If> ifStmt();
             std::shared_ptr<Print> printStmt();

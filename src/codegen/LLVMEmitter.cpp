@@ -60,10 +60,14 @@ namespace klong {
         for (auto& stmt : module->statements()) {
             if (stmt->kind() == StatementKind::FUNCTION) {
                 std::shared_ptr<Function> function = std::dynamic_pointer_cast<Function>(stmt);
+                auto linkage = function->isPublic() ? llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage;
+
                 function->functionType()->accept(this);
                 auto functionType = (llvm::FunctionType*) _valueOfLastType;
+
                 auto llvmFunction = llvm::Function::Create(functionType,
-                        llvm::Function::ExternalLinkage, function->name(), _module.get());
+                        linkage, function->name(), _module.get());
+
                 _namedValues[stmt.get()] = llvmFunction;
             }
         }
@@ -152,7 +156,8 @@ namespace klong {
         if (stmt->isGlobal()) {
             _module->getOrInsertGlobal(stmt->name(), type);
             auto global = _module->getNamedGlobal(stmt->name());
-            global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+            auto linkage = stmt->isPublic() ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::InternalLinkage;
+            global->setLinkage(linkage);
             if (stmt->isConst()) {
                 global->setConstant(true);
             }

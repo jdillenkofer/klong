@@ -92,6 +92,9 @@ namespace klong {
         {'[', std::bind(&Lexer::leftSquaredBracket, std::placeholders::_1, std::placeholders::_2)},
         {']', std::bind(&Lexer::rightSquaredBracket, std::placeholders::_1, std::placeholders::_2)},
 
+        // modifier
+        {'p', std::bind(&Lexer::pubKeyword, std::placeholders::_1, std::placeholders::_2)},
+
         // function
         {'f', std::bind(&Lexer::funKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'p', std::bind(&Lexer::printKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -519,6 +522,10 @@ namespace klong {
         token.sourceRange = { startLocation, endLocation };
         token.value = _code.substr(commentStart, commentEnd - commentStart);
         return true;
+    }
+
+    bool Lexer::pubKeyword(Token& token) {
+        return matchesKeyword(token, "pub", TokenType::PUB);
     }
 
     bool Lexer::funKeyword(Token& token) {

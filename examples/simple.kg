@@ -1,7 +1,7 @@
 const from = 0;
 const to = 5;
 
-fun main() -> i64 {
+pub fun main() -> i64 {
     // a b c
     let funVariable = fib;
     funVariable = fibDoubled;
