@@ -150,6 +150,10 @@ namespace klong {
                 throw ParseException(pubToken.sourceRange, "Illegal pub Keyword.");
             }
 
+            if (match(TokenType::EXTERN)) {
+                return externDeclStmt();
+            }
+
             if (match(TokenType::LINE_COMMENT, TokenType::BLOCK_COMMENT)) {
                 Token commentToken = previous();
                 CommentType type = commentToken.type == TokenType::BLOCK_COMMENT ? CommentType::BLOCK : CommentType::LINE;
@@ -162,6 +166,17 @@ namespace klong {
             synchronize();
             return nullptr;
         }
+    }
+
+
+    std::shared_ptr<ExternalDeclaration> Parser::externDeclStmt() {
+        Token ext = previous();
+        Token name = consume(TokenType::IDENTIFIER, "Expect extern name.");
+        consume(TokenType::COLON, "Expect ':' after extern name.");
+        TypePtr type = typeDeclaration();
+        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after extern declaration.");
+        return std::make_shared<ExternalDeclaration>(
+                SourceRange { ext.sourceRange.start, semicolon.sourceRange.end }, name.value, type);
     }
     
     std::shared_ptr<Function> Parser::function(const std::string& kind, bool isPublic) {
@@ -269,9 +284,11 @@ namespace klong {
             case TokenType::LEFT_PAR:
             {
                 std::vector<TypePtr> argTypes;
-                do {
-                    argTypes.push_back(typeDeclaration());
-                } while(match(TokenType::COMMA));
+                if (peek().type != TokenType::RIGHT_PAR) {
+                    do {
+                        argTypes.push_back(typeDeclaration());
+                    } while(match(TokenType::COMMA));
+                }
                 consume(TokenType::RIGHT_PAR, "Expect ')' as type list terminator.");
                 consume(TokenType::ARROW, "Expect '->' after type list in function type.");
                 auto returnType = typeDeclaration();

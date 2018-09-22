@@ -78,6 +78,11 @@ namespace klong {
         check(stmt->expression().get());
     }
 
+    void TypeChecker::visitExtDeclStmt(ExternalDeclaration* stmt) {
+        // nothing to do here
+        (void) stmt;
+    }
+
     void TypeChecker::visitFunctionStmt(Function* stmt) {
         auto previousFunction = currentFunction;
         currentFunction = stmt;
@@ -266,10 +271,20 @@ namespace klong {
                 expr->type(pointerToClonedFunction);
                 break;
             }
+            case StatementKind::EXT_DECL:
+            {
+                auto extDecl = dynamic_cast<ExternalDeclaration*>(resolvesTo);
+                auto clonedType = std::shared_ptr<Type>(extDecl->type()->clone());
+                if (clonedType->kind() == TypeKind::FUNCTION) {
+                    clonedType = std::make_shared<PointerType>(clonedType->sourceRange(), clonedType);
+                }
+                expr->type(clonedType);
+                break;
+            }
             case StatementKind::VAR_DECL:
             {
-                auto constStmt = dynamic_cast<VariableDeclaration*>(resolvesTo);
-                expr->type(std::shared_ptr<Type>(constStmt->type()->clone()));
+                auto varDecl = dynamic_cast<VariableDeclaration*>(resolvesTo);
+                expr->type(std::shared_ptr<Type>(varDecl->type()->clone()));
                 break;
             }
             case StatementKind::PARAMETER:

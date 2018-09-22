@@ -17,6 +17,7 @@ namespace klong {
 
         // Modifiers
         PUB,
+        EXTERN,
 
         // Functions
         FUN,

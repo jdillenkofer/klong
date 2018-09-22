@@ -85,6 +85,30 @@ namespace klong {
         _valueOfLastExpr = emit(stmt->expression().get());
     }
 
+    void LLVMEmitter::visitExtDeclStmt(ExternalDeclaration* stmt) {
+        stmt->type()->accept(this);
+        auto type = _valueOfLastType;
+
+        bool isFunction = stmt->type()->kind() == TypeKind::FUNCTION;
+        bool isPointer = stmt->type()->kind() == TypeKind::POINTER;
+        if (isPointer) {
+            auto pointerType = dynamic_cast<PointerType*>(stmt->type().get());
+            auto pointsToType = pointerType->pointsTo();
+            if (pointsToType->kind() == TypeKind::FUNCTION) {
+                isFunction = true;
+                pointsToType->accept(this);
+                type = _valueOfLastType;
+            }
+        }
+
+        if (isFunction) {
+            llvm::Function::Create((llvm::FunctionType*) type, llvm::Function::ExternalLinkage, stmt->name(), _module.get());
+            _namedValues[stmt] = _module->getFunction(stmt->name());
+        } else {
+            _namedValues[stmt] = _module->getOrInsertGlobal(stmt->name(), type);
+        }
+    }
+
     void LLVMEmitter::visitFunctionStmt(Function* stmt) {
         llvm::Function* function = _module->getFunction(stmt->name());
 
@@ -347,7 +371,7 @@ namespace klong {
         for (auto& arg : expr->args()) {
             argsV.push_back(emit(arg.get()));
         }
-        _valueOfLastExpr = IRBuilder.CreateCall(calleeF, argsV, "calltmp");
+        _valueOfLastExpr = IRBuilder.CreateCall(calleeF, argsV);
     }
 
     void LLVMEmitter::visitGroupingExpr(Grouping* expr) {

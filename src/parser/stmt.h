@@ -15,6 +15,7 @@ namespace klong {
     enum class StatementKind {
         BLOCK,
         EXPRESSION,
+        EXT_DECL,
         FUNCTION,
         PARAMETER,
         IF,
@@ -88,6 +89,32 @@ namespace klong {
 
         private:
             ExprPtr _expression;
+    };
+
+    class ExternalDeclaration : public Stmt {
+        public:
+            ExternalDeclaration(SourceRange sourceRange, std::string name, TypePtr type):
+                Stmt(StatementKind::EXT_DECL, sourceRange),
+                _name(std::move(name)),
+                _type(type) {
+
+            }
+
+            void accept(Visitor* visitor) {
+                visitor->visitExtDeclStmt(this);
+            }
+
+            std::string name() const {
+                return _name;
+            }
+
+            TypePtr type() const {
+                return _type;
+            }
+
+        private:
+            std::string _name;
+            TypePtr _type;
     };
 
     class Parameter : public Stmt {

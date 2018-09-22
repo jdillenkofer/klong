@@ -77,6 +77,7 @@ namespace klong {
     void Resolver::visitModule(Module* module) {
         for (auto& stmt : module->statements()) {
             if (stmt->kind() != StatementKind::FUNCTION && stmt->kind() != StatementKind::VAR_DECL
+                && stmt->kind() != StatementKind::EXT_DECL
                 && stmt->kind() != StatementKind::COMMENT) {
                 throw ResolveException(stmt->sourceRange(), "Illegal top level statement.");
             }
@@ -95,6 +96,13 @@ namespace klong {
 
     void Resolver::visitExpressionStmt(Expression* stmt) {
         resolve(stmt->expression().get());
+    }
+
+    void Resolver::visitExtDeclStmt(ExternalDeclaration* stmt) {
+        auto type = stmt->type().get();
+        auto declType = type->kind() == TypeKind::FUNCTION ? DeclarationType::FUNCTION : DeclarationType::CONST;
+        declare(stmt, stmt->name(), declType);
+        define(stmt->name());
     }
 
     void Resolver::visitFunctionStmt(Function* stmt) {

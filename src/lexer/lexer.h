@@ -41,6 +41,7 @@ namespace klong {
             bool lineComment(Token& token);
 
             bool pubKeyword(Token& token);
+            bool externKeyword(Token& token);
 
             bool funKeyword(Token& token);
             bool printKeyword(Token& token);
