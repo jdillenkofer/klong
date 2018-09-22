@@ -68,6 +68,7 @@ namespace klong {
             llvm::Value* _valueOfLastExpr = nullptr;
             llvm::Type* _valueOfLastType = nullptr;
             std::map<Stmt*, llvm::Value*> _namedValues;
+            TypeKind _outerType = TypeKind::PRIMITIVE;
             static bool _initialized;
     };
 }

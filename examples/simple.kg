@@ -1,11 +1,23 @@
 const from = 0;
 const to = 5;
 
+extern malloc: (i64) -> ptr<void>;
+extern free: (ptr<void>) -> void;
+
+extern memset: (ptr<void>, i64, i64) -> ptr<void>;
+
 extern srand: (u32) -> void;
 extern rand: () -> i32;
 extern time: () -> u32;
 
 pub fun main() -> i32 {
+
+    // malloc free test
+    let memsize = 1000000000;
+    let pointer = malloc(memsize);
+    memset(pointer, 0, memsize);
+    free(pointer);
+
     // a b c
     let funVariable = fib;
     funVariable = fibDoubled;

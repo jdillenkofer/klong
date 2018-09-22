@@ -472,12 +472,20 @@ namespace klong {
     }
 
     void LLVMEmitter::visitFunctionType(FunctionType* type) {
+
         std::vector<llvm::Type*> paramTypes;
+
+        auto prevOuterType = _outerType;
+        _outerType = TypeKind::FUNCTION;
+
         for (auto& t : type->paramTypes()) {
             t->accept(this);
             paramTypes.push_back(_valueOfLastType);
         }
         type->returnType()->accept(this);
+
+        _outerType = prevOuterType;
+
         llvm::Type* returnType = _valueOfLastType;
         _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
     }
@@ -485,8 +493,14 @@ namespace klong {
     void LLVMEmitter::visitPrimitiveType(PrimitiveType *type) {
         switch (type->type()) {
             case PrimitiveTypeKind::VOID:
-                _valueOfLastType = llvm::Type::getVoidTy(context);
-                break;
+                {
+                    if (_outerType == TypeKind::POINTER) {
+                        _valueOfLastType = llvm::Type::getInt8Ty(context);
+                        break;
+                    }
+                    _valueOfLastType = llvm::Type::getVoidTy(context);
+                    break;
+                }
             case PrimitiveTypeKind::BOOL:
                 _valueOfLastType = llvm::Type::getInt1Ty(context);
                 break;
@@ -519,13 +533,19 @@ namespace klong {
     }
 
     void LLVMEmitter::visitPointerType(klong::PointerType *type) {
+        auto prevOuterType = _outerType;
+        _outerType = TypeKind::POINTER;
         type->pointsTo()->accept(this);
+        _outerType = prevOuterType;
         _valueOfLastType = llvm::PointerType::get(_valueOfLastType, 0);
     }
 
     void LLVMEmitter::visitSimpleType(SimpleType *type) {
         // TODO: how to handle the other types
+        auto prevOuterType = _outerType;
+        _outerType = TypeKind::SIMPLE;
         (void) type;
+        _outerType = prevOuterType;
     }
 
     void LLVMEmitter::printIR() {
