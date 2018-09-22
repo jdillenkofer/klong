@@ -122,6 +122,9 @@ namespace klong {
     }
 
     void TypeChecker::visitVarDeclStmt(VariableDeclaration* stmt) {
+        if (currentFunction != nullptr && stmt->isPublic()) {
+            throw TypeCheckException(stmt->sourceRange(), "Pub keyword not allowed in front of local variable.");
+        }
         check(stmt->initializer().get());
         if (stmt->type() == nullptr) {
             stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
