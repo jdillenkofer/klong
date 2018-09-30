@@ -92,6 +92,11 @@ namespace klong {
         {'[', std::bind(&Lexer::leftSquaredBracket, std::placeholders::_1, std::placeholders::_2)},
         {']', std::bind(&Lexer::rightSquaredBracket, std::placeholders::_1, std::placeholders::_2)},
 
+        // bitshifts
+        {'l', std::bind(&Lexer::lslOp, std::placeholders::_1, std::placeholders::_2)},
+        {'l', std::bind(&Lexer::lsrOp, std::placeholders::_1, std::placeholders::_2)},
+        {'a', std::bind(&Lexer::asrOp, std::placeholders::_1, std::placeholders::_2)},
+
         // modifier
         {'p', std::bind(&Lexer::pubKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'e', std::bind(&Lexer::externKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -323,10 +328,7 @@ namespace klong {
             }
             pos++;
         }
-        if (!isAlphanumeric(read(false))){
-            return true;
-        }
-        return false;
+        return !isAlphanumeric(read(false));
     }
     
     bool Lexer::matchesKeyword(Token& token, const std::string& keyword, TokenType type) {
@@ -622,6 +624,18 @@ namespace klong {
 		token.sourceRange = { startLocation, endLocation };
 		token.value = _code.substr(orStart, orEnd - orStart);
 		return true;
+    }
+
+    bool Lexer::lslOp(Token& token) {
+        return matchesKeyword(token, "lsl", TokenType::LSL);
+    }
+
+    bool Lexer::lsrOp(Token& token) {
+        return matchesKeyword(token, "lsr", TokenType::LSR);
+    }
+
+    bool Lexer::asrOp(Token& token) {
+        return matchesKeyword(token, "asr", TokenType::ASR);
     }
 
     bool Lexer::minus(Token& token) {

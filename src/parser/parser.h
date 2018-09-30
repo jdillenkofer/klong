@@ -61,6 +61,7 @@ namespace klong {
         ExprPtr andExpr();
         ExprPtr equalityExpr();
         ExprPtr comparisonExpr();
+        ExprPtr shiftExpr();
         ExprPtr additionExpr();
         ExprPtr multiplicationExpr();
         ExprPtr unaryExpr();

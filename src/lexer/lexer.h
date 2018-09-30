@@ -67,6 +67,9 @@ namespace klong {
         bool backquote(Token& token);
         bool pipe(Token& token);
         bool orOp(Token& token);
+        bool lslOp(Token& token);
+        bool lsrOp(Token& token);
+        bool asrOp(Token& token);
         bool slash(Token& token);
         bool caret(Token& token);
         bool tilde(Token& token);

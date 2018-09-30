@@ -525,7 +525,7 @@ namespace klong {
     }
 
     ExprPtr Parser::comparisonExpr() {
-        ExprPtr expr = additionExpr();
+        ExprPtr expr = shiftExpr();
 
         while(match(TokenType::GT_OP, TokenType::GE_OP, TokenType::LT_OP, TokenType::LE_OP)) {
             Token op = previous();
@@ -545,6 +545,34 @@ namespace klong {
                     break;
                 default:
                     throw ParseException(op.sourceRange, "Expect '>', '>=', '<' or '<=' Token.");
+            }
+            ExprPtr right = shiftExpr();
+            expr = std::make_shared<Binary>(
+                    SourceRange{ expr->sourceRange().start, right->sourceRange().end },
+                    expr, binaryOperation, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::shiftExpr() {
+        ExprPtr expr = additionExpr();
+
+        while(match(TokenType::LSL, TokenType::LSR, TokenType::ASR)) {
+            Token op = previous();
+            BinaryOperation binaryOperation;
+            switch (op.type) {
+                case TokenType::LSL:
+                    binaryOperation = BinaryOperation::LSL;
+                    break;
+                case TokenType::LSR:
+                    binaryOperation = BinaryOperation::LSR;
+                    break;
+                case TokenType::ASR:
+                    binaryOperation = BinaryOperation::ASR;
+                    break;
+                default:
+                    throw ParseException(op.sourceRange, "Expect 'LSL', 'LSR or 'ASR' Token.");
             }
             ExprPtr right = additionExpr();
             expr = std::make_shared<Binary>(
