@@ -293,6 +293,15 @@ namespace klong {
                 case BinaryOperation::ASR:
                     _valueOfLastExpr = IRBuilder.CreateAShr(left, right);
                     break;
+                case BinaryOperation::AND:
+                    _valueOfLastExpr = IRBuilder.CreateAnd(left, right);
+                    break;
+                case BinaryOperation::XOR:
+                    _valueOfLastExpr = IRBuilder.CreateXor(left, right);
+                    break;
+                case BinaryOperation::OR:
+                    _valueOfLastExpr = IRBuilder.CreateOr(left, right);
+                    break;
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = IRBuilder.CreateICmpEQ(left, right);
                     break;

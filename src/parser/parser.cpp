@@ -456,7 +456,7 @@ namespace klong {
     }
 
     ExprPtr Parser::assignmentExpr() {
-        ExprPtr expr = orExpr();
+        ExprPtr expr = logicalOrExpr();
         if (match(TokenType::ASSIGN_OP)) {
             Token assign = previous();
             ExprPtr value = assignmentExpr();
@@ -471,12 +471,12 @@ namespace klong {
         return expr;
     }
 
-    ExprPtr Parser::orExpr() {
-        ExprPtr expr = andExpr();
+    ExprPtr Parser::logicalOrExpr() {
+        ExprPtr expr = logicalAndExpr();
 
         while(match(TokenType::OR)) {
             Token op = previous();
-            ExprPtr right = andExpr();
+            ExprPtr right = logicalAndExpr();
             expr = std::make_shared<Logical>(
                     SourceRange { expr->sourceRange().start, right->sourceRange().end },
                     expr, LogicalOperation::OR, right);
@@ -485,15 +485,57 @@ namespace klong {
         return expr;
     }
 
-    ExprPtr Parser::andExpr() {
-        ExprPtr expr = equalityExpr();
+    ExprPtr Parser::logicalAndExpr() {
+        ExprPtr expr = bitwiseOr();
 
         while(match(TokenType::AND)) {
             Token op = previous();
-            ExprPtr right = equalityExpr();
+            ExprPtr right = bitwiseOr();
             expr = std::make_shared<Logical>(
                     SourceRange { expr->sourceRange().start, right->sourceRange().end },
                     expr, LogicalOperation::AND, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::bitwiseOr() {
+        ExprPtr expr = bitwiseXOr();
+
+        while(match(TokenType::PIPE)) {
+            Token op = previous();
+            ExprPtr right = bitwiseXOr();
+            expr = std::make_shared<Binary>(
+                    SourceRange { expr->sourceRange().start, right->sourceRange().end },
+                    expr, BinaryOperation::OR, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::bitwiseXOr() {
+        ExprPtr expr = bitwiseAnd();
+
+        while(match(TokenType::CARET)) {
+            Token op = previous();
+            ExprPtr right = bitwiseAnd();
+            expr = std::make_shared<Binary>(
+                    SourceRange { expr->sourceRange().start, right->sourceRange().end },
+                    expr, BinaryOperation ::XOR, right);
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::bitwiseAnd() {
+        ExprPtr expr = equalityExpr();
+
+        while(match(TokenType::AMPERSAND)) {
+            Token op = previous();
+            ExprPtr right = equalityExpr();
+            expr = std::make_shared<Binary>(
+                    SourceRange { expr->sourceRange().start, right->sourceRange().end },
+                    expr, BinaryOperation::AND, right);
         }
 
         return expr;

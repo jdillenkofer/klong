@@ -57,8 +57,11 @@ namespace klong {
         StmtPtr statement();
         ExprPtr expression();
         ExprPtr assignmentExpr();
-        ExprPtr orExpr();
-        ExprPtr andExpr();
+        ExprPtr bitwiseAnd();
+        ExprPtr bitwiseXOr();
+        ExprPtr bitwiseOr();
+        ExprPtr logicalOrExpr();
+        ExprPtr logicalAndExpr();
         ExprPtr equalityExpr();
         ExprPtr comparisonExpr();
         ExprPtr shiftExpr();

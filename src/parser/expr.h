@@ -87,12 +87,15 @@ namespace klong {
         LSL,
         LSR,
         ASR,
-        EQUALITY,
-        INEQUALITY,
         GREATER_THAN,
         GREATER_EQUAL,
         LESS_THAN,
-        LESS_EQUAL
+        LESS_EQUAL,
+        EQUALITY,
+        INEQUALITY,
+        AND,
+        XOR,
+        OR
     };
     
     class Binary : public Expr {

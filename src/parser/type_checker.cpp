@@ -182,6 +182,9 @@ namespace klong {
                 case BinaryOperation::LSL:
                 case BinaryOperation::LSR:
                 case BinaryOperation::ASR:
+                case BinaryOperation::AND:
+                case BinaryOperation::XOR:
+                case BinaryOperation::OR:
                 {
                     // TODO: cast to biggest number type
                     expr->type(std::shared_ptr<Type>(expr->left()->type()->clone()));

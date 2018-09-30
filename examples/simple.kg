@@ -7,7 +7,7 @@ pub fun main() -> i64 {
     funVariable = fibDoubled;
     // allow shadowing
     let sum = sum(from, to, funVariable);
-    return 8 lsr 1;
+    return (255 lsr 1) & 0b1100 | 0b11;
 }
 
 fun sum(from: i64, to: i64, func: ptr<(i64) -> i64>) -> i64 {
