@@ -6,15 +6,13 @@
 
 namespace klong {
     class SourceFile {
-        public:
+    public:
         SourceFile(std::string path):
             _path(std::move(path)) {
-        
         }
 
         SourceFile(std::string path, std::string code):
             _path(std::move(path)), _code(std::move(code)) {
-
         }
 
         bool loadFromFile() {
@@ -38,7 +36,7 @@ namespace klong {
             return _path;
         }
 
-        private:
+    private:
         std::string _path;
         std::string _code;
     };

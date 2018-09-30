@@ -4,25 +4,24 @@
 
 namespace klong {
     class LexerException : public std::exception {
-        public:
-            LexerException(Token token, std::string message):
-                _token(token), _message(message) {
+    public:
+        LexerException(Token token, std::string message):
+            _token(token), _message(message) {
+        }
 
-            }
+        const char* what () const throw () {
+            return _message.c_str();
+        }
 
-            const char* what () const throw () {
-                return _message.c_str();
-            }
-
-        private:
-            Token _token;
-            std::string _message;
+    private:
+        Token _token;
+        std::string _message;
     };
 
     class ILexer {
-        public:
-            virtual ~ILexer() = default;
-            virtual bool hasNext() const = 0;
-            virtual Token next() = 0;
+    public:
+        virtual ~ILexer() = default;
+        virtual bool hasNext() const = 0;
+        virtual Token next() = 0;
     };
 }
