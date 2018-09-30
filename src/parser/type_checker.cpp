@@ -172,14 +172,16 @@ namespace klong {
         check(expr->left().get());
         check(expr->right().get());
         // TODO: doubles and primitive type hierarchie
-        if ((isInteger(expr->left().get()) && isInteger(expr->right().get())) ||
-                (isFloat(expr->left().get()) && isFloat(expr->right().get()))) {
+        if (isInteger(expr->left().get()) && isInteger(expr->right().get())) {
             switch(expr->op()) {
                 case BinaryOperation::PLUS:
                 case BinaryOperation::MINUS:
                 case BinaryOperation::MULTIPLICATION:
                 case BinaryOperation::DIVISION:
                 case BinaryOperation::MODULO:
+                case BinaryOperation::LSL:
+                case BinaryOperation::LSR:
+                case BinaryOperation::ASR:
                 {
                     // TODO: cast to biggest number type
                     expr->type(std::shared_ptr<Type>(expr->left()->type()->clone()));
@@ -195,6 +197,33 @@ namespace klong {
                     expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
                     break;
                 }
+            }
+            return;
+        }
+
+        if (isFloat(expr->left().get()) && isFloat(expr->right().get())) {
+            switch(expr->op()) {
+                case BinaryOperation::PLUS:
+                case BinaryOperation::MINUS:
+                case BinaryOperation::MULTIPLICATION:
+                case BinaryOperation::DIVISION:
+                {
+                    // TODO: cast to biggest number type
+                    expr->type(std::shared_ptr<Type>(expr->left()->type()->clone()));
+                    break;
+                }
+                case BinaryOperation::LESS_THAN:
+                case BinaryOperation::LESS_EQUAL:
+                case BinaryOperation::EQUALITY:
+                case BinaryOperation::INEQUALITY:
+                case BinaryOperation::GREATER_THAN:
+                case BinaryOperation::GREATER_EQUAL:
+                {
+                    expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
+                    break;
+                }
+                default:
+                    throw TypeCheckException(expr->sourceRange(), "Illegal operation for floating number.");
             }
             return;
         }

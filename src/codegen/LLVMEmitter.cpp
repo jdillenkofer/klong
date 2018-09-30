@@ -284,6 +284,15 @@ namespace klong {
                         _valueOfLastExpr = IRBuilder.CreateURem(left, right);
                     }
                     break;
+                case BinaryOperation::LSL:
+                    _valueOfLastExpr = IRBuilder.CreateShl(left, right);
+                    break;
+                case BinaryOperation::LSR:
+                    _valueOfLastExpr = IRBuilder.CreateLShr(left, right);
+                    break;
+                case BinaryOperation::ASR:
+                    _valueOfLastExpr = IRBuilder.CreateAShr(left, right);
+                    break;
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = IRBuilder.CreateICmpEQ(left, right);
                     break;

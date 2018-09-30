@@ -30,6 +30,11 @@ namespace klong {
         WHILE,
         FOR,
         DO,
+
+        // Bitshifts
+        LSL,
+        LSR,
+        ASR,
         
         // Declarators
         LET,
