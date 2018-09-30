@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../parser/stmt.h"
-#include "../parser/visitor.h"
+#include "ast/stmt.h"
+#include "ast/visitor.h"
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -11,9 +11,11 @@ namespace klong {
     static llvm::LLVMContext context;
     static llvm::IRBuilder<> IRBuilder(context);
 
-    class LLVMEmitter : public Visitor {
+    class LLVMEmitVisitor : public Visitor {
     public:
-        LLVMEmitter();
+        LLVMEmitVisitor();
+
+        llvm::Module* getModule();
 
         // Module
         void visitModule(Module* module) override;
@@ -52,12 +54,6 @@ namespace klong {
         void visitPrimitiveType(PrimitiveType* type) override;
         void visitPointerType(PointerType* type) override;
         void visitSimpleType(SimpleType *type) override;
-
-        void printIR();
-        bool generateObjectFile(std::string outputFilename,
-                                std::string targetTriple = llvm::sys::getDefaultTargetTriple(),
-                                std::string cpu = "generic",
-                                std::string features = "");
 
     private:
         llvm::Value* emit(Expr* expr);

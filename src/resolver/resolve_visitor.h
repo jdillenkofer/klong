@@ -1,14 +1,17 @@
 #pragma once
 
-#include "visitor.h"
-#include "stmt.h"
-#include "expr.h"
+#include <stack>
+#include <map>
+
+#include "ast/visitor.h"
+#include "ast/stmt.h"
+#include "ast/expr.h"
 
 namespace klong {
-    class TypeCheckException : public std::exception {
+    class ResolveException : public std::exception {
     public:
-        TypeCheckException(SourceRange sourceRange, std::string message):
-            _sourceRange(sourceRange), _message(message) {
+        ResolveException(SourceRange sourceRange, std::string message):
+            _sourceRange(sourceRange), _message(std::move(message)) {
         }
 
         SourceRange sourceRange() const {
@@ -24,9 +27,22 @@ namespace klong {
         std::string _message;
     };
 
-    class TypeChecker : public Visitor {
+    enum class DeclarationType {
+        CONST,
+        LET,
+        PARAM,
+        FUNCTION
+    };
+
+    struct SymbolInfo {
+        Stmt* declarationStmt;
+        DeclarationType declarationType;
+        bool initialized = false;
+    };
+
+    class ResolveVisitor : public Visitor {
     public:
-        TypeChecker() = default;
+        ResolveVisitor() = default;
 
         // Module
         void visitModule(Module* module) override;
@@ -43,7 +59,7 @@ namespace klong {
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
         void visitWhileStmt(While* stmt) override;
         void visitForStmt(For* stmt) override;
-        void visitCommentStmt(Comment* stmt) override;
+        void visitCommentStmt(Comment* expr) override;
 
         // Expr
         void visitAssignExpr(Assign* expr) override;
@@ -67,15 +83,22 @@ namespace klong {
         void visitSimpleType(SimpleType *type) override;
 
     private:
-        void check(const std::vector<StmtPtr>& statements);
-        void check(Stmt* stmt);
-        void check(Expr* expr);
+        void resolve(Stmt* stmt);
+        void resolve(Expr* expr);
+        void resolve(const std::vector<StmtPtr>& statements);
 
-        bool isBoolean(Expr* expr);
-        bool isInteger(Expr* expr);
-        bool isFloat(Expr* expr);
-        bool isString(Expr* expr);
+        void resolveLocal(Variable* variable);
+
+        void resolveFunction(Function* stmt, bool insideFunction);
+
+        void enterScope();
+        void exitScope();
+
+        void declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType);
+        void define(std::string name);
+
     private:
-        Function* currentFunction = nullptr;
+        std::deque<std::map<std::string, SymbolInfo>> _scopes;
+        bool _isInsideFunction = false;
     };
 }

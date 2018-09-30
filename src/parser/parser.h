@@ -5,12 +5,12 @@
 
 #include "iparser.h"
 #include "../lexer/ilexer.h"
-#include "type.h"
-#include "module.h"
-#include "stmt.h"
-#include "expr.h"
+#include "ast/type.h"
+#include "ast/module.h"
+#include "ast/stmt.h"
+#include "ast/expr.h"
 
-#include "visitor.h" // <-- TODO: remove this include
+#include "ast/visitor.h" // <-- TODO: remove this include
 
 namespace klong {
     class Parser {

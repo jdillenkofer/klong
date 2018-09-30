@@ -1,24 +1,24 @@
-#include "resolver.h"
-#include "module.h"
-#include "stmt.h"
-#include "expr.h"
-#include "type.h"
+#include "resolve_visitor.h"
+#include "ast/module.h"
+#include "ast/stmt.h"
+#include "ast/expr.h"
+#include "ast/type.h"
 
 namespace klong {
 
-    void Resolver::resolve(Stmt* stmt) {
+    void ResolveVisitor::resolve(Stmt* stmt) {
         if (stmt) {
             stmt->accept(this);
         }
     }
 
-    void Resolver::resolve(Expr* expr) {
+    void ResolveVisitor::resolve(Expr* expr) {
         if (expr) {
             expr->accept(this);
         }
     }
 
-    void Resolver::resolve(const std::vector<StmtPtr>& statements) {
+    void ResolveVisitor::resolve(const std::vector<StmtPtr>& statements) {
         for (const auto& statement : statements) {
             if (statement->kind() == StatementKind::FUNCTION) {
                 auto stmt = dynamic_cast<Function*>(statement.get());
@@ -32,7 +32,7 @@ namespace klong {
         }
     }
 
-    void Resolver::resolveLocal(Variable* variable) {
+    void ResolveVisitor::resolveLocal(Variable* variable) {
         for (int64_t i = _scopes.size() - 1; i >= 0; i--) {
             std::map<std::string, SymbolInfo> scope = _scopes[i];
             if (scope.find(variable->name()) != scope.end()) {
@@ -44,15 +44,15 @@ namespace klong {
         throw ResolveException(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() + "'.");
     }
 
-    void Resolver::enterScope() {
+    void ResolveVisitor::enterScope() {
         _scopes.emplace_back(std::map<std::string, SymbolInfo>());
     }
 
-    void Resolver::exitScope() {
+    void ResolveVisitor::exitScope() {
         _scopes.pop_back();
     }
 
-    void Resolver::declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType) {
+    void ResolveVisitor::declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType) {
         if (_scopes.empty()) {
             return;
         }
@@ -64,7 +64,7 @@ namespace klong {
         scope.insert(std::pair<std::string, SymbolInfo>(name, SymbolInfo { declarationStmt, declarationType, false }));
     }
 
-    void Resolver::define(std::string name) {
+    void ResolveVisitor::define(std::string name) {
         if (_scopes.empty()) {
             return;
         }
@@ -74,7 +74,7 @@ namespace klong {
     }
 
     // Module
-    void Resolver::visitModule(Module* module) {
+    void ResolveVisitor::visitModule(Module* module) {
         for (auto& stmt : module->statements()) {
             if (stmt->kind() != StatementKind::FUNCTION && stmt->kind() != StatementKind::VAR_DECL
                 && stmt->kind() != StatementKind::EXT_DECL
@@ -88,33 +88,33 @@ namespace klong {
     }
 
     // Stmt
-    void Resolver::visitBlockStmt(Block* stmt) {
+    void ResolveVisitor::visitBlockStmt(Block* stmt) {
         enterScope();
         resolve(stmt->statements());
         exitScope();
     }
 
-    void Resolver::visitExpressionStmt(Expression* stmt) {
+    void ResolveVisitor::visitExpressionStmt(Expression* stmt) {
         resolve(stmt->expression().get());
     }
 
-    void Resolver::visitExtDeclStmt(ExternalDeclaration* stmt) {
+    void ResolveVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
         auto type = stmt->type().get();
         auto declType = type->kind() == TypeKind::FUNCTION ? DeclarationType::FUNCTION : DeclarationType::CONST;
         declare(stmt, stmt->name(), declType);
         define(stmt->name());
     }
 
-    void Resolver::visitFunctionStmt(Function* stmt) {
+    void ResolveVisitor::visitFunctionStmt(Function* stmt) {
         resolveFunction(stmt, true);
     }
 
-    void Resolver::visitParameterStmt(Parameter* stmt) {
+    void ResolveVisitor::visitParameterStmt(Parameter* stmt) {
         declare(stmt, stmt->name(), DeclarationType::PARAM);
         define(stmt->name());
     }
 
-    void Resolver::resolveFunction(klong::Function *stmt, bool insideFunction) {
+    void ResolveVisitor::resolveFunction(klong::Function *stmt, bool insideFunction) {
         bool enclosingFunction = _isInsideFunction;
         _isInsideFunction = insideFunction;
         enterScope();
@@ -127,24 +127,24 @@ namespace klong {
         _isInsideFunction = enclosingFunction;
     }
 
-    void Resolver::visitIfStmt(If* stmt) {
+    void ResolveVisitor::visitIfStmt(If* stmt) {
         resolve(stmt->condition().get());
         resolve(stmt->thenBranch().get());
         resolve(stmt->elseBranch().get());
     }
 
-    void Resolver::visitPrintStmt(Print* stmt) {
+    void ResolveVisitor::visitPrintStmt(Print* stmt) {
         resolve(stmt->expression().get());
     }
 
-    void Resolver::visitReturnStmt(Return* stmt) {
+    void ResolveVisitor::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
             throw ResolveException(stmt->sourceRange(), "Cannot return from top-level code.");
         }
         resolve(stmt->value().get());
     }
 
-    void Resolver::visitVarDeclStmt(VariableDeclaration* stmt) {
+    void ResolveVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
         if (stmt->initializer()) {
             resolve(stmt->initializer().get());
         }
@@ -155,12 +155,12 @@ namespace klong {
         }
     }
 
-    void Resolver::visitWhileStmt(While* stmt) {
+    void ResolveVisitor::visitWhileStmt(While* stmt) {
         resolve(stmt->condition().get());
         resolve(stmt->body().get());
     }
 
-    void Resolver::visitForStmt(For* stmt) {
+    void ResolveVisitor::visitForStmt(For* stmt) {
         enterScope();
         resolve(stmt->initializer().get());
         resolve(stmt->condition().get());
@@ -169,13 +169,13 @@ namespace klong {
         exitScope();
     }
 
-    void Resolver::visitCommentStmt(Comment* expr) {
+    void ResolveVisitor::visitCommentStmt(Comment* expr) {
         // empty on purpose
         (void) expr;
     }
 
     // Expr
-    void Resolver::visitAssignExpr(Assign* expr) {
+    void ResolveVisitor::visitAssignExpr(Assign* expr) {
         resolve(expr->value().get());
         resolveLocal(expr->target().get());
         auto varDeclRes = expr->target()->resolvesTo();
@@ -187,32 +187,32 @@ namespace klong {
         }
     }
 
-    void Resolver::visitBinaryExpr(Binary* expr) {
+    void ResolveVisitor::visitBinaryExpr(Binary* expr) {
         resolve(expr->left().get());
         resolve(expr->right().get());
     }
 
-    void Resolver::visitCallExpr(Call* expr) {
+    void ResolveVisitor::visitCallExpr(Call* expr) {
         resolve(expr->callee().get());
         for (const auto& arg : expr->args()) {
             resolve(arg.get());
         }
     }
 
-    void Resolver::visitGroupingExpr(Grouping* expr) {
+    void ResolveVisitor::visitGroupingExpr(Grouping* expr) {
         resolve(expr->expression().get());
     }
 
-    void Resolver::visitLogicalExpr(Logical* expr) {
+    void ResolveVisitor::visitLogicalExpr(Logical* expr) {
         resolve(expr->left().get());
         resolve(expr->right().get());
     }
 
-    void Resolver::visitUnaryExpr(Unary* expr) {
+    void ResolveVisitor::visitUnaryExpr(Unary* expr) {
         resolve(expr->right().get());
     }
 
-    void Resolver::visitVariableExpr(Variable* expr) {
+    void ResolveVisitor::visitVariableExpr(Variable* expr) {
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
         if (scope.find(expr->name()) != scope.end()) {
             auto& symbol = (*scope.find(expr->name())).second;
@@ -224,43 +224,43 @@ namespace klong {
     }
 
     // Literals
-    void Resolver::visitNumberLiteral(NumberLiteral* expr) {
+    void ResolveVisitor::visitNumberLiteral(NumberLiteral* expr) {
         // nothing to do here
         (void) expr;
     }
 
-    void Resolver::visitBoolLiteral(BoolLiteral* expr) {
+    void ResolveVisitor::visitBoolLiteral(BoolLiteral* expr) {
         // nothing to do here
         (void) expr;
     }
 
-    void Resolver::visitStringLiteral(StringLiteral* expr) {
+    void ResolveVisitor::visitStringLiteral(StringLiteral* expr) {
         // nothing to do here
         (void) expr;
     }
 
-    void Resolver::visitCharacterLiteral(CharacterLiteral* expr) {
+    void ResolveVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
         // nothing to do here
         (void) expr;
     }
 
     // Types
-    void Resolver::visitFunctionType(FunctionType* type) {
+    void ResolveVisitor::visitFunctionType(FunctionType* type) {
         // nothing to do here
         (void) type;
     }
 
-    void Resolver::visitPrimitiveType(PrimitiveType* type) {
+    void ResolveVisitor::visitPrimitiveType(PrimitiveType* type) {
         // nothing to do here
         (void) type;
     }
 
-    void Resolver::visitPointerType(klong::PointerType* type) {
+    void ResolveVisitor::visitPointerType(klong::PointerType* type) {
         // nothing to do here
         (void) type;
     }
 
-    void Resolver::visitSimpleType(SimpleType* type) {
+    void ResolveVisitor::visitSimpleType(SimpleType* type) {
         // nothing to do here
         (void) type;
     }

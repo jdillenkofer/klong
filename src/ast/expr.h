@@ -1,7 +1,7 @@
 #pragma once
 
 #include "visitor.h"
-#include "../common/source_range.h"
+#include "common/source_range.h"
 #include "type.h"
 
 #include <vector>

@@ -4,9 +4,9 @@
 #include "common/source_file.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
-#include "parser/resolver.h"
-#include "parser/type_checker.h"
-#include "codegen/LLVMEmitter.h"
+#include "resolver/resolver.h"
+#include "typechecker/typechecker.h"
+#include "codegen/llvm_emitter.h"
 
 using namespace klong;
 
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     /* RESOLVING */
     auto resolveStart = std::chrono::high_resolution_clock::now();
     auto resolver = Resolver();
-    module->accept(&resolver);
+    resolver.resolve(*module);
     auto resolveEnd = std::chrono::high_resolution_clock::now();
     std::cout << "Resolve time: " <<
               std::chrono::duration_cast<std::chrono::milliseconds>(resolveEnd - resolveStart).count() << "ms" << std::endl;
@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     /* TYPECHECKING */
     auto typeCheckStart = std::chrono::high_resolution_clock::now();
     auto typeChecker = TypeChecker();
-    module->accept(&typeChecker);
+    typeChecker.check(*module);
     auto typeCheckEnd = std::chrono::high_resolution_clock::now();
     std::cout << "Typecheck time: " <<
               std::chrono::duration_cast<std::chrono::milliseconds>(typeCheckEnd - typeCheckStart).count() << "ms" << std::endl;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
     /* CODEGEN */
     auto llvmEmissionStart = std::chrono::high_resolution_clock::now();
     auto llvmEmitter = LLVMEmitter();
-    module->accept(&llvmEmitter);
+    llvmEmitter.emit(*module);
 
     llvmEmitter.generateObjectFile("output.o");
     llvmEmitter.printIR();

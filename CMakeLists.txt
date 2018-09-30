@@ -50,26 +50,31 @@ set(SOURCE_FILES
     src/main.cpp
     src/lexer/lexer.cpp
     src/parser/parser.cpp
-    src/parser/resolver.cpp
-    src/parser/type_checker.cpp
-    src/codegen/LLVMEmitter.cpp)
+	src/resolver/resolve_visitor.cpp
+	src/typechecker/type_check_visitor.cpp
+	src/codegen/llvm_emit_visitor.cpp
+)
 
 set(HEADER_FILES
-    src/common/source_file.h
+	src/common/source_range.h
+	src/common/source_file.h
     src/common/source_location.h
     src/lexer/token.h
     src/lexer/lexer.h
     src/lexer/ilexer.h
-    src/parser/expr.h
-    src/parser/stmt.h
-    src/parser/visitor.h
-    src/parser/parser.h
+	src/ast/expr.h
+	src/ast/stmt.h
+	src/ast/visitor.h
+	src/ast/type.h
+	src/parser/parser.h
     src/parser/iparser.h
-    src/parser/type.h
-    src/common/source_range.h
-    src/parser/resolver.h
-    src/parser/type_checker.h
-    src/codegen/LLVMEmitter.h)
+    src/resolver/resolver.h
+	src/resolver/resolve_visitor.h
+	src/typechecker/typechecker.h
+    src/typechecker/type_check_visitor.h
+    src/codegen/llvm_emit_visitor.h
+	src/codegen/llvm_emitter.h
+)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

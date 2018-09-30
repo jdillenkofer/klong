@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../lexer/token.h"
-#include "stmt.h"
+#include "ast/stmt.h"
 
 namespace klong {
     class ParseException : public std::exception {

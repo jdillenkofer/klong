@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../lexer/token.h"
-#include "../common/source_range.h"
+#include "lexer/token.h"
+#include "common/source_range.h"
 #include "visitor.h"
 
 #include <vector>

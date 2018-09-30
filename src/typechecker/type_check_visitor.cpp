@@ -1,34 +1,34 @@
 #include <functional>
 
-#include "type_checker.h"
+#include "type_check_visitor.h"
 
-#include "resolver.h"
-#include "module.h"
-#include "stmt.h"
-#include "expr.h"
-#include "type.h"
+#include "resolver/resolve_visitor.h"
+#include "ast/module.h"
+#include "ast/stmt.h"
+#include "ast/expr.h"
+#include "ast/type.h"
 
 namespace klong {
 
-    void TypeChecker::check(const std::vector<StmtPtr>& statements) {
+    void TypeCheckVisitor::check(const std::vector<StmtPtr>& statements) {
         for (const auto& stmt : statements) {
             check(stmt.get());
         }
     }
 
-    void TypeChecker::check(Stmt* stmt) {
+    void TypeCheckVisitor::check(Stmt* stmt) {
         if (stmt != nullptr) {
             stmt->accept(this);
         }
     }
 
-    void TypeChecker::check(Expr* expr) {
+    void TypeCheckVisitor::check(Expr* expr) {
         if (expr != nullptr) {
             expr->accept(this);
         }
     }
 
-    bool TypeChecker::isBoolean(Expr* expr) {
+    bool TypeCheckVisitor::isBoolean(Expr* expr) {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
@@ -37,7 +37,7 @@ namespace klong {
         return false;
     }
 
-    bool TypeChecker::isFloat(Expr* expr) {
+    bool TypeCheckVisitor::isFloat(Expr* expr) {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
@@ -46,7 +46,7 @@ namespace klong {
         return false;
     }
 
-    bool TypeChecker::isInteger(Expr* expr) {
+    bool TypeCheckVisitor::isInteger(Expr* expr) {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
@@ -55,7 +55,7 @@ namespace klong {
         return false;
     }
 
-    bool TypeChecker::isString(Expr* expr) {
+    bool TypeCheckVisitor::isString(Expr* expr) {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
@@ -65,37 +65,37 @@ namespace klong {
     }
 
     // Module
-    void TypeChecker::visitModule(Module* module) {
+    void TypeCheckVisitor::visitModule(Module* module) {
         check(module->statements());
     }
 
     // Stmt
-    void TypeChecker::visitBlockStmt(Block* stmt) {
+    void TypeCheckVisitor::visitBlockStmt(Block* stmt) {
         check(stmt->statements());
     }
 
-    void TypeChecker::visitExpressionStmt(Expression* stmt) {
+    void TypeCheckVisitor::visitExpressionStmt(Expression* stmt) {
         check(stmt->expression().get());
     }
 
-    void TypeChecker::visitExtDeclStmt(ExternalDeclaration* stmt) {
+    void TypeCheckVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
         // nothing to do here
         (void) stmt;
     }
 
-    void TypeChecker::visitFunctionStmt(Function* stmt) {
+    void TypeCheckVisitor::visitFunctionStmt(Function* stmt) {
         auto previousFunction = currentFunction;
         currentFunction = stmt;
         check(stmt->body());
         currentFunction = previousFunction;
     }
 
-    void TypeChecker::visitParameterStmt(Parameter* stmt) {
+    void TypeCheckVisitor::visitParameterStmt(Parameter* stmt) {
         // nothing to do here
         (void) stmt;
     }
 
-    void TypeChecker::visitIfStmt(If* stmt) {
+    void TypeCheckVisitor::visitIfStmt(If* stmt) {
         check(stmt->condition().get());
         if (!isBoolean(stmt->condition().get())) {
             throw TypeCheckException(stmt->condition()->sourceRange(), "Expect bool condition in if-statement.");
@@ -104,7 +104,7 @@ namespace klong {
         check(stmt->elseBranch().get());
     }
 
-    void TypeChecker::visitPrintStmt(Print* stmt) {
+    void TypeCheckVisitor::visitPrintStmt(Print* stmt) {
         Expr* expr = stmt->expression().get();
         check(expr);
         if (!isString(expr) && !isInteger(expr) && !isFloat(expr) && !isBoolean(expr)) {
@@ -112,7 +112,7 @@ namespace klong {
         }
     }
 
-    void TypeChecker::visitReturnStmt(Return* stmt) {
+    void TypeCheckVisitor::visitReturnStmt(Return* stmt) {
         check(stmt->value().get());
         if (stmt->value() != nullptr) {
             if (!currentFunction->functionType()->returnType()->isEqual(stmt->value()->type().get())) {
@@ -121,7 +121,7 @@ namespace klong {
         }
     }
 
-    void TypeChecker::visitVarDeclStmt(VariableDeclaration* stmt) {
+    void TypeCheckVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
         if (currentFunction != nullptr && stmt->isPublic()) {
             throw TypeCheckException(stmt->sourceRange(), "Pub keyword not allowed in front of local variable.");
         }
@@ -135,7 +135,7 @@ namespace klong {
         }
     }
 
-    void TypeChecker::visitWhileStmt(While* stmt) {
+    void TypeCheckVisitor::visitWhileStmt(While* stmt) {
         check(stmt->condition().get());
         if (!isBoolean(stmt->condition().get())) {
             throw TypeCheckException(stmt->condition()->sourceRange(), "while condition expects bool type.");
@@ -143,7 +143,7 @@ namespace klong {
         check(stmt->body().get());
     }
 
-    void TypeChecker::visitForStmt(For* stmt) {
+    void TypeCheckVisitor::visitForStmt(For* stmt) {
         check(stmt->initializer().get());
         check(stmt->condition().get());
         if (!isBoolean(stmt->condition().get())) {
@@ -153,13 +153,13 @@ namespace klong {
         check(stmt->body().get());
     }
 
-    void TypeChecker::visitCommentStmt(Comment* stmt) {
+    void TypeCheckVisitor::visitCommentStmt(Comment* stmt) {
         // empty on purpose
         (void) stmt;
     }
 
     // Expr
-    void TypeChecker::visitAssignExpr(Assign* expr) {
+    void TypeCheckVisitor::visitAssignExpr(Assign* expr) {
         check(expr->target().get());
         check(expr->value().get());
         if (!expr->target()->type()->isEqual(expr->value()->type().get())) {
@@ -168,7 +168,7 @@ namespace klong {
         expr->type(std::shared_ptr<Type>(expr->value()->type()->clone()));
     }
 
-    void TypeChecker::visitBinaryExpr(Binary* expr) {
+    void TypeCheckVisitor::visitBinaryExpr(Binary* expr) {
         check(expr->left().get());
         check(expr->right().get());
         // TODO: doubles and primitive type hierarchie
@@ -245,7 +245,7 @@ namespace klong {
         throw TypeCheckException(expr->sourceRange(), "Illegal type in binary op.");
     }
 
-    void TypeChecker::visitCallExpr(Call* expr) {
+    void TypeCheckVisitor::visitCallExpr(Call* expr) {
         check(expr->callee().get());
         std::vector<TypePtr> callParamTypes;
         for (const auto& arg : expr->args()) {
@@ -267,12 +267,12 @@ namespace klong {
         throw TypeCheckException(expr->sourceRange(), "Callee doesn't resolve to function pointer expression.");
     }
 
-    void TypeChecker::visitGroupingExpr(Grouping* expr) {
+    void TypeCheckVisitor::visitGroupingExpr(Grouping* expr) {
         check(expr->expression().get());
         expr->type(expr->expression()->type());
     }
 
-    void TypeChecker::visitLogicalExpr(Logical* expr) {
+    void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left().get());
         if (!isBoolean(expr->left().get())) {
             throw TypeCheckException(expr->left()->sourceRange(), "Expect boolean expr.");
@@ -284,7 +284,7 @@ namespace klong {
         expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
     }
 
-    void TypeChecker::visitUnaryExpr(Unary* expr) {
+    void TypeCheckVisitor::visitUnaryExpr(Unary* expr) {
         check(expr->right().get());
         if (expr->op() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
             throw TypeCheckException(expr->sourceRange(), "'!' expects boolean expression.");
@@ -295,7 +295,7 @@ namespace klong {
         expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));
     }
 
-    void TypeChecker::visitVariableExpr(Variable* expr) {
+    void TypeCheckVisitor::visitVariableExpr(Variable* expr) {
         Stmt* resolvesTo = expr->resolvesTo();
         switch(resolvesTo->kind()) {
             case StatementKind::FUNCTION:
@@ -334,7 +334,7 @@ namespace klong {
     }
 
     // Literals
-    void TypeChecker::visitNumberLiteral(NumberLiteral* expr) {
+    void TypeCheckVisitor::visitNumberLiteral(NumberLiteral* expr) {
         TypePtr type;
         switch(expr->literalType()) {
             case PrimitiveTypeKind::I64:
@@ -352,38 +352,38 @@ namespace klong {
         expr->type(type);
     }
 
-    void TypeChecker::visitBoolLiteral(BoolLiteral* expr) {
+    void TypeCheckVisitor::visitBoolLiteral(BoolLiteral* expr) {
         TypePtr type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::BOOL);
         expr->type(type);
     }
 
-    void TypeChecker::visitStringLiteral(StringLiteral* expr) {
+    void TypeCheckVisitor::visitStringLiteral(StringLiteral* expr) {
         TypePtr type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::STRING);
         expr->type(type);
     }
 
-    void TypeChecker::visitCharacterLiteral(CharacterLiteral* expr) {
+    void TypeCheckVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
         TypePtr type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::I8);
         expr->type(type);
     }
 
     // Types
-    void TypeChecker::visitFunctionType(FunctionType* type) {
+    void TypeCheckVisitor::visitFunctionType(FunctionType* type) {
         // nothing to do here
         (void) type;
     }
 
-    void TypeChecker::visitPrimitiveType(PrimitiveType *type) {
+    void TypeCheckVisitor::visitPrimitiveType(PrimitiveType *type) {
         // nothing to do here
         (void) type;
     }
 
-    void TypeChecker::visitPointerType(PointerType* type) {
+    void TypeCheckVisitor::visitPointerType(PointerType* type) {
         // nothing to do here
         (void) type;
     }
 
-    void TypeChecker::visitSimpleType(SimpleType *type) {
+    void TypeCheckVisitor::visitSimpleType(SimpleType *type) {
         // nothing to do here
         (void) type;
     }

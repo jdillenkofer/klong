@@ -1,8 +1,8 @@
-#include "LLVMEmitter.h"
+#include "llvm_emit_visitor.h"
 
-#include "../parser/module.h"
-#include "../parser/stmt.h"
-#include "../parser/expr.h"
+#include "ast/module.h"
+#include "ast/stmt.h"
+#include "ast/expr.h"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -14,20 +14,13 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Host.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetOptions.h"
 
 namespace klong {
 
-    bool LLVMEmitter::_initialized = false;
+    bool LLVMEmitVisitor::_initialized = false;
 
-    LLVMEmitter::LLVMEmitter() {
+    LLVMEmitVisitor::LLVMEmitVisitor() {
         if (!_initialized) {
             llvm::InitializeAllTargetInfos();
             llvm::InitializeAllTargets();
@@ -38,23 +31,27 @@ namespace klong {
         }
     }
 
-    llvm::Value* LLVMEmitter::emit(Expr* expr) {
+    llvm::Module* LLVMEmitVisitor::getModule() {
+        return _module.get();
+    }
+
+    llvm::Value* LLVMEmitVisitor::emit(Expr* expr) {
         expr->accept(this);
         return _valueOfLastExpr;
     }
 
-    llvm::Value* LLVMEmitter::emit(Stmt* stmt) {
+    llvm::Value* LLVMEmitVisitor::emit(Stmt* stmt) {
         stmt->accept(this);
         return _valueOfLastExpr;
     }
 
-    void LLVMEmitter::emitBlock(const std::vector<StmtPtr>& statements) {
+    void LLVMEmitVisitor::emitBlock(const std::vector<StmtPtr>& statements) {
         for (auto& stmt : statements) {
             stmt->accept(this);
         }
     }
 
-    void LLVMEmitter::visitModule(Module* module) {
+    void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), context);
 
         for (auto& stmt : module->statements()) {
@@ -77,15 +74,15 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitBlockStmt(Block* stmt) {
+    void LLVMEmitVisitor::visitBlockStmt(Block* stmt) {
         emitBlock(stmt->statements());
     }
 
-    void LLVMEmitter::visitExpressionStmt(Expression* stmt) {
+    void LLVMEmitVisitor::visitExpressionStmt(Expression* stmt) {
         _valueOfLastExpr = emit(stmt->expression().get());
     }
 
-    void LLVMEmitter::visitExtDeclStmt(ExternalDeclaration* stmt) {
+    void LLVMEmitVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
         stmt->type()->accept(this);
         auto type = _valueOfLastType;
 
@@ -109,7 +106,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitFunctionStmt(Function* stmt) {
+    void LLVMEmitVisitor::visitFunctionStmt(Function* stmt) {
         llvm::Function* function = _module->getFunction(stmt->name());
 
         // Function body
@@ -134,11 +131,11 @@ namespace klong {
         llvm::verifyFunction(*function);
     }
 
-    void LLVMEmitter::visitParameterStmt(Parameter* stmt) {
+    void LLVMEmitVisitor::visitParameterStmt(Parameter* stmt) {
         (void) stmt;
     }
 
-    void LLVMEmitter::visitIfStmt(If* stmt) {
+    void LLVMEmitVisitor::visitIfStmt(If* stmt) {
         llvm::Value* condV = emit(stmt->condition().get());
         llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
         llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(context, "thenBranch", function);
@@ -160,12 +157,12 @@ namespace klong {
         IRBuilder.SetInsertPoint(mergeBB);
     }
 
-    void LLVMEmitter::visitPrintStmt(Print* stmt) {
+    void LLVMEmitVisitor::visitPrintStmt(Print* stmt) {
         // TODO: strings and print
         (void) stmt;
     }
 
-    void LLVMEmitter::visitReturnStmt(Return* stmt) {
+    void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
         _valueOfLastExpr = nullptr;
         if (stmt->value() != nullptr) {
             emit(stmt->value().get());
@@ -173,7 +170,7 @@ namespace klong {
         IRBuilder.CreateRet(_valueOfLastExpr);
     }
 
-    void LLVMEmitter::visitVarDeclStmt(VariableDeclaration* stmt) {
+    void LLVMEmitVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
         stmt->type()->accept(this);
         llvm::Type* type = _valueOfLastType;
 
@@ -195,7 +192,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitWhileStmt(While* stmt) {
+    void LLVMEmitVisitor::visitWhileStmt(While* stmt) {
         llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
 
         llvm::BasicBlock* whileCondBB = llvm::BasicBlock::Create(context, "whileCond", function);
@@ -216,7 +213,7 @@ namespace klong {
         IRBuilder.SetInsertPoint(mergeWhileBB);
     }
 
-    void LLVMEmitter::visitForStmt(For* stmt) {
+    void LLVMEmitVisitor::visitForStmt(For* stmt) {
         llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
 
         llvm::BasicBlock* forInitBB = llvm::BasicBlock::Create(context, "forInit", function);
@@ -246,16 +243,16 @@ namespace klong {
         IRBuilder.SetInsertPoint(mergeForBB);
     }
 
-    void LLVMEmitter::visitCommentStmt(Comment* stmt) {
+    void LLVMEmitVisitor::visitCommentStmt(Comment* stmt) {
         (void) stmt;
     }
 
-    void LLVMEmitter::visitAssignExpr(Assign* expr) {
+    void LLVMEmitVisitor::visitAssignExpr(Assign* expr) {
         _valueOfLastExpr = emit(expr->value().get());
         IRBuilder.CreateStore(_valueOfLastExpr, _namedValues[expr->target()->resolvesTo()]);
     }
 
-    void LLVMEmitter::visitBinaryExpr(Binary* expr) {
+    void LLVMEmitVisitor::visitBinaryExpr(Binary* expr) {
         llvm::Value* left = emit(expr->left().get());
         llvm::Value* right = emit(expr->right().get());
         PrimitiveType* type = dynamic_cast<PrimitiveType*>(expr->left()->type().get());
@@ -383,7 +380,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitCallExpr(Call* expr) {
+    void LLVMEmitVisitor::visitCallExpr(Call* expr) {
         auto calleeF = emit(expr->callee().get());
         std::vector<llvm::Value*> argsV;
         for (auto& arg : expr->args()) {
@@ -392,11 +389,11 @@ namespace klong {
         _valueOfLastExpr = IRBuilder.CreateCall(calleeF, argsV);
     }
 
-    void LLVMEmitter::visitGroupingExpr(Grouping* expr) {
+    void LLVMEmitVisitor::visitGroupingExpr(Grouping* expr) {
         _valueOfLastExpr = emit(expr->expression().get());
     }
 
-    void LLVMEmitter::visitLogicalExpr(Logical* expr) {
+    void LLVMEmitVisitor::visitLogicalExpr(Logical* expr) {
         llvm::Value* left = emit(expr->left().get());
         llvm::Value* right = emit(expr->right().get());
         switch (expr->op()) {
@@ -409,7 +406,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitUnaryExpr(Unary* expr) {
+    void LLVMEmitVisitor::visitUnaryExpr(Unary* expr) {
         llvm::Value* right = emit(expr->right().get());
         switch(expr->op()) {
             case UnaryOperation::MINUS:
@@ -421,7 +418,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitVariableExpr(Variable* expr) {
+    void LLVMEmitVisitor::visitVariableExpr(Variable* expr) {
         switch (expr->resolvesTo()->kind()) {
             case StatementKind::VAR_DECL:
             case StatementKind::PARAMETER:
@@ -439,7 +436,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitNumberLiteral(NumberLiteral* expr) {
+    void LLVMEmitVisitor::visitNumberLiteral(NumberLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::I64:
                 _valueOfLastExpr = llvm::ConstantInt::get(context, llvm::APInt(64, (uint64_t) expr->i64(), true));
@@ -456,7 +453,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitBoolLiteral(BoolLiteral* expr) {
+    void LLVMEmitVisitor::visitBoolLiteral(BoolLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::BOOL:
                 _valueOfLastExpr = llvm::ConstantInt::get(context, llvm::APInt(1, (uint64_t) expr->value()));
@@ -467,7 +464,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitStringLiteral(StringLiteral* expr) {
+    void LLVMEmitVisitor::visitStringLiteral(StringLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::STRING:
                 _valueOfLastExpr = llvm::ConstantDataArray::getString(context, expr->value(), true);
@@ -478,7 +475,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitCharacterLiteral(CharacterLiteral* expr) {
+    void LLVMEmitVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::I8:
                 _valueOfLastExpr = llvm::ConstantInt::get(context, llvm::APInt(8, (uint32_t) expr->value()));
@@ -489,7 +486,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitFunctionType(FunctionType* type) {
+    void LLVMEmitVisitor::visitFunctionType(FunctionType* type) {
 
         std::vector<llvm::Type*> paramTypes;
 
@@ -508,7 +505,7 @@ namespace klong {
         _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
     }
 
-    void LLVMEmitter::visitPrimitiveType(PrimitiveType *type) {
+    void LLVMEmitVisitor::visitPrimitiveType(PrimitiveType *type) {
         switch (type->type()) {
             case PrimitiveTypeKind::VOID:
                 {
@@ -550,7 +547,7 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::visitPointerType(klong::PointerType *type) {
+    void LLVMEmitVisitor::visitPointerType(klong::PointerType *type) {
         auto prevOuterType = _outerType;
         _outerType = TypeKind::POINTER;
         type->pointsTo()->accept(this);
@@ -558,46 +555,11 @@ namespace klong {
         _valueOfLastType = llvm::PointerType::get(_valueOfLastType, 0);
     }
 
-    void LLVMEmitter::visitSimpleType(SimpleType *type) {
+    void LLVMEmitVisitor::visitSimpleType(SimpleType *type) {
         // TODO: how to handle the other types
         auto prevOuterType = _outerType;
         _outerType = TypeKind::SIMPLE;
         (void) type;
         _outerType = prevOuterType;
-    }
-
-    void LLVMEmitter::printIR() {
-        _module->print(llvm::outs(), nullptr);
-    }
-
-    bool LLVMEmitter::generateObjectFile(
-            std::string outputFilename,
-            std::string targetTriple,
-            std::string cpu,
-            std::string features) {
-        std::string error;
-        auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
-
-        llvm::TargetOptions opt;
-        auto rm = llvm::Optional<llvm::Reloc::Model>();
-        auto targetMachine = target->createTargetMachine(targetTriple, cpu, features, opt, rm);
-
-        _module->setTargetTriple(targetTriple);
-        _module->setDataLayout(targetMachine->createDataLayout());
-
-        std::error_code error_code;
-        llvm::raw_fd_ostream destination(outputFilename, error_code, llvm::sys::fs::F_None);
-
-        llvm::legacy::PassManager pass;
-        auto fileType = llvm::TargetMachine::CGFT_ObjectFile;
-
-        if (targetMachine->addPassesToEmitFile(pass, destination, nullptr, fileType)) {
-            llvm::errs() << "TheTargetMachine can't emit a file of this type";
-            return false;
-        }
-
-        pass.run(*_module);
-        destination.flush();
-        return true;
     }
 }
