@@ -7,6 +7,7 @@
 #include "resolver/resolver.h"
 #include "typechecker/typechecker.h"
 #include "codegen/llvm_emitter.h"
+#include "graphviz/dotfile_emitter.h"
 
 using namespace klong;
 
@@ -64,5 +65,10 @@ int main(int argc, char* argv[]) {
 
     std::cout << "overall time: " <<
               std::chrono::duration_cast<std::chrono::milliseconds>(llvmEmissionEnd - parseStart).count() << "ms" << std::endl;
+
+    /* GRAPHVIZ */
+    auto graphvizDotFileEmitter = DotfileEmitter();
+    graphvizDotFileEmitter.emit("module.dot", *module);
+
     return 0;
 }

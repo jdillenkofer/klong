@@ -53,6 +53,7 @@ set(SOURCE_FILES
 	src/resolver/resolve_visitor.cpp
 	src/typechecker/type_check_visitor.cpp
 	src/codegen/llvm_emit_visitor.cpp
+	src/graphviz/dotfile_visitor.cpp
 )
 
 set(HEADER_FILES
@@ -72,8 +73,10 @@ set(HEADER_FILES
 	src/resolver/resolve_visitor.h
 	src/typechecker/typechecker.h
     src/typechecker/type_check_visitor.h
-    src/codegen/llvm_emit_visitor.h
+	src/codegen/llvm_emit_visitor.h
 	src/codegen/llvm_emitter.h
+	src/graphviz/dotfile_visitor.h
+	src/graphviz/dotfile_emitter.h
 )
 
 # Find the libraries that correspond to the LLVM components
