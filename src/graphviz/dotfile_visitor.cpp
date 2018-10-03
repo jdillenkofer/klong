@@ -4,6 +4,7 @@
 #include "ast/stmt.h"
 #include "ast/expr.h"
 #include "ast/type.h"
+#include "ast/string_helper.h"
 
 namespace klong {
     // Module
@@ -13,6 +14,7 @@ namespace klong {
 
         // options
         appendLine("node [shape=record fontname=Arial];");
+        appendLine("edge [fontname=Arial];");
 
         // print module stuff here
         auto moduleId = getModuleId(module);
@@ -91,18 +93,18 @@ namespace klong {
         // visit condition
         stmt->condition()->accept(this);
         auto conditionExprId = getExprId(stmt->condition().get());
-        appendLine(std::to_string(ifStmtId) + " -> " + std::to_string(conditionExprId));
+        appendLine(std::to_string(ifStmtId) + " -> " + std::to_string(conditionExprId)+ " [ label=\"condition\" ]");
 
         // visit then
         stmt->thenBranch()->accept(this);
         auto thenBranchStmtId = getStmtId(stmt->thenBranch().get());
-        appendLine(std::to_string(ifStmtId) + " -> " + std::to_string(thenBranchStmtId));
+        appendLine(std::to_string(ifStmtId) + " -> " + std::to_string(thenBranchStmtId)+ " [ label=\"then\" ]");
 
         // visit else
         if (stmt->elseBranch() != nullptr) {
             stmt->elseBranch()->accept(this);
             auto elseBranchStmtId = getStmtId(stmt->elseBranch().get());
-            appendLine(std::to_string(ifStmtId) + " -> " + std::to_string(elseBranchStmtId));
+            appendLine(std::to_string(ifStmtId) + " -> " + std::to_string(elseBranchStmtId)+ " [ label=\"else\" ]");
         }
     }
 
@@ -132,8 +134,8 @@ namespace klong {
         // print VariableDeclaration stuff here
         auto varDeclStmtId = getStmtId(stmt);
         appendLine(std::to_string(varDeclStmtId) + " [label=\"VariableDeclaration\\n" + stmt->name() + "\\n"
-        + "isConst: " + std::to_string(stmt->isConst()) + "\\n"
-        + "isPublic: " + std::to_string(stmt->isPublic()) + "\"]");
+        + "isPublic: " + to_string(stmt->isPublic()) + "\\n"
+        + "isConst: " + to_string(stmt->isConst()) + "\"]");
 
         // visit initializer
         stmt->initializer()->accept(this);
@@ -149,11 +151,11 @@ namespace klong {
         // visit condition
         stmt->condition()->accept(this);
         auto conditionExprId = getExprId(stmt->condition().get());
-        appendLine(std::to_string(whileStmtId) + " -> " + std::to_string(conditionExprId));
+        appendLine(std::to_string(whileStmtId) + " -> " + std::to_string(conditionExprId) + " [ label=\"condition\" ]");
         // visit body
         stmt->body()->accept(this);
         auto bodyStmtId = getStmtId(stmt->body().get());
-        appendLine(std::to_string(whileStmtId) + " -> " + std::to_string(bodyStmtId));
+        appendLine(std::to_string(whileStmtId) + " -> " + std::to_string(bodyStmtId)+ " [ label=\"body\" ]");
     }
 
     void DotfileVisitor::visitForStmt(For* stmt) {
@@ -165,30 +167,30 @@ namespace klong {
         if (stmt->initializer() != nullptr) {
             stmt->initializer()->accept(this);
             auto initializerStmtId = getStmtId(stmt->initializer().get());
-            appendLine(std::to_string(forStmtId) + " -> " + std::to_string(initializerStmtId));
+            appendLine(std::to_string(forStmtId) + " -> " + std::to_string(initializerStmtId) + " [ label=\"initializer\" ]");
         }
         // visit condition
         stmt->condition()->accept(this);
         auto conditionExprId = getExprId(stmt->condition().get());
-        appendLine(std::to_string(forStmtId) + " -> " + std::to_string(conditionExprId));
+        appendLine(std::to_string(forStmtId) + " -> " + std::to_string(conditionExprId) + " [ label=\"condition\" ]");
 
         // visit increment
         if (stmt->increment() != nullptr) {
             stmt->increment()->accept(this);
             auto incrementExprId = getExprId(stmt->increment().get());
-            appendLine(std::to_string(forStmtId) + " -> " + std::to_string(incrementExprId));
+            appendLine(std::to_string(forStmtId) + " -> " + std::to_string(incrementExprId) + " [ label=\"increment\" ]");
         }
 
         // visit body
         stmt->body()->accept(this);
         auto bodyStmtId = getStmtId(stmt->body().get());
-        appendLine(std::to_string(forStmtId) + " -> " + std::to_string(bodyStmtId));
+        appendLine(std::to_string(forStmtId) + " -> " + std::to_string(bodyStmtId)+ " [ label=\"body\" ]");
     }
 
     void DotfileVisitor::visitCommentStmt(Comment* stmt) {
         // print Comment stuff here
         auto commentStmtId = getStmtId(stmt);
-        appendLine(std::to_string(commentStmtId) + " [label=\"Comment\"]");
+        appendLine(std::to_string(commentStmtId) + " [label=\"Comment\\n" + stmt->text() + "\"]");
     }
 
     // Expr
@@ -200,28 +202,29 @@ namespace klong {
         // visit target
         expr->target()->accept(this);
         auto targetExprId = getExprId(expr->target().get());
-        appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(targetExprId));
+        appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(targetExprId)+ " [ label=\"target\" ]");
 
         // visit value
         expr->value()->accept(this);
         auto valueExprId = getExprId(expr->value().get());
-        appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(valueExprId));
+        appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(valueExprId)+ " [ label=\"value\" ]");
     }
 
     void DotfileVisitor::visitBinaryExpr(Binary* expr) {
         // print Binary stuff here
         auto binaryExprId = getExprId(expr);
-        appendLine(std::to_string(binaryExprId) + " [label=\"Binary\"]");
+        appendLine(std::to_string(binaryExprId) + " [label=\"Binary\\n"
+        + to_string(expr->op()) + "\"]");
 
         // visit left
         expr->left()->accept(this);
         auto leftExprId = getExprId(expr->left().get());
-        appendLine(std::to_string(binaryExprId) + " -> " + std::to_string(leftExprId));
+        appendLine(std::to_string(binaryExprId) + " -> " + std::to_string(leftExprId)+ " [ label=\"left\" ]");
 
         // visit right
         expr->right()->accept(this);
         auto rightExprId = getExprId(expr->right().get());
-        appendLine(std::to_string(binaryExprId) + " -> " + std::to_string(rightExprId));
+        appendLine(std::to_string(binaryExprId) + " -> " + std::to_string(rightExprId)+ " [ label=\"right\" ]");
     }
 
     void DotfileVisitor::visitCallExpr(Call* expr) {
@@ -249,23 +252,25 @@ namespace klong {
     void DotfileVisitor::visitLogicalExpr(Logical* expr) {
         // print Logical stuff here
         auto logicalExprId = getExprId(expr);
-        appendLine(std::to_string(logicalExprId) + " [label=\"Logical\"]");
+        appendLine(std::to_string(logicalExprId) + " [label=\"Logical\\n"
+        + to_string(expr->op()) + "\"]");
 
         // visit left
         expr->left()->accept(this);
         auto leftExprId = getExprId(expr->left().get());
-        appendLine(std::to_string(logicalExprId) + " -> " + std::to_string(leftExprId));
+        appendLine(std::to_string(logicalExprId) + " -> " + std::to_string(leftExprId)+ " [ label=\"left\" ]");
 
         // visit right
         expr->right()->accept(this);
         auto rightExprId = getExprId(expr->right().get());
-        appendLine(std::to_string(logicalExprId) + " -> " + std::to_string(rightExprId));
+        appendLine(std::to_string(logicalExprId) + " -> " + std::to_string(rightExprId)+ " [ label=\"right\" ]");
     }
 
     void DotfileVisitor::visitUnaryExpr(Unary* expr) {
         // print Unary stuff here
         auto unaryExprId = getExprId(expr);
-        appendLine(std::to_string(unaryExprId) + " [label=\"Unary\"]");
+        appendLine(std::to_string(unaryExprId) + " [label=\"Unary\\n"
+        + to_string(expr->op()) + "\"]");
 
         // visit right
         expr->right()->accept(this);
@@ -276,11 +281,12 @@ namespace klong {
     void DotfileVisitor::visitVariableExpr(Variable* expr) {
         // print Variable stuff here
         auto variableExprId = getExprId(expr);
-        appendLine(std::to_string(variableExprId) + " [label=\"Variable\"]");
+        appendLine(std::to_string(variableExprId) + " [label=\"Variable\\n"
+        + expr->name() + "\"]");
 
         // visit resolvesTo
         auto resolvesToId = getStmtId(expr->resolvesTo());
-        appendLine(std::to_string(variableExprId) + " -> " + std::to_string(resolvesToId));
+        appendLine(std::to_string(variableExprId) + " -> " + std::to_string(resolvesToId) + "[ constraint=false, style=\"dotted\"]");
     }
 
     // Literals
@@ -288,6 +294,7 @@ namespace klong {
         // print NumberLiteral stuff here
         auto numberLiteralId = getExprId(expr);
         appendLine(std::to_string(numberLiteralId) + " [label=\"NumberLiteral\\n"
+        + "value: \\n" +
         + "i64: " + std::to_string(expr->i64()) + "\\n"
         + "u64: " + std::to_string(expr->u64()) + "\\n"
         + "f64: " + std::to_string(expr->f64()) + "\"]");
@@ -297,7 +304,7 @@ namespace klong {
         // print BoolLiteral stuff here
         auto boolLiteralId = getExprId(expr);
         appendLine(std::to_string(boolLiteralId) + " [label=\"BoolLiteral\\n"
-                   + "i64: " + std::to_string(expr->value()) + "\"]");
+                   + "value: " + to_string(expr->value()) + "\"]");
     }
 
     void DotfileVisitor::visitStringLiteral(StringLiteral* expr) {
@@ -336,7 +343,6 @@ namespace klong {
         _moduleToId.clear();
         _stmtToId.clear();
         _exprToId.clear();
-        _typeToId.clear();
         _output = "";
     }
 
@@ -364,15 +370,6 @@ namespace klong {
         }
         auto id = _counter++;
         _exprToId[expr] = id;
-        return id;
-    }
-
-    uint64_t DotfileVisitor::getTypeId(Type* type) {
-        if (_typeToId.find(type) != _typeToId.end()) {
-            return _typeToId[type];
-        }
-        auto id = _counter++;
-        _typeToId[type] = id;
         return id;
     }
 }

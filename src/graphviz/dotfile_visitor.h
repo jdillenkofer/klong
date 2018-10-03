@@ -56,7 +56,6 @@ namespace klong {
         uint64_t getModuleId(Module* module);
         uint64_t getStmtId(Stmt* stmt);
         uint64_t getExprId(Expr* expr);
-        uint64_t getTypeId(Type* type);
 
         void appendLine(const std::string& append) {
             _output += append + "\n";
@@ -67,7 +66,6 @@ namespace klong {
         std::map<Module*, uint64_t> _moduleToId;
         std::map<Stmt*, uint64_t> _stmtToId;
         std::map<Expr*, uint64_t> _exprToId;
-        std::map<Type*, uint64_t> _typeToId;
 
         std::string _output;
     };
