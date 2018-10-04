@@ -8,39 +8,39 @@ namespace klong {
     std::string to_string(BinaryOperation bOp) {
         switch(bOp) {
             case BinaryOperation::PLUS:
-                return "PLUS";
+                return "+";
             case BinaryOperation::MINUS:
-                return "MINUS";
+                return "-";
             case BinaryOperation::MULTIPLICATION:
-                return "MULTIPLICATION";
+                return "*";
             case BinaryOperation::DIVISION:
-                return "DIVISION";
+                return "/";
             case BinaryOperation::MODULO:
-                return "MODULO";
+                return "%";
             case BinaryOperation::LSL:
-                return "LSL";
+                return "lsl";
             case BinaryOperation::LSR:
-                return "LSR";
+                return "lsr";
             case BinaryOperation::ASR:
-                return "ASR";
+                return "asr";
             case BinaryOperation::GREATER_THAN:
-                return "GREATER THAN";
+                return "&#62;";
             case BinaryOperation::GREATER_EQUAL:
-                return "GREATER EQUAL";
+                return "&#62;=";
             case BinaryOperation::LESS_THAN:
-                return "LESS THAN";
+                return "&#60;";
             case BinaryOperation::LESS_EQUAL:
-                return "LESS EQUAL";
+                return "&#60;=";
             case BinaryOperation::EQUALITY:
-                return "EQUALITY";
+                return "==";
             case BinaryOperation::INEQUALITY:
-                return "INEQUALITY";
+                return "!=";
             case BinaryOperation::AND:
-                return "AND";
+                return "&";
             case BinaryOperation::XOR:
-                return "XOR";
+                return "^";
             case BinaryOperation::OR:
-                return "OR";
+                return "&#124;";
             default:
                 return "UNDEFINED";
         }
@@ -48,10 +48,10 @@ namespace klong {
 
     std::string to_string(LogicalOperation lOp) {
         switch (lOp) {
-            case LogicalOperation::OR:
-                return "OR";
             case LogicalOperation::AND:
-                return "AND";
+                return "&&";
+            case LogicalOperation::OR:
+                return "||";
             default:
                 return "UNDEFINED";
         }
@@ -60,9 +60,9 @@ namespace klong {
     std::string to_string(UnaryOperation uOp) {
         switch (uOp) {
             case UnaryOperation::NOT:
-                return "NOT";
+                return "!";
             case UnaryOperation::MINUS:
-                return "MINUS";
+                return "-";
             default:
                 return "UNDEFINED";
         }
