@@ -1,13 +1,14 @@
 #pragma once
 
-#include "../lexer/token.h"
-#include "ast/stmt.h"
+#include "common/result.h"
+#include "lexer/token.h"
+#include "ast/module.h"
 
 namespace klong {
     class ParseException : public std::exception {
     public:
         ParseException(SourceRange sourceRange, std::string message):
-            _sourceRange(sourceRange), _message(message) {
+            _sourceRange(sourceRange), _message(std::move(message)) {
         }
 
         static ParseException from(Token token, const std::string& message) {
@@ -18,7 +19,7 @@ namespace klong {
             return _sourceRange;
         }
 
-        const char* what () const throw () {
+        const char* what () const noexcept override {
             return _message.c_str();
         }
 
@@ -30,6 +31,6 @@ namespace klong {
     class IParser {
     public:
         virtual ~IParser() = default;
-        virtual std::vector<StmtPtr> parse();
+        virtual Result<ModulePtr, ParseException> parse() = 0;
     };
 }

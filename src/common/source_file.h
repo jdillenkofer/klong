@@ -3,16 +3,20 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 namespace klong {
     class SourceFile {
     public:
-        SourceFile(std::string path):
-            _path(std::move(path)) {
+        explicit SourceFile(std::string path):
+            _path(std::move(path)),
+            _filename(std::filesystem::path(_path).filename()) {
         }
 
         SourceFile(std::string path, std::string code):
-            _path(std::move(path)), _code(std::move(code)) {
+            _path(std::move(path)),
+            _filename(std::filesystem::path(_path).filename()),
+            _code(std::move(code)) {
         }
 
         bool loadFromFile() {
@@ -36,8 +40,13 @@ namespace klong {
             return _path;
         }
 
+        const std::string& filename() const {
+            return _filename;
+        }
+
     private:
         std::string _path;
+        std::string _filename;
         std::string _code;
     };
 }

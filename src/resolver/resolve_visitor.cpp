@@ -41,7 +41,7 @@ namespace klong {
                 return;
             }
         }
-        throw ResolveException(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() + "'.");
+        _result.addError(ResolveException(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() + "'."));
     }
 
     void ResolveVisitor::enterScope() {
@@ -58,8 +58,8 @@ namespace klong {
         }
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
         if (scope.find(name) != scope.end()) {
-            throw ResolveException(declarationStmt->sourceRange(),
-                    "Symbol with name '" + name + "' already declared in this scope");
+            _result.addError(ResolveException(declarationStmt->sourceRange(),
+                    "Symbol with name '" + name + "' already declared in this scope"));
         }
         scope.insert(std::pair<std::string, SymbolInfo>(name, SymbolInfo { declarationStmt, declarationType, false }));
     }
@@ -79,7 +79,7 @@ namespace klong {
             if (stmt->kind() != StatementKind::FUNCTION && stmt->kind() != StatementKind::VAR_DECL
                 && stmt->kind() != StatementKind::EXT_DECL
                 && stmt->kind() != StatementKind::COMMENT) {
-                throw ResolveException(stmt->sourceRange(), "Illegal top level statement.");
+                _result.addError(ResolveException(stmt->sourceRange(), "Illegal top level statement."));
             }
         }
         enterScope();
@@ -139,7 +139,7 @@ namespace klong {
 
     void ResolveVisitor::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
-            throw ResolveException(stmt->sourceRange(), "Cannot return from top-level code.");
+            _result.addError(ResolveException(stmt->sourceRange(), "Cannot return from top-level code."));
         }
         resolve(stmt->value().get());
     }
@@ -182,7 +182,7 @@ namespace klong {
         if (varDeclRes->kind() == StatementKind::VAR_DECL) {
             auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
             if (varDecl->isConst()) {
-                throw ResolveException(expr->sourceRange(), "Cannot reassign 'const'.");
+                _result.addError(ResolveException(expr->sourceRange(), "Cannot reassign 'const'."));
             }
         }
     }
@@ -217,7 +217,7 @@ namespace klong {
         if (scope.find(expr->name()) != scope.end()) {
             auto& symbol = (*scope.find(expr->name())).second;
             if (!symbol.initialized) {
-                throw ResolveException(expr->sourceRange(), "Cannot read local variable in its own initializer.");
+                _result.addError(ResolveException(expr->sourceRange(), "Cannot read local variable in its own initializer."));
             }
         }
         resolveLocal(expr);
@@ -263,5 +263,9 @@ namespace klong {
     void ResolveVisitor::visitSimpleType(SimpleType* type) {
         // nothing to do here
         (void) type;
+    }
+
+    Result<ModulePtr, ResolveException> ResolveVisitor::getResult() const {
+        return _result;
     }
 }

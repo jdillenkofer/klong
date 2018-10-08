@@ -98,7 +98,8 @@ namespace klong {
     void TypeCheckVisitor::visitIfStmt(If* stmt) {
         check(stmt->condition().get());
         if (!isBoolean(stmt->condition().get())) {
-            throw TypeCheckException(stmt->condition()->sourceRange(), "Expect bool condition in if-statement.");
+            _result.addError(
+                    TypeCheckException(stmt->condition()->sourceRange(), "Expect bool condition in if-statement."));
         }
         check(stmt->thenBranch().get());
         check(stmt->elseBranch().get());
@@ -108,7 +109,8 @@ namespace klong {
         Expr* expr = stmt->expression().get();
         check(expr);
         if (!isString(expr) && !isInteger(expr) && !isFloat(expr) && !isBoolean(expr)) {
-            throw TypeCheckException(stmt->sourceRange(), "Expect string, integer, float or boolean type in print stmt.");
+            _result.addError(
+                    TypeCheckException(stmt->sourceRange(), "Expect string, integer, float or boolean type in print stmt."));
         }
     }
 
@@ -116,21 +118,24 @@ namespace klong {
         check(stmt->value().get());
         if (stmt->value() != nullptr) {
             if (!currentFunction->functionType()->returnType()->isEqual(stmt->value()->type().get())) {
-                throw TypeCheckException(stmt->sourceRange(), "Expect return statement type to match the function returnType.");
+                _result.addError(
+                        TypeCheckException(stmt->sourceRange(), "Expect return statement type to match the function returnType."));
             }
         }
     }
 
     void TypeCheckVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
         if (currentFunction != nullptr && stmt->isPublic()) {
-            throw TypeCheckException(stmt->sourceRange(), "Pub keyword not allowed in front of local variable.");
+            _result.addError(
+                    TypeCheckException(stmt->sourceRange(), "Pub keyword not allowed in front of local variable."));
         }
         check(stmt->initializer().get());
         if (stmt->type() == nullptr) {
             stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
         } else {
             if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type().get())) {
-                throw TypeCheckException(stmt->sourceRange(), "initializerType doesn't match declaration type.");
+                _result.addError(
+                        TypeCheckException(stmt->sourceRange(), "initializerType doesn't match declaration type."));
             }
         }
     }
@@ -138,7 +143,8 @@ namespace klong {
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
         check(stmt->condition().get());
         if (!isBoolean(stmt->condition().get())) {
-            throw TypeCheckException(stmt->condition()->sourceRange(), "while condition expects bool type.");
+            _result.addError(
+                    TypeCheckException(stmt->condition()->sourceRange(), "while condition expects bool type."));
         }
         check(stmt->body().get());
     }
@@ -147,7 +153,8 @@ namespace klong {
         check(stmt->initializer().get());
         check(stmt->condition().get());
         if (!isBoolean(stmt->condition().get())) {
-            throw TypeCheckException(stmt->condition()->sourceRange(), "for condition expects bool type.");
+            _result.addError(
+                    TypeCheckException(stmt->condition()->sourceRange(), "for condition expects bool type."));
         }
         check(stmt->increment().get());
         check(stmt->body().get());
@@ -163,7 +170,8 @@ namespace klong {
         check(expr->target().get());
         check(expr->value().get());
         if (!expr->target()->type()->isEqual(expr->value()->type().get())) {
-            throw TypeCheckException(expr->value()->sourceRange(), "Expect valid type in assignment.");
+            _result.addError(
+                    TypeCheckException(expr->value()->sourceRange(), "Expect valid type in assignment."));
         }
         expr->type(std::shared_ptr<Type>(expr->value()->type()->clone()));
     }
@@ -226,7 +234,8 @@ namespace klong {
                     break;
                 }
                 default:
-                    throw TypeCheckException(expr->sourceRange(), "Illegal operation for floating number.");
+                    _result.addError(
+                            TypeCheckException(expr->sourceRange(), "Illegal operation for floating number."));
             }
             return;
         }
@@ -242,7 +251,8 @@ namespace klong {
                 return;
             }
         }
-        throw TypeCheckException(expr->sourceRange(), "Illegal type in binary op.");
+        _result.addError(
+                TypeCheckException(expr->sourceRange(), "Illegal type in binary op."));
     }
 
     void TypeCheckVisitor::visitCallExpr(Call* expr) {
@@ -258,13 +268,15 @@ namespace klong {
             auto functionType = std::dynamic_pointer_cast<FunctionType>(calleePointer->pointsTo());
             if (functionType != nullptr) {
                 if (!functionType->matchesSignature(callParamTypes)) {
-                    throw TypeCheckException(expr->sourceRange(), "Call Expr doesn't match function signature.");
+                    _result.addError(
+                            TypeCheckException(expr->sourceRange(), "Call Expr doesn't match function signature."));
                 }
                 expr->type(std::shared_ptr<Type>(functionType->returnType()->clone()));
                 return;
             }
         }
-        throw TypeCheckException(expr->sourceRange(), "Callee doesn't resolve to function pointer expression.");
+        _result.addError(
+                TypeCheckException(expr->sourceRange(), "Callee doesn't resolve to function pointer expression."));
     }
 
     void TypeCheckVisitor::visitGroupingExpr(Grouping* expr) {
@@ -275,11 +287,13 @@ namespace klong {
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left().get());
         if (!isBoolean(expr->left().get())) {
-            throw TypeCheckException(expr->left()->sourceRange(), "Expect boolean expr.");
+            _result.addError(
+                    TypeCheckException(expr->left()->sourceRange(), "Expect boolean expr."));
         }
         check(expr->right().get());
         if (!isBoolean(expr->right().get())) {
-            throw TypeCheckException(expr->right()->sourceRange(), "Expect boolean expr.");
+            _result.addError(
+                    TypeCheckException(expr->right()->sourceRange(), "Expect boolean expr."));
         }
         expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
     }
@@ -287,10 +301,12 @@ namespace klong {
     void TypeCheckVisitor::visitUnaryExpr(Unary* expr) {
         check(expr->right().get());
         if (expr->op() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
-            throw TypeCheckException(expr->sourceRange(), "'!' expects boolean expression.");
+            _result.addError(
+                    TypeCheckException(expr->sourceRange(), "'!' expects boolean expression."));
         }
         if (expr->op() == UnaryOperation::MINUS && !isInteger(expr->right().get())) {
-            throw TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression.");
+            _result.addError(
+                    TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression."));
         }
         expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));
     }
@@ -329,7 +345,8 @@ namespace klong {
                 break;
             }
             default:
-                throw TypeCheckException(expr->sourceRange(), "Variable resolves to invalid kind.");
+                _result.addError(
+                        TypeCheckException(expr->sourceRange(), "Variable resolves to invalid kind."));
         }
     }
 
@@ -386,5 +403,9 @@ namespace klong {
     void TypeCheckVisitor::visitSimpleType(SimpleType *type) {
         // nothing to do here
         (void) type;
+    }
+
+    Result<ModulePtr, TypeCheckException> TypeCheckVisitor::getResult() const {
+        return _result;
     }
 }

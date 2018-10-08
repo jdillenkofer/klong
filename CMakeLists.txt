@@ -36,6 +36,9 @@ if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" ST
      -fno-common \
      -pedantic \
      -std=c++17")
+
+	set(LINK_FLAGS
+	 "-lstdc++fs")
 endif()
 
 if(MSVC)
@@ -57,7 +60,9 @@ set(SOURCE_FILES
         src/ast/string_helper.cpp)
 
 set(HEADER_FILES
-	src/common/source_range.h
+    src/common/defer.h
+    src/common/result.h
+    src/common/source_range.h
 	src/common/source_file.h
     src/common/source_location.h
     src/lexer/token.h
@@ -67,7 +72,8 @@ set(HEADER_FILES
 	src/ast/stmt.h
 	src/ast/visitor.h
 	src/ast/type.h
-	src/parser/parser.h
+    src/ast/string_helper.h
+    src/parser/parser.h
     src/parser/iparser.h
     src/resolver/resolver.h
 	src/resolver/resolve_visitor.h
@@ -77,7 +83,7 @@ set(HEADER_FILES
 	src/codegen/llvm_emitter.h
 	src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
-        src/ast/string_helper.h)
+)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
@@ -213,9 +219,10 @@ llvm_map_components_to_libnames(llvm_libs
 	Core
 	BinaryFormat
 	Support
-	Demangle)
+	Demangle
+)
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
 # Link against LLVM libraries
-target_link_libraries(${EXECUTABLE_NAME} ${llvm_libs})
+target_link_libraries(${EXECUTABLE_NAME} ${llvm_libs} ${LINK_FLAGS})

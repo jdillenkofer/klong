@@ -14,8 +14,8 @@
 namespace klong {
     class LLVMEmitter {
     public:
-        void emit(Module& module) {
-            module.accept(&llvmEmitVisitor);
+        void emit(ModulePtr module) {
+            module->accept(&llvmEmitVisitor);
         }
 
         void printIR() {

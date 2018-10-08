@@ -23,8 +23,12 @@ namespace klong {
             _charPos++;
         }
 
-        std::string filepath() const {
+        std::string path() const {
             return _source->path();
+        }
+
+        std::string filename() const {
+            return _source->filename();
         }
 
         size_t column() const {

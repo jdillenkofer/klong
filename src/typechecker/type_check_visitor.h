@@ -1,6 +1,8 @@
 #pragma once
 
+#include "common/result.h"
 #include "ast/visitor.h"
+#include "ast/module.h"
 #include "ast/stmt.h"
 #include "ast/expr.h"
 
@@ -8,14 +10,14 @@ namespace klong {
     class TypeCheckException : public std::exception {
     public:
         TypeCheckException(SourceRange sourceRange, std::string message):
-            _sourceRange(sourceRange), _message(message) {
+            _sourceRange(sourceRange), _message(std::move(message)) {
         }
 
         SourceRange sourceRange() const {
             return _sourceRange;
         }
 
-        const char* what () const throw () {
+        const char* what () const noexcept override {
             return _message.c_str();
         }
 
@@ -66,6 +68,8 @@ namespace klong {
         void visitPointerType(PointerType* type) override;
         void visitSimpleType(SimpleType *type) override;
 
+        Result<ModulePtr, TypeCheckException> getResult() const;
+
     private:
         void check(const std::vector<StmtPtr>& statements);
         void check(Stmt* stmt);
@@ -77,5 +81,7 @@ namespace klong {
         bool isString(Expr* expr);
     private:
         Function* currentFunction = nullptr;
+        Result<ModulePtr, TypeCheckException> _result = Result<ModulePtr, TypeCheckException>::from(
+                std::shared_ptr<Module>(nullptr));
     };
 }

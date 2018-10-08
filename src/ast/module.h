@@ -6,7 +6,6 @@
 #include <vector>
 #include <memory>
 
-
 namespace klong {
     class Stmt;
     using StmtPtr = std::shared_ptr<Stmt>;
@@ -14,7 +13,7 @@ namespace klong {
     class Module {
     public:
         Module(std::string filename, std::vector<StmtPtr>&& statements):
-            _statements(statements), _filename(filename) {
+            _statements(statements), _filename(std::move(filename)) {
         }
 
         virtual void accept(Visitor* visitor) {
@@ -27,6 +26,20 @@ namespace klong {
 
         std::string filename() const {
             return _filename;
+        }
+
+        std::string filenameNoExt() const {
+            std::stringstream filenameNoExt;
+            size_t n = 0;
+            while (n < _filename.size()) {
+                char c = _filename[n];
+                if (n > 0 && c == '.') {
+                    break;
+                }
+                filenameNoExt << c;
+                n++;
+            }
+            return filenameNoExt.str();
         }
 
     private:

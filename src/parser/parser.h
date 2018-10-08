@@ -13,14 +13,14 @@
 #include "ast/visitor.h" // <-- TODO: remove this include
 
 namespace klong {
-    class Parser {
+    class Parser : public IParser {
     public:
-        Parser(ILexer* lexer):
+        explicit Parser(ILexer* lexer):
             _lexer(lexer) {
             advance();
         }
 
-        ModulePtr parse();
+        Result<ModulePtr, ParseException> parse() override;
     private:
         template<typename... T> bool match(T... types) {
             for (auto& type : { types... }) {
@@ -76,5 +76,6 @@ namespace klong {
         Token _previous;
         ILexer* _lexer;
         bool _isInsideFunction = false;
+        std::vector<ParseException> _errors;
     };
 }

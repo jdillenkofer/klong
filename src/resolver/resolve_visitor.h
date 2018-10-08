@@ -3,6 +3,8 @@
 #include <stack>
 #include <map>
 
+#include "common/result.h"
+#include "ast/module.h"
 #include "ast/visitor.h"
 #include "ast/stmt.h"
 #include "ast/expr.h"
@@ -18,7 +20,7 @@ namespace klong {
             return _sourceRange;
         }
 
-        const char* what () const throw () {
+        const char* what () const noexcept override {
             return _message.c_str();
         }
 
@@ -82,6 +84,8 @@ namespace klong {
         void visitPointerType(PointerType* type) override;
         void visitSimpleType(SimpleType *type) override;
 
+        Result<ModulePtr, ResolveException> getResult() const;
+
     private:
         void resolve(Stmt* stmt);
         void resolve(Expr* expr);
@@ -100,5 +104,7 @@ namespace klong {
     private:
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
         bool _isInsideFunction = false;
+        Result<ModulePtr, ResolveException> _result = Result<ModulePtr, ResolveException>::from(
+                std::shared_ptr<Module>(nullptr));
     };
 }

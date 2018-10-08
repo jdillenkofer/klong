@@ -4,17 +4,21 @@
 #include <exception>
 
 namespace klong {
-    ModulePtr Parser::parse() {
+    Result<ModulePtr, ParseException> Parser::parse() {
         std::vector<StmtPtr> statements;
         while(!isAtEnd()) {
             statements.push_back(std::move(declarationStmt()));
         }
         Token lastToken = previous();
-        std::string moduleName = "defaultModule";
+        std::string moduleName;
         if (lastToken.sourceRange.start.valid()) {
-            moduleName = lastToken.sourceRange.start.filepath();
+            moduleName = lastToken.sourceRange.start.filename();
         }
-        return std::make_shared<Module>(moduleName, std::move(statements));
+        if (!_errors.empty()) {
+            return Result<ModulePtr, ParseException>::fromErrors(std::move(_errors));
+        }
+        auto module = std::make_shared<Module>(moduleName, std::move(statements));
+        return Result<ModulePtr, ParseException>::from(std::move(module));
     }
 
     Token Parser::consume(TokenType type, std::string errorMessage) {
@@ -162,7 +166,7 @@ namespace klong {
 
             return statement();
         } catch(const ParseException& error) {
-            std::cerr << error.what() << std::endl;
+            _errors.push_back(error);
             synchronize();
             return nullptr;
         }
