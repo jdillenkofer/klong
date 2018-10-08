@@ -28,7 +28,7 @@ namespace klong {
             return _filename;
         }
 
-        std::string filenameNoExt() const {
+        std::string filenameWithoutExtension() const {
             std::stringstream filenameNoExt;
             size_t n = 0;
             while (n < _filename.size()) {

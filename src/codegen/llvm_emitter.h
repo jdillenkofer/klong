@@ -25,6 +25,10 @@ namespace klong {
             }
         }
 
+        std::string getDefaultTargetTriple() const {
+            return llvm::sys::getDefaultTargetTriple();
+        }
+
         bool generateObjectFile(const std::string& outputFilename,
                                 const std::string& targetTriple = llvm::sys::getDefaultTargetTriple(),
                                 const std::string& cpu = "generic",

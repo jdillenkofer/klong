@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <optional>
 
 namespace klong {
     template <typename successType, typename errorType> class Result {
@@ -12,6 +13,8 @@ namespace klong {
         static Result<successType, errorType> from(successType&& val) {
             return Result(std::move(val));
         }
+
+        Result() = default;
 
         successType success() const {
             return _val;
@@ -27,6 +30,13 @@ namespace klong {
 
         std::vector<errorType> getErrors() const {
             return _errors;
+        }
+
+        std::optional<errorType> getFirstError() const {
+            if (hasErrors()) {
+                return std::make_optional(_errors[0]);
+            }
+            return {};
         }
 
         void addError(errorType&& error) {

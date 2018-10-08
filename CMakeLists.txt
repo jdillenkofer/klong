@@ -51,16 +51,21 @@ add_definitions(${LLVM_DEFINITIONS})
 
 set(SOURCE_FILES
     src/main.cpp
+    src/common/getopt.c
+    src/common/option.cpp
     src/lexer/lexer.cpp
     src/parser/parser.cpp
 	src/resolver/resolve_visitor.cpp
 	src/typechecker/type_check_visitor.cpp
 	src/codegen/llvm_emit_visitor.cpp
 	src/graphviz/dotfile_visitor.cpp
-        src/ast/string_helper.cpp)
+    src/ast/string_helper.cpp
+        src/compiler.cpp)
 
 set(HEADER_FILES
     src/common/defer.h
+    src/common/option.h
+    src/common/getopt.h
     src/common/result.h
     src/common/source_range.h
 	src/common/source_file.h
@@ -83,7 +88,7 @@ set(HEADER_FILES
 	src/codegen/llvm_emitter.h
 	src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
-)
+        src/compiler.h)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

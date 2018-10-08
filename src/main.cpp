@@ -1,120 +1,38 @@
 #include <iostream>
-#include <chrono>
 
-#include "common/defer.h"
-#include "common/source_file.h"
-#include "lexer/lexer.h"
-#include "parser/parser.h"
-#include "resolver/resolver.h"
-#include "typechecker/typechecker.h"
-#include "codegen/llvm_emitter.h"
-#include "graphviz/dotfile_emitter.h"
+#include "common/option.h"
+#include "compiler.h"
 
 using namespace klong;
 
+void printHelp();
+
 int main(int argc, char* argv[]) {
-    // TODO: commandline args
-    if (argc != 2) {
-        std::cerr << "No input file!" << std::endl;
+    auto optionResult = parseOptions(argc, argv);
+    if (optionResult.hasErrors()) {
+        std::cerr << optionResult.getFirstError().value() << std::endl;
         return 1;
     }
+    auto option = optionResult.success();
+    auto entryFile = option.filepath;
 
-    const std::string filename = argv[1];
-    auto sourceFile = SourceFile(filename);
-    auto result = sourceFile.loadFromFile();
-    if (!result) {
-        std::cerr << "Cannot load source file " << sourceFile.path() << std::endl;
-        return 1;
+    if (option.help) {
+        printHelp();
+        return 0;
     }
 
-    /* PARSING */
-    ModulePtr module;
-    auto parseStart = std::chrono::high_resolution_clock::now();
-    {
-        defer(
-            auto parseEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "Parsing time: " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(parseEnd - parseStart).count() <<
-            "ms" << std::endl;
-        );
-
-        auto lexer = Lexer(&sourceFile);
-        auto parser = Parser(&lexer);
-        auto parseResult = parser.parse();
-        if (parseResult.hasErrors()) {
-            for (auto& parseError : parseResult.getErrors()) {
-                std::cerr << parseError.what() << std::endl;
-            }
-            return 1;
-        }
-        module = parseResult.success();
-    }
-
-
-    /* RESOLVING */
-    {
-        auto resolveStart = std::chrono::high_resolution_clock::now();
-        defer(
-            auto resolveEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "Resolve time: " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(resolveEnd - resolveStart).count() <<
-            "ms" << std::endl;
-        );
-
-        auto resolver = Resolver();
-        auto resolveResult = resolver.resolve(module);
-        if (resolveResult.hasErrors()) {
-            for (auto& resolveError : resolveResult.getErrors()) {
-                std::cerr << resolveError.what() << std::endl;
-            }
-            return 1;
-        }
-
-    }
-
-    /* TYPECHECKING */
-    {
-        auto typeCheckStart = std::chrono::high_resolution_clock::now();
-        defer(
-            auto typeCheckEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "Typecheck time: " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(typeCheckEnd - typeCheckStart).count() <<
-            "ms" << std::endl;
-        );
-
-        auto typeChecker = TypeChecker();
-        auto typeCheckResult = typeChecker.check(module);
-        if (typeCheckResult.hasErrors()) {
-            for (auto& typeCheckError: typeCheckResult.getErrors()) {
-                std::cerr << typeCheckError.what() << std::endl;
-            }
-            return 1;
-        }
-    }
-
-    /* CODEGEN */
-    auto llvmEmitter = LLVMEmitter();
-    {
-        auto llvmEmissionStart = std::chrono::high_resolution_clock::now();
-        defer(
-            auto llvmEmissionEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "LLVM time: " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(llvmEmissionEnd - llvmEmissionStart).count() <<
-            "ms" << std::endl;
-
-            std::cout << "overall time: " <<
-            std::chrono::duration_cast<std::chrono::milliseconds>(llvmEmissionEnd - parseStart).count() <<
-            "ms" << std::endl;
-        );
-        llvmEmitter.emit(module);
-    }
-
-    llvmEmitter.generateObjectFile(module->filenameNoExt() + ".o");
-    llvmEmitter.printIR();
-
-    /* GRAPHVIZ */
-    auto graphvizDotFileEmitter = DotfileEmitter();
-    graphvizDotFileEmitter.emit("module.dot", module);
-
+    Compiler compiler(option);
+    compiler.compile(entryFile);
     return 0;
+}
+
+void printHelp() {
+    std::cout << "usage klong [options] [@entryfile]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "\t-c disable linking" << std::endl;
+    std::cout << "\t-o file Place output in file \"file\"." << std::endl;
+    std::cout << "\t-b targetTriple" << std::endl;
+    std::cout << "\t-d emit graphviz dot files" << std::endl;
+    std::cout << "\t-v (verbose) shows compile times" << std::endl;
+    std::cout << "\t-h shows this help" << std::endl;
 }
