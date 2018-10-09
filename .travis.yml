@@ -9,17 +9,17 @@ addons:
         packages:
             - gcc-8
             - g++-8
-            - clang-7
-              #- libllvm7
-              #- llvm-7
-              #- llvm-7-dev
-              #- llvm-7-runtime
+              #- clang-7
+            - libllvm7
+            - llvm-7
+            - llvm-7-dev
+            - llvm-7-runtime
 
 notifications:
   email: false
 
 before_script:
-  - which clang-7
+  - ls /usr/local/lib/cmake/
     #ls /usr/local/clang-7.0.0/lib/cmake/llvm
   - mkdir build
   - cd build
