@@ -5,9 +5,14 @@ addons:
     apt:
         sources:
             - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-7
         packages:
             - gcc-8
             - g++-8
+            - libllvm7
+            - llvm-7
+            - llvm-7-dev
+            - llvm-7-runtime
 
 notifications:
   email: false
