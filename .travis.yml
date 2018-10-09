@@ -8,17 +8,14 @@ addons:
         packages:
             - gcc-8
             - g++-8
-    env:
-    - COMPILER_EVAL="export CC=gcc-8 && export CXX=g++-8"
 
 notifications:
   email: false
 
 before_script:
-  - eval "${COMPILER_EVAL}"
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) ..
 
 script: 
   - make -j2
