@@ -26,9 +26,9 @@ install:
     - timeout 1800 ./get-deps.sh || true
 
 before_script:
-  - mkdir build
-  - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake/llvm ..
+# - mkdir build
+# - cd build
+# - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake/llvm ..
 
 script: 
-  - make
+#  - make -j2
