@@ -8,5 +8,3 @@ fi
 if [ ! -d "clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04" ]; then
     tar -xf "clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
 fi
-cd "clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04"
-cd ../../

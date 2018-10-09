@@ -9,12 +9,7 @@ addons:
         packages:
             - gcc-8
             - g++-8
-            #- clang-7
-            #- libllvm7
-            #- llvm-7
-            #- llvm-7-dev
-            #- llvm-7-runtime
-            - libedit-dev
+            #- libedit-dev
 notifications:
   email: false
 
@@ -23,12 +18,14 @@ cache:
     deps
 
 install:
+    - sudo rm -rf /usr/local/clang-5.0.0
     - ./get-deps.sh
+    - sudo cp deps/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/* /usr/local
 
 before_script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/deps/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/lib ..
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) ..
 
 script: 
   - make -j2
