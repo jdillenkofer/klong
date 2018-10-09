@@ -9,10 +9,11 @@ addons:
         packages:
             - gcc-8
             - g++-8
-            - libllvm7
-            - llvm-7
-            - llvm-7-dev
-            - llvm-7-runtime
+            - clang-7
+              #- libllvm7
+              #- llvm-7
+              #- llvm-7-dev
+              #- llvm-7-runtime
 
 notifications:
   email: false
@@ -20,7 +21,7 @@ notifications:
 before_script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/lib/ccache ..
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/local/clang-7.0.0/lib/cmake/llvm ..
 
 script: 
   - make -j2
