@@ -18,6 +18,10 @@ addons:
 notifications:
   email: false
 
+cache:
+  directories:
+    deps
+
 before_script:
   - ./get-deps.sh  
   - mkdir build
