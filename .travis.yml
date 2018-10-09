@@ -18,7 +18,6 @@ cache:
     deps
 
 install:
-    - sudo rm -rf /usr/local/clang-5.0.0
     - ./get-deps.sh
     - sudo cp -r deps/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/* /usr/local
 
