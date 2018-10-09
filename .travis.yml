@@ -10,10 +10,10 @@ addons:
             - gcc-8
             - g++-8
             #- clang-7
-            - libllvm7
-            - llvm-7
-            - llvm-7-dev
-            - llvm-7-runtime
+            #- libllvm7
+            #- llvm-7
+            #- llvm-7-dev
+            #- llvm-7-runtime
             - libedit-dev
 notifications:
   email: false
@@ -29,4 +29,4 @@ before_script:
   - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake/llvm ..
 
 script: 
-  - make -j4
+  - make
