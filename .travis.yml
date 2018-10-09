@@ -18,9 +18,10 @@ notifications:
   email: false
 
 before_script:
+  - sudo apt-get purge clang 
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) ..
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=  ..
 
 script: 
   - make -j2
