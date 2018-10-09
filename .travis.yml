@@ -9,7 +9,7 @@ addons:
         packages:
             - gcc-8
             - g++-8
-            #- libedit-dev
+            - libedit-dev
 notifications:
   email: false
 
