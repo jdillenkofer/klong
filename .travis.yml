@@ -21,7 +21,7 @@ notifications:
 before_script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DLLVM_INSTALL_PREFIX=/usr/local/clang-7.0.0/lib/cmake/llvm ..
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DLLVM_DIR=/usr/local/clang-7.0.0/lib/cmake/llvm ..
 
 script: 
   - make -j2
