@@ -19,7 +19,7 @@ notifications:
   email: false
 
 before_script:
-  - ls /usr/lib
+  - ls /usr/lib/llvm-7
     #ls /usr/local/clang-7.0.0/lib/cmake/llvm
   - mkdir build
   - cd build
