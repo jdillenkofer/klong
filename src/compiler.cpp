@@ -9,10 +9,65 @@
 #include "parser/parser.h"
 #include "resolver/resolver.h"
 #include "typechecker/typechecker.h"
-#include "codegen/llvm_emitter.h"
 #include "graphviz/dotfile_emitter.h"
 
 namespace klong {
+
+    bool Compiler::parse(ModulePtr& module, SourceFile &sourceFile) {
+        auto lexer = Lexer(&sourceFile);
+        auto parser = Parser(&lexer);
+        auto parseResult = parser.parse();
+        if (parseResult.hasErrors()) {
+            for (auto& parseError : parseResult.getErrors()) {
+                std::cerr << parseError.what() << std::endl;
+            }
+            return false;
+        }
+        module = parseResult.success();
+        return true;
+    }
+
+    bool Compiler::resolve(klong::ModulePtr &module) {
+        Resolver resolver;
+        auto resolveResult = resolver.resolve(module);
+        if (resolveResult.hasErrors()) {
+            for (auto& resolveError : resolveResult.getErrors()) {
+                std::cerr << resolveError.what() << std::endl;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    bool Compiler::typecheck(klong::ModulePtr &module) {
+        TypeChecker typeChecker;
+        auto typeCheckResult = typeChecker.check(module);
+        if (typeCheckResult.hasErrors()) {
+            for (auto& typeCheckError: typeCheckResult.getErrors()) {
+                std::cerr << typeCheckError.what() << std::endl;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter) {
+        llvmEmitter.emit(module);
+
+        auto objOutputPath = module->filenameWithoutExtension() + ".o";
+        if (_option.disableLinking && _option.useCustomOutputPath) {
+            objOutputPath = _option.customOutputPath;
+        }
+
+        auto targetTriple = llvmEmitter.getDefaultTargetTriple();
+        if (_option.isCustomTarget) {
+            targetTriple = _option.customTarget;
+        }
+
+        llvmEmitter.generateObjectFile(objOutputPath, targetTriple);
+        return true;
+    }
+
     bool Compiler::compile(std::string filepath) {
         auto sourceFile = SourceFile(std::move(filepath));
         auto result = sourceFile.loadFromFile();
@@ -34,16 +89,9 @@ namespace klong {
                 }
             );
 
-            auto lexer = Lexer(&sourceFile);
-            auto parser = Parser(&lexer);
-            auto parseResult = parser.parse();
-            if (parseResult.hasErrors()) {
-                for (auto& parseError : parseResult.getErrors()) {
-                    std::cerr << parseError.what() << std::endl;
-                }
+            if (!parse(module, sourceFile)) {
                 return false;
             }
-            module = parseResult.success();
         }
 
 
@@ -59,12 +107,7 @@ namespace klong {
                 }
             );
 
-            auto resolver = Resolver();
-            auto resolveResult = resolver.resolve(module);
-            if (resolveResult.hasErrors()) {
-                for (auto& resolveError : resolveResult.getErrors()) {
-                    std::cerr << resolveError.what() << std::endl;
-                }
+            if (!resolve(module)) {
                 return false;
             }
 
@@ -82,18 +125,13 @@ namespace klong {
                 }
             );
 
-            auto typeChecker = TypeChecker();
-            auto typeCheckResult = typeChecker.check(module);
-            if (typeCheckResult.hasErrors()) {
-                for (auto& typeCheckError: typeCheckResult.getErrors()) {
-                    std::cerr << typeCheckError.what() << std::endl;
-                }
+            if (!typecheck(module)) {
                 return false;
             }
         }
 
         /* CODEGEN */
-        auto llvmEmitter = LLVMEmitter();
+        LLVMEmitter llvmEmitter;
         {
             auto llvmEmissionStart = std::chrono::high_resolution_clock::now();
             defer(
@@ -108,21 +146,12 @@ namespace klong {
                     "ms" << std::endl;
                 }
             );
-            llvmEmitter.emit(module);
+
+
+            if (!codegen(module, llvmEmitter)) {
+                return false;
+            }
         }
-
-        auto objOutputPath = module->filenameWithoutExtension() + ".o";
-
-        if (_option.disableLinking && _option.useCustomOutputPath) {
-            objOutputPath = _option.customOutputPath;
-        }
-
-        auto targetTriple = llvmEmitter.getDefaultTargetTriple();
-        if (_option.isCustomTarget) {
-            targetTriple = _option.customTarget;
-        }
-
-        llvmEmitter.generateObjectFile(objOutputPath, targetTriple);
 
         if (_option.verbose) {
             llvmEmitter.printIR();
@@ -130,7 +159,7 @@ namespace klong {
 
         /* GRAPHVIZ */
         if (_option.emitDotFile) {
-            auto graphvizDotFileEmitter = DotfileEmitter();
+            DotfileEmitter graphvizDotFileEmitter;
             graphvizDotFileEmitter.emit(module->filenameWithoutExtension() + ".dot", module);
         }
         return true;

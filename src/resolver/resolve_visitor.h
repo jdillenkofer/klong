@@ -104,7 +104,6 @@ namespace klong {
     private:
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
         bool _isInsideFunction = false;
-        Result<ModulePtr, ResolveException> _result = Result<ModulePtr, ResolveException>::from(
-                std::shared_ptr<Module>(nullptr));
+        Result<ModulePtr, ResolveException> _result;
     };
 }

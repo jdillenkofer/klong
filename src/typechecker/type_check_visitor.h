@@ -81,7 +81,6 @@ namespace klong {
         bool isString(Expr* expr);
     private:
         Function* currentFunction = nullptr;
-        Result<ModulePtr, TypeCheckException> _result = Result<ModulePtr, TypeCheckException>::from(
-                std::shared_ptr<Module>(nullptr));
+        Result<ModulePtr, TypeCheckException> _result;
     };
 }
