@@ -8,8 +8,11 @@ addons:
         packages:
             - gcc-8
             - g++-8
+    env:
+    - COMPILER_EVAL="CC=gcc-8 && CXX=g++-8"
 
 before_script:
+  - eval "${COMPILER_EVAL}"
   - mkdir build
   - cd build
   - cmake ..
