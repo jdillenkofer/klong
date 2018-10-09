@@ -29,3 +29,4 @@ before_script:
 
 script: 
   - make -j2
+  - ./klong -v ../examples/simple.kg
