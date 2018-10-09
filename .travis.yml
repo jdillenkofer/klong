@@ -11,6 +11,9 @@ addons:
     env:
     - COMPILER_EVAL="export CC=gcc-8 && export CXX=g++-8"
 
+notifications:
+  email: false
+
 before_script:
   - eval "${COMPILER_EVAL}"
   - mkdir build
