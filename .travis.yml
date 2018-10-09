@@ -25,4 +25,4 @@ before_script:
   - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake/llvm ..
 
 script: 
-  - make -j2
+  - make -j4

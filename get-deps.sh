@@ -8,5 +8,5 @@ cd llvm-7.0.0.src
 mkdir -p build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Debug ..
-sudo make install -j2
+sudo make install -j4
 cd ../../..
