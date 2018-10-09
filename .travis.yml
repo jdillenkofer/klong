@@ -5,7 +5,7 @@ addons:
     apt:
         sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-7
+            #- llvm-toolchain-trusty-7
         packages:
             - gcc-8
             - g++-8
