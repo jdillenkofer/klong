@@ -19,6 +19,7 @@ notifications:
   email: false
 
 before_script:
+  - ls /usr/local/clang-7.0.0/lib/cmake/llvm
   - mkdir build
   - cd build
   - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DLLVM_DIR=/usr/local/clang-7.0.0/lib/cmake/llvm ..
