@@ -8,6 +8,7 @@ addons:
         packages:
             - gcc-8
             - g++-8
+            - cmake-3.11
 
 before_script:
   - mkdir build
