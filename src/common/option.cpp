@@ -31,11 +31,16 @@ namespace klong {
                     break;
             }
         }
-        if (optind > argc - 1) {
-            optionResult.addError("No input file!");
-            return optionResult;
+        // if there is no help option set, we need to check
+        if (!option.help) {
+            // if there is another argument
+            if (optind > (argc - 1)) {
+                optionResult.addError("No input file!");
+                return optionResult;
+            }
+            // add the argument as target file to the options
+            option.filepath = std::string(argv[optind]);
         }
-        option.filepath = std::string(argv[optind]);
         optionResult.setSuccess(std::move(option));
         return optionResult;
     }
