@@ -28,7 +28,7 @@ install:
 before_script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/deps/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04 ..
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/deps/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/lib ..
 
 script: 
   - make -j2
