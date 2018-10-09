@@ -14,14 +14,15 @@ addons:
             - llvm-7
             - llvm-7-dev
             - llvm-7-runtime
-            #- libedit-dev
+            - libedit-dev
 notifications:
   email: false
 
 before_script:
+  - ./get-deps.sh  
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/lib/llvm-7/ ..
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_PREFIX_PATH=/usr/local/lib/cmake/llvm ..
 
 script: 
   - make -j
