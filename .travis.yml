@@ -1,0 +1,29 @@
+language: cpp
+compiler: gcc
+dist: trusty
+addons:
+    apt:
+        sources:
+            - ubuntu-toolchain-r-test
+        packages:
+            - gcc-8
+            - g++-8
+            - libedit-dev
+
+cache:
+  apt: true
+  directories:
+    deps
+
+install:
+    - ./get-deps.sh
+    - sudo cp -rs $(pwd)/deps/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-14.04/* /usr/local
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DCMAKE_LINKER=$(which ld-8) ..
+
+script: 
+  - make -j2
+  - ./klong -v ../examples/simple.kg
