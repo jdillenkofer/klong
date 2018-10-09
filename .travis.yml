@@ -9,7 +9,7 @@ addons:
             - gcc-8
             - g++-8
     env:
-    - COMPILER_EVAL="CC=gcc-8 && CXX=g++-8"
+    - COMPILER_EVAL="export CC=gcc-8 && export CXX=g++-8"
 
 before_script:
   - eval "${COMPILER_EVAL}"
