@@ -19,6 +19,7 @@ notifications:
   email: false
 
 before_script:
+  - sudo rm -rf /usr/local/clang-5.0.0/
   - mkdir build
   - cd build
   - cmake -DCMAKE_CXX_COMPILER=$(which g++-8) -DCMAKE_C_COMPILER=$(which gcc-8) -DLLVM_INSTALL_PREFIX=/usr/lib/llvm-7/ ..
