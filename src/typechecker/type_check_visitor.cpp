@@ -70,6 +70,15 @@ namespace klong {
         return false;
     }
 
+    bool TypeCheckVisitor::isPointer(Expr* expr) {
+        TypePtr type = expr->type();
+        if (type->kind() == TypeKind::POINTER) {
+            auto pointerType = std::dynamic_pointer_cast<PointerType>(type);
+            return pointerType != nullptr;
+        }
+        return false;
+    }
+
     // Module
     void TypeCheckVisitor::visitModule(Module* module) {
         check(module->statements());
@@ -319,6 +328,28 @@ namespace klong {
         if (expr->op() == UnaryOperation::MINUS && !isInteger(expr->right().get())) {
             _result.addError(
                     TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression."));
+        }
+        if (expr->op() == UnaryOperation::DEREF) {
+            if (!isPointer(expr->right().get())) {
+                _result.addError(
+                        TypeCheckException(expr->sourceRange(), "Deref expects pointer type."));
+                return;
+            }
+            auto pointerType = std::dynamic_pointer_cast<PointerType>(expr->right()->type());
+            expr->type(std::shared_ptr<Type>(pointerType->pointsTo()->clone()));
+            return;
+        }
+
+        if (expr->op() == UnaryOperation::ADDRESS_OF) {
+            auto variable = dynamic_cast<Variable*>(expr->right().get());
+            if (variable == nullptr) {
+                _result.addError(
+                        TypeCheckException(expr->sourceRange(), "Can only get address of variable expressions."));
+            }
+            expr->type(std::make_shared<PointerType>(
+                    expr->sourceRange(),
+                    std::shared_ptr<Type>(expr->right()->type()->clone())));
+            return;
         }
         expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));
     }

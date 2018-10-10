@@ -79,6 +79,7 @@ namespace klong {
         bool isInteger(Expr* expr);
         bool isFloat(Expr* expr);
         bool isString(Expr* expr);
+        bool isPointer(Expr* expr);
     private:
         Function* currentFunction = nullptr;
         Result<ModulePtr, TypeCheckException> _result;

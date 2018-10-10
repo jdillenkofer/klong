@@ -1,13 +1,16 @@
 const from = 0;
 const to = 5;
 
-pub fun main() -> i64 {
+pub fun main() -> ptr<i64> {
     // a b c
-    let funVariable = fib;
-    funVariable = fibDoubled;
+    //let funVariable = fib;
+    //funVariable = fibDoubled;
     // allow shadowing
-    let sum = sum(from, to, funVariable);
-    return (255 lsr 1) & 0b1100 | 0b11;
+    //let sum = sum(from, to, funVariable);
+    let a = 5;
+    let b = &a;
+    return b;
+    //return (255 lsr 1) & 0b1100 | 0b11;
 }
 
 fun sum(from: i64, to: i64, func: ptr<(i64) -> i64>) -> i64 {

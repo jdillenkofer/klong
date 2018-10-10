@@ -459,6 +459,15 @@ namespace klong {
                         variable, value);
             }
 
+            /*
+            if (expr->kind() == ExprKind::UNARY) {
+                auto deref = std::dynamic_pointer_cast<Unary>(expr);
+                if (deref->op() == UnaryOperation::DEREF) {
+                    return std::make_shared<Assign>(SourceRange { expr->sourceRange().start, deref->sourceRange().end },
+                                                    deref, value);
+                }
+            }
+            */
             throw ParseException::from(assign, "Invalid assign target");
         }
         return expr;
@@ -686,6 +695,22 @@ namespace klong {
             return std::make_shared<Unary>(
                     SourceRange { op.sourceRange.start, right->sourceRange().end },
                     UnaryOperation::MINUS, right);
+        }
+
+        if (match(TokenType::AMPERSAND)) {
+            Token op = previous();
+            ExprPtr right = unaryExpr();
+            return std::make_shared<Unary>(
+                    SourceRange { op.sourceRange.start, right->sourceRange().end },
+                    UnaryOperation::ADDRESS_OF, right);
+        }
+
+        if (match(TokenType::ASTERISK)) {
+            Token op = previous();
+            ExprPtr right = unaryExpr();
+            return std::make_shared<Unary>(
+                    SourceRange { op.sourceRange.start, right->sourceRange().end },
+                    UnaryOperation::DEREF, right);
         }
 
         return callExpr();

@@ -63,6 +63,10 @@ namespace klong {
                 return "!";
             case UnaryOperation::MINUS:
                 return "-";
+            case UnaryOperation::DEREF:
+                return "*";
+            case UnaryOperation::ADDRESS_OF:
+                return "&";
             default:
                 return "UNDEFINED";
         }

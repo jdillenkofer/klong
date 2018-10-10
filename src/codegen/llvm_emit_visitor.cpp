@@ -413,6 +413,14 @@ namespace klong {
             case UnaryOperation::NOT:
                 _valueOfLastExpr = IRBuilder.CreateNot(right);
                 break;
+            case UnaryOperation::DEREF:
+                _valueOfLastExpr = IRBuilder.CreateLoad(right);
+                break;
+            case UnaryOperation::ADDRESS_OF:
+                auto variable = dynamic_cast<Variable*>(expr->right().get());
+                auto address = _namedValues[variable->resolvesTo()];
+                _valueOfLastExpr = address;
+                break;
         }
     }
 

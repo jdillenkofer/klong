@@ -323,7 +323,9 @@ namespace klong {
 
     enum class UnaryOperation {
         NOT,
-        MINUS
+        MINUS,
+        DEREF,
+        ADDRESS_OF
     };
 
     class Unary : public Expr {
