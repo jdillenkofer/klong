@@ -147,17 +147,16 @@ namespace klong {
             return false;
         }
 
+        bool isVoid() const {
+            return type() == PrimitiveTypeKind::VOID;
+        }
+
         bool isBoolean() const {
             return type() == PrimitiveTypeKind::BOOL;
         }
 
         bool isString() const {
-            switch(type()) {
-                case PrimitiveTypeKind::STRING:
-                    return true;
-                default:
-                    return false;
-            }
+            return type() == PrimitiveTypeKind::STRING;
         }
 
         bool isInteger() const {

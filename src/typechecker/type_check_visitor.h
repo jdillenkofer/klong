@@ -73,6 +73,7 @@ namespace klong {
         void check(const std::vector<StmtPtr>& statements);
         void check(Stmt* stmt);
         void check(Expr* expr);
+        bool getAndResetReturnsValue();
 
         bool isBoolean(Expr* expr);
         bool isInteger(Expr* expr);
@@ -81,5 +82,6 @@ namespace klong {
     private:
         Function* currentFunction = nullptr;
         Result<ModulePtr, TypeCheckException> _result;
+        bool _returnsValue = false;
     };
 }

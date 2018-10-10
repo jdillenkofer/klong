@@ -210,10 +210,19 @@ namespace klong {
             return _elseBranch;
         }
 
+        bool isMergeUnreachable() const {
+            return _isMergeUnreachable;
+        }
+
+        void setMergeUnreachable() {
+            _isMergeUnreachable = true;
+        }
+
     private:
         ExprPtr _condition;
         StmtPtr _thenBranch;
         StmtPtr _elseBranch;
+        bool _isMergeUnreachable;
     };
 
     class Return : public Stmt {

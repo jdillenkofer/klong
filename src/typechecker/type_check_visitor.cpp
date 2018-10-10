@@ -28,6 +28,12 @@ namespace klong {
         }
     }
 
+    bool TypeCheckVisitor::getAndResetReturnsValue() {
+        auto returnsValue = _returnsValue;
+        _returnsValue = false;
+        return returnsValue;
+    }
+
     bool TypeCheckVisitor::isBoolean(Expr* expr) {
         TypePtr type = expr->type();
         if (type->kind() == TypeKind::PRIMITIVE) {
@@ -87,6 +93,11 @@ namespace klong {
         auto previousFunction = currentFunction;
         currentFunction = stmt;
         check(stmt->body());
+        auto primType = dynamic_cast<PrimitiveType*>(stmt->functionType()->returnType().get());
+        if (!_returnsValue && primType != nullptr && !primType->isVoid()) {
+            _result.addError(TypeCheckException(stmt->sourceRange(), "Control-flow reaches end of non-void function "
+                + stmt->name() + "."));
+        }
         currentFunction = previousFunction;
     }
 
@@ -102,7 +113,16 @@ namespace klong {
                     TypeCheckException(stmt->condition()->sourceRange(), "Expect bool condition in if-statement."));
         }
         check(stmt->thenBranch().get());
+        bool thenBranchReturnsValue = getAndResetReturnsValue();
         check(stmt->elseBranch().get());
+        if (stmt->elseBranch().get() != nullptr) {
+            _returnsValue = getAndResetReturnsValue() && thenBranchReturnsValue;
+        } else {
+            _returnsValue = false;
+        }
+        if (_returnsValue) {
+            stmt->setMergeUnreachable();
+        }
     }
 
     void TypeCheckVisitor::visitReturnStmt(Return* stmt) {
@@ -112,6 +132,7 @@ namespace klong {
                 _result.addError(
                         TypeCheckException(stmt->sourceRange(), "Expect return statement type to match the function returnType."));
             }
+            _returnsValue = true;
         }
     }
 

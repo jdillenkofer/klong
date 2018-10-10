@@ -10,7 +10,6 @@
 #include "ast/stmt.h"
 #include "ast/expr.h"
 
-#include "ast/visitor.h" // <-- TODO: remove this include
 
 namespace klong {
     class Parser : public IParser {

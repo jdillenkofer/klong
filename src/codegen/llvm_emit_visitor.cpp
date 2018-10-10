@@ -155,6 +155,9 @@ namespace klong {
         IRBuilder.CreateBr(mergeBB);
 
         IRBuilder.SetInsertPoint(mergeBB);
+        if (stmt->isMergeUnreachable()) {
+            IRBuilder.CreateUnreachable();
+        }
     }
 
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
