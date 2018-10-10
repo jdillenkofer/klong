@@ -157,11 +157,6 @@ namespace klong {
         IRBuilder.SetInsertPoint(mergeBB);
     }
 
-    void LLVMEmitVisitor::visitPrintStmt(Print* stmt) {
-        // TODO: strings and print
-        (void) stmt;
-    }
-
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
         _valueOfLastExpr = nullptr;
         if (stmt->value() != nullptr) {

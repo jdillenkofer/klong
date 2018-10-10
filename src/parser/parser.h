@@ -49,7 +49,6 @@ namespace klong {
         std::shared_ptr<VariableDeclaration> constDeclaration(bool isPublic = false);
         TypePtr typeDeclaration();
         std::shared_ptr<If> ifStmt();
-        std::shared_ptr<Print> printStmt();
         std::shared_ptr<Return> returnStmt();
         std::shared_ptr<While> whileStmt();
         std::shared_ptr<For> forStmt();

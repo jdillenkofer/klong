@@ -19,7 +19,6 @@ namespace klong {
         FUNCTION,
         PARAMETER,
         IF,
-        PRINT,
         RETURN,
         VAR_DECL,
         WHILE,
@@ -215,25 +214,6 @@ namespace klong {
         ExprPtr _condition;
         StmtPtr _thenBranch;
         StmtPtr _elseBranch;
-    };
-
-    class Print : public Stmt {
-    public:
-        Print(SourceRange sourceRange, ExprPtr expression):
-            Stmt(StatementKind::PRINT, sourceRange),
-            _expression(std::move(expression)) {
-        }
-
-        void accept(Visitor* visitor) {
-            visitor->visitPrintStmt(this);
-        }
-
-        ExprPtr expression() const {
-            return _expression;
-        }
-
-    private:
-        ExprPtr _expression;
     };
 
     class Return : public Stmt {

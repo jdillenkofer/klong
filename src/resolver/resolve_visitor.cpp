@@ -133,10 +133,6 @@ namespace klong {
         resolve(stmt->elseBranch().get());
     }
 
-    void ResolveVisitor::visitPrintStmt(Print* stmt) {
-        resolve(stmt->expression().get());
-    }
-
     void ResolveVisitor::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
             _result.addError(ResolveException(stmt->sourceRange(), "Cannot return from top-level code."));

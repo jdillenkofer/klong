@@ -105,15 +105,6 @@ namespace klong {
         check(stmt->elseBranch().get());
     }
 
-    void TypeCheckVisitor::visitPrintStmt(Print* stmt) {
-        Expr* expr = stmt->expression().get();
-        check(expr);
-        if (!isString(expr) && !isInteger(expr) && !isFloat(expr) && !isBoolean(expr)) {
-            _result.addError(
-                    TypeCheckException(stmt->sourceRange(), "Expect string, integer, float or boolean type in print stmt."));
-        }
-    }
-
     void TypeCheckVisitor::visitReturnStmt(Return* stmt) {
         check(stmt->value().get());
         if (stmt->value() != nullptr) {

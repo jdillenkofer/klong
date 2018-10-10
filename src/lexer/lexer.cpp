@@ -103,7 +103,6 @@ namespace klong {
 
         // function
         {'f', std::bind(&Lexer::funKeyword, std::placeholders::_1, std::placeholders::_2)},
-        {'p', std::bind(&Lexer::printKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'r', std::bind(&Lexer::returnKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // control flow keyword
@@ -537,10 +536,6 @@ namespace klong {
 
     bool Lexer::funKeyword(Token& token) {
         return matchesKeyword(token, "fun", TokenType::FUN);
-    }
-
-    bool Lexer::printKeyword(Token& token) {
-        return matchesKeyword(token, "print", TokenType::PRINT);
     }
 
     bool Lexer::returnKeyword(Token& token) {

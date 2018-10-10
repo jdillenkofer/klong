@@ -352,14 +352,6 @@ namespace klong {
                 condition, thenBranch, elseBranch);
     }
 
-    std::shared_ptr<Print> Parser::printStmt() {
-        ExprPtr value = expression();
-        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after value.");
-        return std::make_shared<Print>(
-                SourceRange { value->sourceRange().start, semicolon.sourceRange.end },
-                value);
-    }
-
     std::shared_ptr<Return> Parser::returnStmt() {
         Token keyword = previous();
         ExprPtr value = nullptr;
@@ -434,9 +426,6 @@ namespace klong {
         }
         if (match(TokenType::IF)) {
             return ifStmt();
-        }
-        if (match(TokenType::PRINT)) {
-            return printStmt();
         }
         if (match(TokenType::RETURN)) {
             return returnStmt();

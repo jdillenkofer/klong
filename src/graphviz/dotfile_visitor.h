@@ -18,7 +18,6 @@ namespace klong {
         void visitFunctionStmt(Function* stmt) override;
         void visitParameterStmt(Parameter* stmt) override;
         void visitIfStmt(If* stmt) override;
-        void visitPrintStmt(Print* stmt) override;
         void visitReturnStmt(Return* stmt) override;
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
         void visitWhileStmt(While* stmt) override;

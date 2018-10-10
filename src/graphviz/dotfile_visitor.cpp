@@ -111,17 +111,6 @@ namespace klong {
         }
     }
 
-    void DotfileVisitor::visitPrintStmt(Print* stmt) {
-        // print PrintStmt stuff here
-        auto printStmtId = getStmtId(stmt);
-        appendLine(std::to_string(printStmtId) + " [label=\"Print\"]");
-
-        // visit expression
-        stmt->expression()->accept(this);
-        auto exprId = getExprId(stmt->expression().get());
-        appendLine(std::to_string(printStmtId) + " -> " + std::to_string(exprId));
-    }
-
     void DotfileVisitor::visitReturnStmt(Return* stmt) {
         // print ReturnStmt stuff here
         auto returnStmtId = getStmtId(stmt);
