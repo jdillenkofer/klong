@@ -43,7 +43,10 @@ namespace klong {
             auto target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
 
             llvm::TargetOptions opt;
-            auto rm = llvm::Optional<llvm::Reloc::Model>();
+
+            // use position independent code - only works with executables
+            auto rm = llvm::Reloc::Model::PIC_;
+
             auto targetMachine = target->createTargetMachine(targetTriple, cpu, features, opt, rm);
 
             module->setTargetTriple(targetTriple);
