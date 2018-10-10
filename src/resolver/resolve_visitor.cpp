@@ -173,13 +173,17 @@ namespace klong {
     // Expr
     void ResolveVisitor::visitAssignExpr(Assign* expr) {
         resolve(expr->value().get());
-        resolveLocal(expr->target().get());
-        auto varDeclRes = expr->target()->resolvesTo();
-        if (varDeclRes->kind() == StatementKind::VAR_DECL) {
-            auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
-            if (varDecl->isConst()) {
-                _result.addError(ResolveException(expr->sourceRange(), "Cannot reassign 'const'."));
+        if (expr->isTargetVariable()) {
+            resolveLocal(expr->target().get());
+            auto varDeclRes = expr->target()->resolvesTo();
+            if (varDeclRes->kind() == StatementKind::VAR_DECL) {
+                auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
+                if (varDecl->isConst()) {
+                    _result.addError(ResolveException(expr->sourceRange(), "Cannot reassign 'const'."));
+                }
             }
+        } else {
+            resolve(expr->targetDeref().get());
         }
     }
 

@@ -61,6 +61,11 @@ namespace klong {
             _target(std::move(target)), _value(std::move(value)) {
         }
 
+        Assign(SourceRange sourceRange, std::shared_ptr<Unary> target, ExprPtr value):
+                Expr(ExprKind::ASSIGN, sourceRange),
+                _targetDeref(std::move(target)), _value(std::move(value)) {
+        }
+
         void accept(Visitor* visitor) {
             visitor->visitAssignExpr(this);
         }
@@ -69,12 +74,21 @@ namespace klong {
             return _target;
         }
 
+        std::shared_ptr<Unary> targetDeref() const {
+            return _targetDeref;
+        }
+
+        bool isTargetVariable() const {
+            return _target != nullptr;
+        }
+
         ExprPtr value() const {
             return _value;
         }
 
     private:
-        std::shared_ptr<Variable> _target;
+        std::shared_ptr<Variable> _target = nullptr;
+        std::shared_ptr<Unary> _targetDeref = nullptr;
         ExprPtr _value;
     };
 

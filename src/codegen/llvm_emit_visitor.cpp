@@ -56,8 +56,9 @@ namespace klong {
 
         for (auto& stmt : module->statements()) {
             if (stmt->kind() == StatementKind::FUNCTION) {
-                std::shared_ptr<Function> function = std::dynamic_pointer_cast<Function>(stmt);
-                auto linkage = function->isPublic() ? llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage;
+                Function* function = dynamic_cast<Function*>(stmt.get());
+                auto linkage = function->isPublic() ?
+                        llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage;
 
                 function->functionType()->accept(this);
                 auto functionType = (llvm::FunctionType*) _valueOfLastType;
@@ -246,8 +247,17 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitAssignExpr(Assign* expr) {
-        _valueOfLastExpr = emit(expr->value().get());
-        IRBuilder.CreateStore(_valueOfLastExpr, _namedValues[expr->target()->resolvesTo()]);
+        auto value = emit(expr->value().get());
+        llvm::Value* address = nullptr;
+        if (expr->isTargetVariable()) {
+            address = getVariableAddress(expr->target().get());
+        } else {
+            // ignore the deref operator and
+            // just get the address of the variable
+            address = emit(expr->targetDeref()->right().get());
+        }
+        IRBuilder.CreateStore(value, address);
+        _valueOfLastExpr = value;
     }
 
     void LLVMEmitVisitor::visitBinaryExpr(Binary* expr) {
@@ -417,11 +427,16 @@ namespace klong {
                 _valueOfLastExpr = IRBuilder.CreateLoad(right);
                 break;
             case UnaryOperation::ADDRESS_OF:
-                auto variable = dynamic_cast<Variable*>(expr->right().get());
-                auto address = _namedValues[variable->resolvesTo()];
-                _valueOfLastExpr = address;
+                _valueOfLastExpr = getVariableAddress(expr->right().get());
                 break;
         }
+    }
+
+    llvm::Value* LLVMEmitVisitor::getVariableAddress(Expr* expr) {
+        auto variable = dynamic_cast<Variable*>(expr);
+        assert(variable != nullptr);
+        auto address = _namedValues[variable->resolvesTo()];
+        return address;
     }
 
     void LLVMEmitVisitor::visitVariableExpr(Variable* expr) {
@@ -455,6 +470,7 @@ namespace klong {
                 break;
             default:
                 // TODO: Error handling
+                assert(false);
                 break;
         }
     }
@@ -466,6 +482,7 @@ namespace klong {
                 break;
             default:
                 // TODO: Error handling
+                assert(false);
                 break;
         }
     }
@@ -477,6 +494,7 @@ namespace klong {
                 break;
             default:
                 // TODO: Error handling
+                assert(false);
                 break;
         }
     }
@@ -488,6 +506,7 @@ namespace klong {
                 break;
             default:
                 // TODO: Error handling
+                assert(false);
                 break;
         }
     }
@@ -549,7 +568,7 @@ namespace klong {
                 break;
             default:
                 // TODO: how to handle the other types
-                throw 5;
+                assert(false);
         }
     }
 

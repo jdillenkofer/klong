@@ -1,3 +1,4 @@
+#include <cassert>
 #include <functional>
 
 #include "type_check_visitor.h"
@@ -35,45 +36,45 @@ namespace klong {
     }
 
     bool TypeCheckVisitor::isBoolean(Expr* expr) {
-        TypePtr type = expr->type();
-        if (type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+        Type* type = expr->type().get();
+        if (type && type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isBoolean();
         }
         return false;
     }
 
     bool TypeCheckVisitor::isFloat(Expr* expr) {
-        TypePtr type = expr->type();
-        if (type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+        Type* type = expr->type().get();
+        if (type && type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isFloat();
         }
         return false;
     }
 
     bool TypeCheckVisitor::isInteger(Expr* expr) {
-        TypePtr type = expr->type();
-        if (type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+        Type* type = expr->type().get();
+        if (type && type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isInteger();
         }
         return false;
     }
 
     bool TypeCheckVisitor::isString(Expr* expr) {
-        TypePtr type = expr->type();
-        if (type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+        Type* type = expr->type().get();
+        if (type && type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isString();
         }
         return false;
     }
 
     bool TypeCheckVisitor::isPointer(Expr* expr) {
-        TypePtr type = expr->type();
+        Type* type = expr->type().get();
         if (type->kind() == TypeKind::POINTER) {
-            auto pointerType = std::dynamic_pointer_cast<PointerType>(type);
+            auto pointerType = dynamic_cast<PointerType*>(type);
             return pointerType != nullptr;
         }
         return false;
@@ -189,18 +190,31 @@ namespace klong {
     // Expr
     void TypeCheckVisitor::visitAssignExpr(Assign* expr) {
         check(expr->target().get());
+        check(expr->targetDeref().get());
         check(expr->value().get());
-        if (!expr->target()->type()->isEqual(expr->value()->type().get())) {
+
+        Type* targetType = nullptr;
+
+        if (expr->isTargetVariable()) {
+            targetType = expr->target()->type().get();
+        } else {
+            targetType = expr->targetDeref()->type().get();
+        }
+
+        if (!targetType->isEqual(expr->value()->type().get())) {
             _result.addError(
                     TypeCheckException(expr->value()->sourceRange(), "Expect valid type in assignment."));
         }
-        expr->type(std::shared_ptr<Type>(expr->value()->type()->clone()));
+
+        if (expr->value()->type()) {
+            expr->type(std::shared_ptr<Type>(expr->value()->type()->clone()));
+        }
     }
 
     void TypeCheckVisitor::visitBinaryExpr(Binary* expr) {
         check(expr->left().get());
         check(expr->right().get());
-        // TODO: doubles and primitive type hierarchie
+        // TODO: primitive type hierarchie
         if (isInteger(expr->left().get()) && isInteger(expr->right().get())) {
             switch(expr->op()) {
                 case BinaryOperation::PLUS:
@@ -285,8 +299,8 @@ namespace klong {
         }
         auto calleeType = expr->callee()->type();
         if (calleeType->kind() == TypeKind::POINTER) {
-            auto calleePointer = std::dynamic_pointer_cast<PointerType>(calleeType);
-            auto functionType = std::dynamic_pointer_cast<FunctionType>(calleePointer->pointsTo());
+            auto calleePointer = dynamic_cast<PointerType*>(calleeType.get());
+            auto functionType = dynamic_cast<FunctionType*>(calleePointer->pointsTo().get());
             if (functionType != nullptr) {
                 if (!functionType->matchesSignature(callParamTypes)) {
                     _result.addError(
@@ -321,21 +335,28 @@ namespace klong {
 
     void TypeCheckVisitor::visitUnaryExpr(Unary* expr) {
         check(expr->right().get());
+
         if (expr->op() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
             _result.addError(
                     TypeCheckException(expr->sourceRange(), "'!' expects boolean expression."));
         }
+
         if (expr->op() == UnaryOperation::MINUS && !isInteger(expr->right().get())) {
             _result.addError(
                     TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression."));
         }
+
         if (expr->op() == UnaryOperation::DEREF) {
             if (!isPointer(expr->right().get())) {
                 _result.addError(
                         TypeCheckException(expr->sourceRange(), "Deref expects pointer type."));
                 return;
             }
-            auto pointerType = std::dynamic_pointer_cast<PointerType>(expr->right()->type());
+            auto pointerType = dynamic_cast<PointerType*>(expr->right()->type().get());
+            if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
+                _result.addError(
+                        TypeCheckException(expr->sourceRange(), "Deref expects non function pointer type."));
+            }
             expr->type(std::shared_ptr<Type>(pointerType->pointsTo()->clone()));
             return;
         }
@@ -345,6 +366,24 @@ namespace klong {
             if (variable == nullptr) {
                 _result.addError(
                         TypeCheckException(expr->sourceRange(), "Can only get address of variable expressions."));
+            } else {
+                auto isFunction = false;
+                if (variable->type()->kind() == TypeKind::FUNCTION) {
+                    isFunction = true;
+                }
+
+                if (variable->type()->kind() == TypeKind::POINTER) {
+                    auto pointerType = dynamic_cast<PointerType*>(variable->type().get());
+                    if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
+                        isFunction = true;
+                    }
+                }
+
+                if (isFunction) {
+                    _result.addError(
+                            TypeCheckException(expr->sourceRange(),
+                                               "Can not get address of function. Function names are already pointers."));
+                }
             }
             expr->type(std::make_shared<PointerType>(
                     expr->sourceRange(),

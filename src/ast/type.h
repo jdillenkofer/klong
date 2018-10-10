@@ -140,7 +140,7 @@ namespace klong {
         }
 
         bool isEqual(const Type* other) const {
-            if (other->kind() == TypeKind::PRIMITIVE) {
+            if (other && other->kind() == TypeKind::PRIMITIVE) {
                 auto otherPrimitiveType = dynamic_cast<const PrimitiveType*>(other);
                 return this->type() == otherPrimitiveType->type();
             }
@@ -212,7 +212,7 @@ namespace klong {
     class PointerType : public Type {
     public:
         PointerType(SourceRange sourceRange, TypePtr type):
-                Type(TypeKind::POINTER, sourceRange), _type(type) {
+                Type(TypeKind::POINTER, sourceRange), _type(std::move(type)) {
         }
 
         void accept(Visitor* visitor) {

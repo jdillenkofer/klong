@@ -204,7 +204,7 @@ namespace klong {
                                 type));
 
                 if (type->kind() == TypeKind::PRIMITIVE) {
-                    std::shared_ptr<PrimitiveType> primitiveType = std::dynamic_pointer_cast<PrimitiveType>(type);
+                    PrimitiveType* primitiveType = dynamic_cast<PrimitiveType*>(type.get());
                     if (primitiveType->type() == PrimitiveTypeKind::VOID) {
                         throw ParseException(primitiveType->sourceRange(), "Illegal type 'void' in argument list.");
                     }
@@ -459,7 +459,7 @@ namespace klong {
                         variable, value);
             }
 
-            /*
+
             if (expr->kind() == ExprKind::UNARY) {
                 auto deref = std::dynamic_pointer_cast<Unary>(expr);
                 if (deref->op() == UnaryOperation::DEREF) {
@@ -467,7 +467,7 @@ namespace klong {
                                                     deref, value);
                 }
             }
-            */
+
             throw ParseException::from(assign, "Invalid assign target");
         }
         return expr;
