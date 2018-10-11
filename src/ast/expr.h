@@ -28,7 +28,7 @@ namespace klong {
 
         virtual ~Expr() = default;
 
-        virtual void accept(Visitor* visitor) = 0;
+        virtual void accept(ExprVisitor* visitor) = 0;
 
         ExprKind kind() const {
             return _kind;
@@ -66,7 +66,7 @@ namespace klong {
                 _targetDeref(std::move(target)), _value(std::move(value)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitAssignExpr(this);
         }
 
@@ -119,7 +119,7 @@ namespace klong {
             _left(std::move(left)), _op(op), _right(std::move(right)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitBinaryExpr(this);
         }
 
@@ -148,7 +148,7 @@ namespace klong {
             _callee(std::move(callee)), _args(args) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitCallExpr(this);
         }
 
@@ -172,7 +172,7 @@ namespace klong {
             _expr(std::move(expr)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitGroupingExpr(this);
         }
 
@@ -196,7 +196,7 @@ namespace klong {
             _literalType(literalType) {
         }
 
-        void accept(Visitor* visitor) = 0;
+        void accept(ExprVisitor* visitor) = 0;
 
         PrimitiveTypeKind literalType() const {
             return _literalType;
@@ -235,7 +235,7 @@ namespace klong {
             return _value.u;
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitNumberLiteral(this);
         };
     private:
@@ -260,7 +260,7 @@ namespace klong {
             return _value;
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitBoolLiteral(this);
         };
     private:
@@ -277,7 +277,7 @@ namespace klong {
             return _value;
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitStringLiteral(this);
         };
     private:
@@ -294,7 +294,7 @@ namespace klong {
             return _value;
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitCharacterLiteral(this);
         };
     private:
@@ -313,7 +313,7 @@ namespace klong {
             _left(std::move(left)), _op(op), _right(std::move(right)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitLogicalExpr(this);
         }
 
@@ -349,7 +349,7 @@ namespace klong {
             _op(op), _right(std::move(right)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitUnaryExpr(this);
         }
 
@@ -375,7 +375,7 @@ namespace klong {
             _name(std::move(name)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(ExprVisitor* visitor) {
             visitor->visitVariableExpr(this);
         }
 

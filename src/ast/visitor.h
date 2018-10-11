@@ -16,29 +16,8 @@ namespace klong {
     class While;
     class For;
     class Comment;
-    
-    // Expr
-    class Assign;
-    class Binary;
-    class Call;
-    class Grouping;
-    class Logical;
-    class Unary;
-    class Variable;
 
-    // Literals
-    class NumberLiteral;
-    class BoolLiteral;
-    class StringLiteral;
-    class CharacterLiteral;
-
-    // Types
-    class FunctionType;
-    class PrimitiveType;
-    class PointerType;
-    class SimpleType;
-
-    class Visitor {
+    class StmtVisitor {
     public:
         // Module
         virtual void visitModule(Module* module) = 0;
@@ -55,7 +34,26 @@ namespace klong {
         virtual void visitWhileStmt(While* stmt) = 0;
         virtual void visitForStmt(For* stmt) = 0;
         virtual void visitCommentStmt(Comment* expr) = 0;
+    };
+    
+    // Expr
+    class Assign;
+    class Binary;
+    class Call;
+    class Grouping;
+    class Logical;
+    class Unary;
+    class Variable;
 
+    // Literals
+    class NumberLiteral;
+    class BoolLiteral;
+    class StringLiteral;
+    class CharacterLiteral;
+
+
+    class ExprVisitor {
+    public:
         // Expr
         virtual void visitAssignExpr(Assign* expr) = 0;
         virtual void visitBinaryExpr(Binary* expr) = 0;
@@ -70,7 +68,16 @@ namespace klong {
         virtual void visitBoolLiteral(BoolLiteral* expr) = 0;
         virtual void visitStringLiteral(StringLiteral* expr) = 0;
         virtual void visitCharacterLiteral(CharacterLiteral* expr) = 0;
+    };
 
+    // Types
+    class FunctionType;
+    class PrimitiveType;
+    class PointerType;
+    class SimpleType;
+
+    class TypeVisitor {
+    public:
         // Types
         virtual void visitFunctionType(FunctionType* type) = 0;
         virtual void visitPrimitiveType(PrimitiveType *type) = 0;

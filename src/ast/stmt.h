@@ -33,7 +33,7 @@ namespace klong {
 
         virtual ~Stmt() = default;
 
-        virtual void accept(Visitor* visitor) = 0;
+        virtual void accept(StmtVisitor* visitor) = 0;
 
         StatementKind kind() const {
             return _kind;
@@ -58,7 +58,7 @@ namespace klong {
             _statements(statements) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitBlockStmt(this);
         }
 
@@ -77,7 +77,7 @@ namespace klong {
             _expression(std::move(expression)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitExpressionStmt(this);
         }
 
@@ -97,7 +97,7 @@ namespace klong {
             _type(type) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitExtDeclStmt(this);
         }
 
@@ -122,7 +122,7 @@ namespace klong {
             _type(type) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitParameterStmt(this);
         }
 
@@ -153,7 +153,7 @@ namespace klong {
             _isPublic(isPublic) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitFunctionStmt(this);
         }
 
@@ -194,7 +194,7 @@ namespace klong {
             _elseBranch(std::move(elseBranch)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitIfStmt(this);
         }
 
@@ -231,7 +231,7 @@ namespace klong {
             Stmt(StatementKind::RETURN, sourceRange), _value(std::move(value)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitReturnStmt(this);
         }
 
@@ -261,7 +261,7 @@ namespace klong {
                 _isGlobal(isGlobal) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitVarDeclStmt(this);
         }
 
@@ -309,7 +309,7 @@ namespace klong {
             _condition(std::move(condition)), _body(std::move(body)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitWhileStmt(this);
         }
 
@@ -336,7 +336,7 @@ namespace klong {
             _body(std::move(body)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitForStmt(this);
         }
 
@@ -376,7 +376,7 @@ namespace klong {
             _type(type){
         }
 
-        void accept(Visitor* visitor) {
+        void accept(StmtVisitor* visitor) {
             visitor->visitCommentStmt(this);
         }
 

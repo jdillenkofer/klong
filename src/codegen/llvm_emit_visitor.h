@@ -11,7 +11,7 @@ namespace klong {
     static llvm::LLVMContext context;
     static llvm::IRBuilder<> IRBuilder(context);
 
-    class LLVMEmitVisitor : public Visitor {
+    class LLVMEmitVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
         LLVMEmitVisitor();
 

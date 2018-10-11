@@ -6,7 +6,7 @@
 #include <map>
 
 namespace klong {
-    class DotfileVisitor : public Visitor {
+    class DotfileVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
         // Module
         void visitModule(Module* module) override;

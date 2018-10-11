@@ -42,7 +42,7 @@ namespace klong {
         bool initialized = false;
     };
 
-    class ResolveVisitor : public Visitor {
+    class ResolveVisitor : public StmtVisitor, public ExprVisitor {
     public:
         ResolveVisitor() = default;
 
@@ -76,12 +76,6 @@ namespace klong {
         void visitBoolLiteral(BoolLiteral* expr) override;
         void visitStringLiteral(StringLiteral* expr) override;
         void visitCharacterLiteral(CharacterLiteral* expr) override;
-
-        // Types
-        void visitFunctionType(FunctionType* type) override;
-        void visitPrimitiveType(PrimitiveType* type) override;
-        void visitPointerType(PointerType* type) override;
-        void visitSimpleType(SimpleType *type) override;
 
         Result<ModulePtr, ResolveException> getResult() const;
 

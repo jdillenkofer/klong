@@ -16,7 +16,7 @@ namespace klong {
             _statements(statements), _filename(std::move(filename)) {
         }
 
-        virtual void accept(Visitor* visitor) {
+        virtual void accept(StmtVisitor* visitor) {
             visitor->visitModule(this);
         }
 

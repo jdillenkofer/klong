@@ -39,7 +39,7 @@ namespace klong {
 
         virtual ~Type() = default;
 
-        virtual void accept(Visitor* visitor) = 0;
+        virtual void accept(TypeVisitor* visitor) = 0;
 
         TypeKind kind() const {
             return _kind;
@@ -76,7 +76,7 @@ namespace klong {
             }
         }
 
-        void accept(Visitor* visitor) {
+        void accept(TypeVisitor* visitor) {
             visitor->visitFunctionType(this);
         }
 
@@ -131,7 +131,7 @@ namespace klong {
             Type(TypeKind::PRIMITIVE, sourceRange), _type(type) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(TypeVisitor* visitor) {
             visitor->visitPrimitiveType(this);
         }
 
@@ -215,7 +215,7 @@ namespace klong {
                 Type(TypeKind::POINTER, sourceRange), _type(std::move(type)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(TypeVisitor* visitor) {
             visitor->visitPointerType(this);
         }
 
@@ -246,7 +246,7 @@ namespace klong {
             _name(std::move(name)) {
         }
 
-        void accept(Visitor* visitor) {
+        void accept(TypeVisitor* visitor) {
             visitor->visitSimpleType(this);
         }
 

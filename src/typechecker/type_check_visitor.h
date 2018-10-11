@@ -26,7 +26,7 @@ namespace klong {
         std::string _message;
     };
 
-    class TypeCheckVisitor : public Visitor {
+    class TypeCheckVisitor : public StmtVisitor, public ExprVisitor {
     public:
         TypeCheckVisitor() = default;
 
@@ -60,12 +60,6 @@ namespace klong {
         void visitBoolLiteral(BoolLiteral* expr) override;
         void visitStringLiteral(StringLiteral* expr) override;
         void visitCharacterLiteral(CharacterLiteral* expr) override;
-
-        // Types
-        void visitFunctionType(FunctionType* type) override;
-        void visitPrimitiveType(PrimitiveType* type) override;
-        void visitPointerType(PointerType* type) override;
-        void visitSimpleType(SimpleType *type) override;
 
         Result<ModulePtr, TypeCheckException> getResult() const;
 

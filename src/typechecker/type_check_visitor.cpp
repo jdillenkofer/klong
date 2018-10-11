@@ -466,27 +466,6 @@ namespace klong {
         expr->type(type);
     }
 
-    // Types
-    void TypeCheckVisitor::visitFunctionType(FunctionType* type) {
-        // nothing to do here
-        (void) type;
-    }
-
-    void TypeCheckVisitor::visitPrimitiveType(PrimitiveType *type) {
-        // nothing to do here
-        (void) type;
-    }
-
-    void TypeCheckVisitor::visitPointerType(PointerType* type) {
-        // nothing to do here
-        (void) type;
-    }
-
-    void TypeCheckVisitor::visitSimpleType(SimpleType *type) {
-        // nothing to do here
-        (void) type;
-    }
-
     Result<ModulePtr, TypeCheckException> TypeCheckVisitor::getResult() const {
         return _result;
     }

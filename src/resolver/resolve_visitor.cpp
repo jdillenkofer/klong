@@ -244,27 +244,6 @@ namespace klong {
         (void) expr;
     }
 
-    // Types
-    void ResolveVisitor::visitFunctionType(FunctionType* type) {
-        // nothing to do here
-        (void) type;
-    }
-
-    void ResolveVisitor::visitPrimitiveType(PrimitiveType* type) {
-        // nothing to do here
-        (void) type;
-    }
-
-    void ResolveVisitor::visitPointerType(klong::PointerType* type) {
-        // nothing to do here
-        (void) type;
-    }
-
-    void ResolveVisitor::visitSimpleType(SimpleType* type) {
-        // nothing to do here
-        (void) type;
-    }
-
     Result<ModulePtr, ResolveException> ResolveVisitor::getResult() const {
         return _result;
     }
