@@ -13,6 +13,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/IR/InstrTypes.h"
 
 #include "llvm/Support/TargetSelect.h"
 
@@ -446,6 +447,49 @@ namespace klong {
         llvm::Value* one = llvm::ConstantInt::get(context, llvm::APInt(64, (uint64_t) 1, true));
         llvm::Value* size = IRBuilder.CreateGEP(null, one);
         _valueOfLastExpr = IRBuilder.CreatePtrToInt(size, llvm::Type::getInt64Ty(context));
+    }
+
+    void LLVMEmitVisitor::visitCastExpr(Cast* expr) {
+        llvm::Value* value = emit(expr->right().get());
+        expr->targetType()->accept(this);
+        llvm::Type* targetType = _valueOfLastType;
+        {
+            auto mySourceType = dynamic_cast<PrimitiveType*>(expr->right()->type().get());
+            auto myTargetType = dynamic_cast<PrimitiveType*>(expr->targetType().get());
+            if (mySourceType && myTargetType) {
+                if ((mySourceType->isInteger() || mySourceType->isBoolean()) &&
+                    (myTargetType->isInteger() || myTargetType->isBoolean())) {
+                    _valueOfLastExpr = IRBuilder.CreateIntCast(value, targetType, myTargetType->isSigned());
+                    return;
+                }
+
+                if (mySourceType->isFloat() && myTargetType->isFloat()) {
+                    _valueOfLastExpr = IRBuilder.CreateFPCast(value, targetType);
+                    return;
+                }
+
+                if ((mySourceType->isInteger() || mySourceType->isBoolean()) && (myTargetType->isFloat())) {
+                    if (mySourceType->isSigned()) {
+                        _valueOfLastExpr = IRBuilder.CreateSIToFP(value, targetType);
+                    } else {
+                        _valueOfLastExpr = IRBuilder.CreateUIToFP(value, targetType);
+                    }
+                    return;
+                }
+
+                if ((mySourceType->isFloat()) || (myTargetType->isInteger() || myTargetType->isBoolean())) {
+                    if (myTargetType->isSigned()) {
+                        _valueOfLastExpr = IRBuilder.CreateFPToSI(value, targetType);
+                    } else {
+                        _valueOfLastExpr = IRBuilder.CreateFPToUI(value, targetType);
+                    }
+                    return;
+                }
+            }
+        }
+        {
+
+        }
     }
 
     void LLVMEmitVisitor::visitVariableExpr(Variable* expr) {

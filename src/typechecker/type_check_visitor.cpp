@@ -397,6 +397,11 @@ namespace klong {
         expr->type(std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::U64));
     }
 
+    void TypeCheckVisitor::visitCastExpr(Cast* expr) {
+        check(expr->right().get());
+        expr->type(std::shared_ptr<Type>(expr->targetType()->clone()));
+    }
+
     void TypeCheckVisitor::visitVariableExpr(Variable* expr) {
         Stmt* resolvesTo = expr->resolvesTo();
         switch(resolvesTo->kind()) {

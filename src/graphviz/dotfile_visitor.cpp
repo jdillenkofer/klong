@@ -284,9 +284,21 @@ namespace klong {
     void DotfileVisitor::visitSizeOfExpr(SizeOf *expr) {
         // print SizeOf stuff here
         auto sizeOfExprId = getExprId(expr);
-        appendLine(std::to_string(sizeOfExprId) + " [label=\"SizeOf\\n"
+        appendLine(std::to_string(sizeOfExprId) + " [label=\"sizeof\\n"
         + getType(expr->right().get()) + "\\n"
         + getType(expr->type().get()) + "\"]");
+    }
+
+    void DotfileVisitor::visitCastExpr(Cast* expr) {
+        // print Unary stuff here
+        auto castExprId = getExprId(expr);
+        appendLine(std::to_string(castExprId) + " [label=\"cast\\n"
+                   + getType(expr->targetType().get()) + "\"]");
+
+        // visit right
+        expr->right()->accept(this);
+        auto rightExprId = getExprId(expr->right().get());
+        appendLine(std::to_string(castExprId) + " -> " + std::to_string(rightExprId));
     }
 
     void DotfileVisitor::visitVariableExpr(Variable* expr) {

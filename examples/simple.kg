@@ -7,10 +7,10 @@ pub fun main() -> i64 {
     funVariable = fibDoubled;
     // allow shadowing
     let sum = sum(from, to, funVariable);
-    if (sizeof(i64) - 8 != 0) {
-        return 1;
-    }
-    return 0;
+    let fl = 1;
+    let a = cast<f32>(fl);
+    let b = cast<i64>(a);
+    return b;
 }
 
 fun sum(from: i64, to: i64, func: ptr<(i64) -> i64>) -> i64 {

@@ -44,6 +44,7 @@ namespace klong {
     class Logical;
     class Unary;
     class SizeOf;
+    class Cast;
     class Variable;
 
     // Literals
@@ -63,6 +64,7 @@ namespace klong {
         virtual void visitLogicalExpr(Logical* expr) = 0;
         virtual void visitUnaryExpr(Unary* expr) = 0;
         virtual void visitSizeOfExpr(SizeOf* expr) = 0;
+        virtual void visitCastExpr(Cast* expr) = 0;
         virtual void visitVariableExpr(Variable* expr) = 0;
 
         // Literals

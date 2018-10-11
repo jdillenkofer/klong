@@ -714,12 +714,25 @@ namespace klong {
 
         if (match(TokenType::SIZEOF)) {
             Token sizeOf = previous();
-            consume(TokenType::LEFT_PAR, "Expect '(' after size_of operator.");
+            consume(TokenType::LEFT_PAR, "Expect '(' after sizeof operator.");
             TypePtr right = typeDeclaration();
             Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' at the end of size_of operator.");
             return std::make_shared<SizeOf>(
                     SourceRange { sizeOf.sourceRange.start, rightPar.sourceRange.end },
                     right);
+        }
+
+        if (match(TokenType::CAST)) {
+            Token cast = previous();
+            consume(TokenType::LT_OP, "Expect '<' after cast operator.");
+            TypePtr targetType = typeDeclaration();
+            consume(TokenType::GT_OP, "Expect '>' after target type.");
+            consume(TokenType::LEFT_PAR, "Expect '(' after target type.");
+            ExprPtr right = assignmentExpr();
+            Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after cast target.");
+            return std::make_shared<Cast>(
+                    SourceRange { cast.sourceRange.start, rightPar.sourceRange.end },
+                    targetType, right);
         }
 
         return callExpr();

@@ -41,6 +41,7 @@ namespace klong {
         void visitLogicalExpr(Logical* expr) override;
         void visitUnaryExpr(Unary* expr) override;
         void visitSizeOfExpr(SizeOf* expr) override;
+        void visitCastExpr(Cast* expr) override;
         void visitVariableExpr(Variable* expr) override;
 
         // Literals

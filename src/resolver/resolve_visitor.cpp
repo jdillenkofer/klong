@@ -217,6 +217,10 @@ namespace klong {
         (void) expr;
     }
 
+    void ResolveVisitor::visitCastExpr(Cast* expr) {
+        resolve(expr->right().get());
+    }
+
     void ResolveVisitor::visitVariableExpr(Variable* expr) {
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
         if (scope.find(expr->name()) != scope.end()) {
