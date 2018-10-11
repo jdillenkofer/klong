@@ -393,6 +393,10 @@ namespace klong {
         expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));
     }
 
+    void TypeCheckVisitor::visitSizeOfExpr(SizeOf *expr) {
+        expr->type(std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::U64));
+    }
+
     void TypeCheckVisitor::visitVariableExpr(Variable* expr) {
         Stmt* resolvesTo = expr->resolvesTo();
         switch(resolvesTo->kind()) {

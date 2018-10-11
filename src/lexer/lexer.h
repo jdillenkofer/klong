@@ -29,8 +29,8 @@ namespace klong {
         bool isDigit(char c) const;
         bool isHexDigit(char c) const;
         bool readSingleLineToken(Token& token, TokenType type);
-        bool matches(const std::string& str);
-        bool matchesKeyword(Token& token, const std::string& keyword, TokenType type);
+        bool matches(const std::string& str, bool allowAlphanumericAtEnd);
+        bool matchesKeyword(Token& token, const std::string& keyword, TokenType type, bool allowAlphanumericAtEnd = false);
         char getEscapedValue(char valueToEscape);
 
         bool hexLiteral(Token& token, std::stringstream& content);
@@ -44,6 +44,7 @@ namespace klong {
         bool externKeyword(Token& token);
 
         bool funKeyword(Token& token);
+        bool sizeOfKeyword(Token& token);
         bool returnKeyword(Token& token);
 
         bool ifKeyword(Token& token);

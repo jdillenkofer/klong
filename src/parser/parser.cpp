@@ -69,7 +69,6 @@ namespace klong {
                 case TokenType::FOR:
                 case TokenType::IF:
                 case TokenType::WHILE:
-                case TokenType::PRINT:
                 case TokenType::RETURN:
                     return;
                 default:
@@ -711,6 +710,16 @@ namespace klong {
             return std::make_shared<Unary>(
                     SourceRange { op.sourceRange.start, right->sourceRange().end },
                     UnaryOperation::DEREF, right);
+        }
+
+        if (match(TokenType::SIZE_OF)) {
+            Token sizeOf = previous();
+            consume(TokenType::LEFT_PAR, "Expect '(' after size_of operator.");
+            TypePtr right = typeDeclaration();
+            Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' at the end of size_of operator.");
+            return std::make_shared<SizeOf>(
+                    SourceRange { sizeOf.sourceRange.start, rightPar.sourceRange.end },
+                    right);
         }
 
         return callExpr();

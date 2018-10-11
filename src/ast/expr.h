@@ -17,7 +17,8 @@ namespace klong {
         LITERAL,
         LOGICAL,
         UNARY,
-        VARIABLE
+        VARIABLE,
+        SIZE_OF
     };
     
     class Expr {
@@ -364,6 +365,25 @@ namespace klong {
     private:
         UnaryOperation _op;
         ExprPtr _right;
+    };
+
+    class SizeOf : public Expr {
+    public:
+        SizeOf(SourceRange sourceRange, TypePtr right):
+        Expr(ExprKind::SIZE_OF, sourceRange),
+        _right(std::move(right)) {
+        }
+
+        void accept(ExprVisitor* visitor) {
+            visitor->visitSizeOfExpr(this);
+        }
+
+        TypePtr right() const {
+            return _right;
+        }
+
+    private:
+        TypePtr _right;
     };
 
     class Stmt;

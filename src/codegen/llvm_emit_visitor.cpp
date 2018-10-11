@@ -439,6 +439,15 @@ namespace klong {
         return address;
     }
 
+    void LLVMEmitVisitor::visitSizeOfExpr(SizeOf* expr) {
+        expr->right()->accept(this);
+        auto pointerType = llvm::PointerType::get(_valueOfLastType, 0);
+        llvm::Value* null = llvm::ConstantPointerNull::get(pointerType);
+        llvm::Value* one = llvm::ConstantInt::get(context, llvm::APInt(64, (uint64_t) 1, true));
+        llvm::Value* size = IRBuilder.CreateGEP(null, one);
+        _valueOfLastExpr = IRBuilder.CreatePtrToInt(size, llvm::Type::getInt64Ty(context));
+    }
+
     void LLVMEmitVisitor::visitVariableExpr(Variable* expr) {
         switch (expr->resolvesTo()->kind()) {
             case StatementKind::VAR_DECL:

@@ -53,6 +53,7 @@ namespace klong {
         void visitGroupingExpr(Grouping* expr) override;
         void visitLogicalExpr(Logical* expr) override;
         void visitUnaryExpr(Unary* expr) override;
+        void visitSizeOfExpr(SizeOf* expr) override;
         void visitVariableExpr(Variable* expr) override;
 
         // Literals
