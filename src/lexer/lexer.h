@@ -44,7 +44,7 @@ namespace klong {
         bool externKeyword(Token& token);
 
         bool funKeyword(Token& token);
-        bool sizeOfKeyword(Token& token);
+        bool sizeofKeyword(Token &token);
         bool returnKeyword(Token& token);
 
         bool ifKeyword(Token& token);

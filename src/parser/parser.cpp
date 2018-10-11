@@ -712,7 +712,7 @@ namespace klong {
                     UnaryOperation::DEREF, right);
         }
 
-        if (match(TokenType::SIZE_OF)) {
+        if (match(TokenType::SIZEOF)) {
             Token sizeOf = previous();
             consume(TokenType::LEFT_PAR, "Expect '(' after size_of operator.");
             TypePtr right = typeDeclaration();
