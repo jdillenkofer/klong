@@ -62,8 +62,12 @@ namespace klong {
             visitor->visitBlockStmt(this);
         }
 
-        std::vector<StmtPtr> statements() const {
-            return _statements;
+        std::vector<Stmt*> statements() const {
+            std::vector<Stmt*> stmts;
+            for (auto& stmt : _statements) {
+                stmts.push_back(stmt.get());
+            }
+            return stmts;
         }
 
     private:
@@ -81,8 +85,8 @@ namespace klong {
             visitor->visitExpressionStmt(this);
         }
 
-        ExprPtr expression() const {
-            return _expression;
+        Expr* expression() const {
+            return _expression.get();
         }
 
     private:
@@ -105,8 +109,8 @@ namespace klong {
             return _name;
         }
 
-        TypePtr type() const {
-            return _type;
+        Type* type() const {
+            return _type.get();
         }
 
     private:
@@ -130,8 +134,8 @@ namespace klong {
             return _name;
         }
 
-        TypePtr type() const {
-            return _type;
+        Type* type() const {
+            return _type.get();
         }
 
     private:
@@ -161,16 +165,24 @@ namespace klong {
             return _name;
         }
 
-        std::vector<ParameterPtr> params() const {
-            return _params;
+        std::vector<Parameter*> params() const {
+            std::vector<Parameter*> params;
+            for (auto& param : _params) {
+                params.push_back(param.get());
+            }
+            return params;
         }
 
-        std::shared_ptr<FunctionType> functionType() const {
-            return _functionType;
+        FunctionType* functionType() const {
+            return _functionType.get();
         }
 
-        std::vector<StmtPtr> body() const {
-            return _body;
+        std::vector<Stmt*> body() const {
+            std::vector<Stmt*> body;
+            for (auto& stmt : _body) {
+                body.push_back(stmt.get());
+            }
+            return body;
         }
 
         bool isPublic() const {
@@ -198,16 +210,16 @@ namespace klong {
             visitor->visitIfStmt(this);
         }
 
-        ExprPtr condition() const {
-            return _condition;
+        Expr* condition() const {
+            return _condition.get();
         }
 
-        StmtPtr thenBranch() const {
-            return _thenBranch;
+        Stmt* thenBranch() const {
+            return _thenBranch.get();
         }
 
-        StmtPtr elseBranch() const {
-            return _elseBranch;
+        Stmt* elseBranch() const {
+            return _elseBranch.get();
         }
 
         bool isMergeUnreachable() const {
@@ -235,8 +247,8 @@ namespace klong {
             visitor->visitReturnStmt(this);
         }
 
-        ExprPtr value() const {
-            return _value;
+        Expr* value() const {
+            return _value.get();
         }
 
     private:
@@ -269,16 +281,16 @@ namespace klong {
             return _name;
         }
 
-        TypePtr type() const {
-            return _type;
+        Type* type() const {
+            return _type.get();
         }
 
         void type(TypePtr type) {
             _type = std::move(type);
         }
 
-        ExprPtr initializer() const {
-            return _initializer;
+        Expr* initializer() const {
+            return _initializer.get();
         }
 
         bool isPublic() const {
@@ -313,12 +325,12 @@ namespace klong {
             visitor->visitWhileStmt(this);
         }
 
-        ExprPtr condition() const {
-            return _condition;
+        Expr* condition() const {
+            return _condition.get();
         }
 
-        StmtPtr body() const {
-            return _body;
+        Stmt* body() const {
+            return _body.get();
         }
 
     private:
@@ -340,20 +352,20 @@ namespace klong {
             visitor->visitForStmt(this);
         }
 
-        StmtPtr initializer() const {
-            return _initializer;
+        Stmt* initializer() const {
+            return _initializer.get();
         }
 
-        ExprPtr condition() const {
-            return _condition;
+        Expr* condition() const {
+            return _condition.get();
         };
 
-        ExprPtr increment() const {
-            return _increment;
+        Expr* increment() const {
+            return _increment.get();
         }
 
-        StmtPtr body() const {
-            return _body;
+        Stmt* body() const {
+            return _body.get();
         }
 
     private:

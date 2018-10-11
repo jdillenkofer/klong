@@ -59,7 +59,7 @@ namespace klong {
     private:
         llvm::Value* emit(Expr* expr);
         llvm::Value* emit(Stmt* stmt);
-        void emitBlock(const std::vector<StmtPtr>& statements);
+        void emitBlock(const std::vector<Stmt*>& statements);
         llvm::Value* getVariableAddress(Expr* expr);
     private:
         std::unique_ptr<llvm::Module> _module;

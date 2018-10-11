@@ -66,7 +66,7 @@ namespace klong {
         Result<ModulePtr, TypeCheckException> getResult() const;
 
     private:
-        void check(const std::vector<StmtPtr>& statements);
+        void check(const std::vector<Stmt*>& statements);
         void check(Stmt* stmt);
         void check(Expr* expr);
         bool getAndResetReturnsValue();

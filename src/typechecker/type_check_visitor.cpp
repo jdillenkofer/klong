@@ -11,9 +11,9 @@
 
 namespace klong {
 
-    void TypeCheckVisitor::check(const std::vector<StmtPtr>& statements) {
+    void TypeCheckVisitor::check(const std::vector<Stmt*>& statements) {
         for (const auto& stmt : statements) {
-            check(stmt.get());
+            check(stmt);
         }
     }
 
@@ -36,7 +36,7 @@ namespace klong {
     }
 
     bool TypeCheckVisitor::isBoolean(Expr* expr) {
-        Type* type = expr->type().get();
+        Type* type = expr->type();
         if (type && type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isBoolean();
@@ -45,7 +45,7 @@ namespace klong {
     }
 
     bool TypeCheckVisitor::isFloat(Expr* expr) {
-        Type* type = expr->type().get();
+        Type* type = expr->type();
         if (type && type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isFloat();
@@ -54,7 +54,7 @@ namespace klong {
     }
 
     bool TypeCheckVisitor::isInteger(Expr* expr) {
-        Type* type = expr->type().get();
+        Type* type = expr->type();
         if (type && type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isInteger();
@@ -63,7 +63,7 @@ namespace klong {
     }
 
     bool TypeCheckVisitor::isString(Expr* expr) {
-        Type* type = expr->type().get();
+        Type* type = expr->type();
         if (type && type->kind() == TypeKind::PRIMITIVE) {
             auto primitiveType = dynamic_cast<PrimitiveType*>(type);
             return primitiveType->isString();
@@ -72,7 +72,7 @@ namespace klong {
     }
 
     bool TypeCheckVisitor::isPointer(Expr* expr) {
-        Type* type = expr->type().get();
+        Type* type = expr->type();
         if (type->kind() == TypeKind::POINTER) {
             auto pointerType = dynamic_cast<PointerType*>(type);
             return pointerType != nullptr;
@@ -91,7 +91,7 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitExpressionStmt(Expression* stmt) {
-        check(stmt->expression().get());
+        check(stmt->expression());
     }
 
     void TypeCheckVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
@@ -103,7 +103,7 @@ namespace klong {
         auto previousFunction = currentFunction;
         currentFunction = stmt;
         check(stmt->body());
-        auto primType = dynamic_cast<PrimitiveType*>(stmt->functionType()->returnType().get());
+        auto primType = dynamic_cast<PrimitiveType*>(stmt->functionType()->returnType());
         if (!_returnsValue && primType != nullptr && !primType->isVoid()) {
             _result.addError(TypeCheckException(stmt->sourceRange(), "Control-flow reaches end of non-void function "
                 + stmt->name() + "."));
@@ -117,15 +117,15 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitIfStmt(If* stmt) {
-        check(stmt->condition().get());
-        if (!isBoolean(stmt->condition().get())) {
+        check(stmt->condition());
+        if (!isBoolean(stmt->condition())) {
             _result.addError(
                     TypeCheckException(stmt->condition()->sourceRange(), "Expect bool condition in if-statement."));
         }
-        check(stmt->thenBranch().get());
+        check(stmt->thenBranch());
         bool thenBranchReturnsValue = getAndResetReturnsValue();
-        check(stmt->elseBranch().get());
-        if (stmt->elseBranch().get() != nullptr) {
+        check(stmt->elseBranch());
+        if (stmt->elseBranch() != nullptr) {
             _returnsValue = getAndResetReturnsValue() && thenBranchReturnsValue;
         } else {
             _returnsValue = false;
@@ -136,9 +136,9 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitReturnStmt(Return* stmt) {
-        check(stmt->value().get());
+        check(stmt->value());
         if (stmt->value() != nullptr) {
-            if (!currentFunction->functionType()->returnType()->isEqual(stmt->value()->type().get())) {
+            if (!currentFunction->functionType()->returnType()->isEqual(stmt->value()->type())) {
                 _result.addError(
                         TypeCheckException(stmt->sourceRange(), "Expect return statement type to match the function returnType."));
             }
@@ -151,11 +151,11 @@ namespace klong {
             _result.addError(
                     TypeCheckException(stmt->sourceRange(), "Pub keyword not allowed in front of local variable."));
         }
-        check(stmt->initializer().get());
+        check(stmt->initializer());
         if (stmt->type() == nullptr) {
             stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
         } else {
-            if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type().get())) {
+            if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type())) {
                 _result.addError(
                         TypeCheckException(stmt->sourceRange(), "initializerType doesn't match declaration type."));
             }
@@ -163,23 +163,23 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
-        check(stmt->condition().get());
-        if (!isBoolean(stmt->condition().get())) {
+        check(stmt->condition());
+        if (!isBoolean(stmt->condition())) {
             _result.addError(
                     TypeCheckException(stmt->condition()->sourceRange(), "while condition expects bool type."));
         }
-        check(stmt->body().get());
+        check(stmt->body());
     }
 
     void TypeCheckVisitor::visitForStmt(For* stmt) {
-        check(stmt->initializer().get());
-        check(stmt->condition().get());
-        if (!isBoolean(stmt->condition().get())) {
+        check(stmt->initializer());
+        check(stmt->condition());
+        if (!isBoolean(stmt->condition())) {
             _result.addError(
                     TypeCheckException(stmt->condition()->sourceRange(), "for condition expects bool type."));
         }
-        check(stmt->increment().get());
-        check(stmt->body().get());
+        check(stmt->increment());
+        check(stmt->body());
     }
 
     void TypeCheckVisitor::visitCommentStmt(Comment* stmt) {
@@ -189,19 +189,19 @@ namespace klong {
 
     // Expr
     void TypeCheckVisitor::visitAssignExpr(Assign* expr) {
-        check(expr->target().get());
-        check(expr->targetDeref().get());
-        check(expr->value().get());
+        check(expr->target());
+        check(expr->targetDeref());
+        check(expr->value());
 
         Type* targetType = nullptr;
 
         if (expr->isTargetVariable()) {
-            targetType = expr->target()->type().get();
+            targetType = expr->target()->type();
         } else {
-            targetType = expr->targetDeref()->type().get();
+            targetType = expr->targetDeref()->type();
         }
 
-        if (!targetType->isEqual(expr->value()->type().get())) {
+        if (!targetType->isEqual(expr->value()->type())) {
             _result.addError(
                     TypeCheckException(expr->value()->sourceRange(), "Expect valid type in assignment."));
         }
@@ -212,10 +212,10 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitBinaryExpr(Binary* expr) {
-        check(expr->left().get());
-        check(expr->right().get());
+        check(expr->left());
+        check(expr->right());
         // TODO: primitive type hierarchie
-        if (isInteger(expr->left().get()) && isInteger(expr->right().get())) {
+        if (isInteger(expr->left()) && isInteger(expr->right())) {
             switch(expr->op()) {
                 case BinaryOperation::PLUS:
                 case BinaryOperation::MINUS:
@@ -247,7 +247,7 @@ namespace klong {
             return;
         }
 
-        if (isFloat(expr->left().get()) && isFloat(expr->right().get())) {
+        if (isFloat(expr->left()) && isFloat(expr->right())) {
             switch(expr->op()) {
                 case BinaryOperation::PLUS:
                 case BinaryOperation::MINUS:
@@ -279,9 +279,9 @@ namespace klong {
             std::function<bool(Expr*)> isValidOtherType = [this](Expr* exprPtr) {
                 return isFloat(exprPtr) || isInteger(exprPtr) || isBoolean(exprPtr);
             };
-            if ((isString(expr->left().get()) && isValidOtherType(expr->right().get()))
-                || (isValidOtherType(expr->left().get()) && isString(expr->right().get()))
-                || (isString(expr->left().get()) && isString(expr->right().get()))) {
+            if ((isString(expr->left()) && isValidOtherType(expr->right()))
+                || (isValidOtherType(expr->left()) && isString(expr->right()))
+                || (isString(expr->left()) && isString(expr->right()))) {
                 expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::STRING));
                 return;
             }
@@ -291,16 +291,16 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitCallExpr(Call* expr) {
-        check(expr->callee().get());
-        std::vector<TypePtr> callParamTypes;
+        check(expr->callee());
+        std::vector<Type*> callParamTypes;
         for (const auto& arg : expr->args()) {
-            check(arg.get());
+            check(arg);
             callParamTypes.push_back(arg->type());
         }
         auto calleeType = expr->callee()->type();
         if (calleeType->kind() == TypeKind::POINTER) {
-            auto calleePointer = dynamic_cast<PointerType*>(calleeType.get());
-            auto functionType = dynamic_cast<FunctionType*>(calleePointer->pointsTo().get());
+            auto calleePointer = dynamic_cast<PointerType*>(calleeType);
+            auto functionType = dynamic_cast<FunctionType*>(calleePointer->pointsTo());
             if (functionType != nullptr) {
                 if (!functionType->matchesSignature(callParamTypes)) {
                     _result.addError(
@@ -315,18 +315,18 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitGroupingExpr(Grouping* expr) {
-        check(expr->expression().get());
-        expr->type(expr->expression()->type());
+        check(expr->expression());
+        expr->type(std::shared_ptr<Type>(expr->expression()->type()->clone()));
     }
 
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
-        check(expr->left().get());
-        if (!isBoolean(expr->left().get())) {
+        check(expr->left());
+        if (!isBoolean(expr->left())) {
             _result.addError(
                     TypeCheckException(expr->left()->sourceRange(), "Expect boolean expr."));
         }
-        check(expr->right().get());
-        if (!isBoolean(expr->right().get())) {
+        check(expr->right());
+        if (!isBoolean(expr->right())) {
             _result.addError(
                     TypeCheckException(expr->right()->sourceRange(), "Expect boolean expr."));
         }
@@ -334,25 +334,25 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitUnaryExpr(Unary* expr) {
-        check(expr->right().get());
+        check(expr->right());
 
-        if (expr->op() == UnaryOperation::NOT && !isBoolean(expr->right().get())) {
+        if (expr->op() == UnaryOperation::NOT && !isBoolean(expr->right())) {
             _result.addError(
                     TypeCheckException(expr->sourceRange(), "'!' expects boolean expression."));
         }
 
-        if (expr->op() == UnaryOperation::MINUS && !isInteger(expr->right().get())) {
+        if (expr->op() == UnaryOperation::MINUS && !isInteger(expr->right())) {
             _result.addError(
                     TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression."));
         }
 
         if (expr->op() == UnaryOperation::DEREF) {
-            if (!isPointer(expr->right().get())) {
+            if (!isPointer(expr->right())) {
                 _result.addError(
                         TypeCheckException(expr->sourceRange(), "Deref expects pointer type."));
                 return;
             }
-            auto pointerType = dynamic_cast<PointerType*>(expr->right()->type().get());
+            auto pointerType = dynamic_cast<PointerType*>(expr->right()->type());
             if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
                 _result.addError(
                         TypeCheckException(expr->sourceRange(), "Deref expects non function pointer type."));
@@ -362,7 +362,7 @@ namespace klong {
         }
 
         if (expr->op() == UnaryOperation::ADDRESS_OF) {
-            auto variable = dynamic_cast<Variable*>(expr->right().get());
+            auto variable = dynamic_cast<Variable*>(expr->right());
             if (variable == nullptr) {
                 _result.addError(
                         TypeCheckException(expr->sourceRange(), "Can only get address of variable expressions."));
@@ -373,7 +373,7 @@ namespace klong {
                 }
 
                 if (variable->type()->kind() == TypeKind::POINTER) {
-                    auto pointerType = dynamic_cast<PointerType*>(variable->type().get());
+                    auto pointerType = dynamic_cast<PointerType*>(variable->type());
                     if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
                         isFunction = true;
                     }
@@ -398,7 +398,7 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitCastExpr(Cast* expr) {
-        check(expr->right().get());
+        check(expr->right());
         expr->type(std::shared_ptr<Type>(expr->targetType()->clone()));
     }
 

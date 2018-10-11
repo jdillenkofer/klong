@@ -46,7 +46,7 @@ namespace klong {
         return _valueOfLastExpr;
     }
 
-    void LLVMEmitVisitor::emitBlock(const std::vector<StmtPtr>& statements) {
+    void LLVMEmitVisitor::emitBlock(const std::vector<Stmt*>& statements) {
         for (auto& stmt : statements) {
             stmt->accept(this);
         }
@@ -57,7 +57,7 @@ namespace klong {
 
         for (auto& stmt : module->statements()) {
             if (stmt->kind() == StatementKind::FUNCTION) {
-                Function* function = dynamic_cast<Function*>(stmt.get());
+                auto function = dynamic_cast<Function*>(stmt);
                 auto linkage = function->isPublic() ?
                         llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage;
 
@@ -67,7 +67,7 @@ namespace klong {
                 auto llvmFunction = llvm::Function::Create(functionType,
                         linkage, function->name(), _module.get());
 
-                _namedValues[stmt.get()] = llvmFunction;
+                _namedValues[stmt] = llvmFunction;
             }
         }
 
@@ -81,7 +81,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitExpressionStmt(Expression* stmt) {
-        _valueOfLastExpr = emit(stmt->expression().get());
+        _valueOfLastExpr = emit(stmt->expression());
     }
 
     void LLVMEmitVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
@@ -91,7 +91,7 @@ namespace klong {
         bool isFunction = stmt->type()->kind() == TypeKind::FUNCTION;
         bool isPointer = stmt->type()->kind() == TypeKind::POINTER;
         if (isPointer) {
-            auto pointerType = dynamic_cast<PointerType*>(stmt->type().get());
+            auto pointerType = dynamic_cast<PointerType*>(stmt->type());
             auto pointsToType = pointerType->pointsTo();
             if (pointsToType->kind() == TypeKind::FUNCTION) {
                 isFunction = true;
@@ -122,13 +122,13 @@ namespace klong {
                 llvm::Type* paramType = _valueOfLastType;
                 auto param = IRBuilder.CreateAlloca(paramType);
                 IRBuilder.CreateStore(&arg, param);
-                _namedValues[stmt->params()[i].get()] = param;
+                _namedValues[stmt->params()[i]] = param;
                 i++;
             }
         }
 
         for (auto& statement : stmt->body()) {
-            emit(statement.get());
+            emit(statement);
         }
         llvm::verifyFunction(*function);
     }
@@ -138,7 +138,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitIfStmt(If* stmt) {
-        llvm::Value* condV = emit(stmt->condition().get());
+        llvm::Value* condV = emit(stmt->condition());
         llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
         llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(context, "thenBranch", function);
         llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(context, "elseBranch", function);
@@ -147,12 +147,12 @@ namespace klong {
         IRBuilder.CreateCondBr(condV, thenBB, elseBB);
 
         IRBuilder.SetInsertPoint(thenBB);
-        emit(stmt->thenBranch().get());
+        emit(stmt->thenBranch());
         IRBuilder.CreateBr(mergeBB);
 
         IRBuilder.SetInsertPoint(elseBB);
         if (stmt->elseBranch() != nullptr) {
-            emit(stmt->elseBranch().get());
+            emit(stmt->elseBranch());
         }
         IRBuilder.CreateBr(mergeBB);
 
@@ -165,7 +165,7 @@ namespace klong {
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
         _valueOfLastExpr = nullptr;
         if (stmt->value() != nullptr) {
-            emit(stmt->value().get());
+            emit(stmt->value());
         }
         IRBuilder.CreateRet(_valueOfLastExpr);
     }
@@ -182,12 +182,12 @@ namespace klong {
             if (stmt->isConst()) {
                 global->setConstant(true);
             }
-            global->setInitializer((llvm::Constant*) emit(stmt->initializer().get()));
+            global->setInitializer((llvm::Constant*) emit(stmt->initializer()));
             _namedValues[stmt] = global;
         } else {
             auto stackPtr = IRBuilder.CreateAlloca(type);
             _namedValues[stmt] = stackPtr;
-            auto value = emit(stmt->initializer().get());
+            auto value = emit(stmt->initializer());
             IRBuilder.CreateStore(value, stackPtr);
         }
     }
@@ -202,12 +202,12 @@ namespace klong {
         IRBuilder.CreateBr(whileCondBB);
 
         IRBuilder.SetInsertPoint(whileCondBB);
-        llvm::Value* condV = emit(stmt->condition().get());
+        llvm::Value* condV = emit(stmt->condition());
         IRBuilder.CreateCondBr(condV, whileBodyBB, mergeWhileBB);
 
         IRBuilder.SetInsertPoint(whileBodyBB);
 
-        emit(stmt->body().get());
+        emit(stmt->body());
         IRBuilder.CreateBr(whileCondBB);
 
         IRBuilder.SetInsertPoint(mergeWhileBB);
@@ -225,18 +225,18 @@ namespace klong {
 
         IRBuilder.SetInsertPoint(forInitBB);
         if (stmt->initializer() != nullptr) {
-            emit(stmt->initializer().get());
+            emit(stmt->initializer());
         }
         IRBuilder.CreateBr(forCondBB);
 
         IRBuilder.SetInsertPoint(forCondBB);
-        llvm::Value* condV = emit(stmt->condition().get());
+        llvm::Value* condV = emit(stmt->condition());
         IRBuilder.CreateCondBr(condV, forBodyBB, mergeForBB);
 
         IRBuilder.SetInsertPoint(forBodyBB);
-        emit(stmt->body().get());
+        emit(stmt->body());
         if (stmt->increment() != nullptr) {
-            emit(stmt->increment().get());
+            emit(stmt->increment());
         }
         IRBuilder.CreateBr(forCondBB);
 
@@ -248,24 +248,24 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitAssignExpr(Assign* expr) {
-        auto value = emit(expr->value().get());
+        auto value = emit(expr->value());
         llvm::Value* address = nullptr;
         if (expr->isTargetVariable()) {
-            address = getVariableAddress(expr->target().get());
+            address = getVariableAddress(expr->target());
         } else {
             // ignore the deref operator and
             // just get the address of the variable
-            address = emit(expr->targetDeref()->right().get());
+            address = emit(expr->targetDeref()->right());
         }
         IRBuilder.CreateStore(value, address);
         _valueOfLastExpr = value;
     }
 
     void LLVMEmitVisitor::visitBinaryExpr(Binary* expr) {
-        llvm::Value* left = emit(expr->left().get());
-        llvm::Value* right = emit(expr->right().get());
-        PrimitiveType* type = dynamic_cast<PrimitiveType*>(expr->left()->type().get());
-        if (type->isInteger()) {
+        llvm::Value* left = emit(expr->left());
+        llvm::Value* right = emit(expr->right());
+        auto primitiveType = dynamic_cast<PrimitiveType*>(expr->left()->type());
+        if (primitiveType->isInteger()) {
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = IRBuilder.CreateAdd(left, right);
@@ -277,14 +277,14 @@ namespace klong {
                     _valueOfLastExpr = IRBuilder.CreateMul(left, right);
                     break;
                 case BinaryOperation::DIVISION:
-                    if (type->isSigned()) {
+                    if (primitiveType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateSDiv(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateUDiv(left, right);
                     }
                     break;
                 case BinaryOperation::MODULO:
-                    if (type->isSigned()) {
+                    if (primitiveType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateSRem(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateURem(left, right);
@@ -315,28 +315,28 @@ namespace klong {
                     _valueOfLastExpr = IRBuilder.CreateICmpNE(left, right);
                     break;
                 case BinaryOperation::LESS_THAN:
-                    if (type->isSigned()) {
+                    if (primitiveType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSLT(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpULT(left, right);
                     }
                     break;
                 case BinaryOperation::LESS_EQUAL:
-                    if (type->isSigned()) {
+                    if (primitiveType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSLE(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpULE(left, right);
                     }
                     break;
                 case BinaryOperation::GREATER_THAN:
-                    if (type->isSigned()) {
+                    if (primitiveType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSGT(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpUGT(left, right);
                     }
                     break;
                 case BinaryOperation::GREATER_EQUAL:
-                    if (type->isSigned()) {
+                    if (primitiveType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSGE(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpUGE(left, right);
@@ -347,7 +347,7 @@ namespace klong {
             }
             return;
         }
-        if (type->isFloat()) {
+        if (primitiveType->isFloat()) {
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = IRBuilder.CreateFAdd(left, right);
@@ -390,21 +390,21 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitCallExpr(Call* expr) {
-        auto calleeF = emit(expr->callee().get());
+        auto calleeF = emit(expr->callee());
         std::vector<llvm::Value*> argsV;
         for (auto& arg : expr->args()) {
-            argsV.push_back(emit(arg.get()));
+            argsV.push_back(emit(arg));
         }
         _valueOfLastExpr = IRBuilder.CreateCall(calleeF, argsV);
     }
 
     void LLVMEmitVisitor::visitGroupingExpr(Grouping* expr) {
-        _valueOfLastExpr = emit(expr->expression().get());
+        _valueOfLastExpr = emit(expr->expression());
     }
 
     void LLVMEmitVisitor::visitLogicalExpr(Logical* expr) {
-        llvm::Value* left = emit(expr->left().get());
-        llvm::Value* right = emit(expr->right().get());
+        llvm::Value* left = emit(expr->left());
+        llvm::Value* right = emit(expr->right());
         switch (expr->op()) {
             case LogicalOperation::AND:
                 _valueOfLastExpr = IRBuilder.CreateAnd(left, right);
@@ -416,7 +416,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitUnaryExpr(Unary* expr) {
-        llvm::Value* right = emit(expr->right().get());
+        llvm::Value* right = emit(expr->right());
         switch(expr->op()) {
             case UnaryOperation::MINUS:
                 _valueOfLastExpr = IRBuilder.CreateNeg(right);
@@ -428,7 +428,7 @@ namespace klong {
                 _valueOfLastExpr = IRBuilder.CreateLoad(right);
                 break;
             case UnaryOperation::ADDRESS_OF:
-                _valueOfLastExpr = getVariableAddress(expr->right().get());
+                _valueOfLastExpr = getVariableAddress(expr->right());
                 break;
         }
     }
@@ -450,12 +450,12 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitCastExpr(Cast* expr) {
-        llvm::Value* value = emit(expr->right().get());
+        llvm::Value* value = emit(expr->right());
         expr->targetType()->accept(this);
         llvm::Type* targetType = _valueOfLastType;
         {
-            auto mySourceType = dynamic_cast<PrimitiveType*>(expr->right()->type().get());
-            auto myTargetType = dynamic_cast<PrimitiveType*>(expr->targetType().get());
+            auto mySourceType = dynamic_cast<PrimitiveType*>(expr->right()->type());
+            auto myTargetType = dynamic_cast<PrimitiveType*>(expr->targetType());
             if (mySourceType && myTargetType) {
                 if ((mySourceType->isInteger() || mySourceType->isBoolean()) &&
                     (myTargetType->isInteger() || myTargetType->isBoolean())) {
