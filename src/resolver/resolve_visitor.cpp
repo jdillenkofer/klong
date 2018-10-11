@@ -18,17 +18,17 @@ namespace klong {
         }
     }
 
-    void ResolveVisitor::resolve(const std::vector<StmtPtr>& statements) {
+    void ResolveVisitor::resolve(const std::vector<Stmt*>& statements) {
         for (const auto& statement : statements) {
             if (statement->kind() == StatementKind::FUNCTION) {
-                auto stmt = dynamic_cast<Function*>(statement.get());
+                auto stmt = dynamic_cast<Function*>(statement);
                 declare(stmt, stmt->name(), DeclarationType::FUNCTION);
                 define(stmt->name());
             }
         }
 
         for (const auto& statement : statements) {
-            resolve(statement.get());
+            resolve(statement);
         }
     }
 
@@ -95,11 +95,11 @@ namespace klong {
     }
 
     void ResolveVisitor::visitExpressionStmt(Expression* stmt) {
-        resolve(stmt->expression().get());
+        resolve(stmt->expression());
     }
 
     void ResolveVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
-        auto type = stmt->type().get();
+        auto type = stmt->type();
         auto declType = type->kind() == TypeKind::FUNCTION ? DeclarationType::FUNCTION : DeclarationType::CONST;
         declare(stmt, stmt->name(), declType);
         define(stmt->name());
@@ -119,7 +119,7 @@ namespace klong {
         _isInsideFunction = insideFunction;
         enterScope();
         for (const auto& param : stmt->params()) {
-            resolve(param.get());
+            resolve(param);
         }
 
         resolve(stmt->body());
@@ -128,21 +128,21 @@ namespace klong {
     }
 
     void ResolveVisitor::visitIfStmt(If* stmt) {
-        resolve(stmt->condition().get());
-        resolve(stmt->thenBranch().get());
-        resolve(stmt->elseBranch().get());
+        resolve(stmt->condition());
+        resolve(stmt->thenBranch());
+        resolve(stmt->elseBranch());
     }
 
     void ResolveVisitor::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
             _result.addError(ResolveException(stmt->sourceRange(), "Cannot return from top-level code."));
         }
-        resolve(stmt->value().get());
+        resolve(stmt->value());
     }
 
     void ResolveVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
         if (stmt->initializer()) {
-            resolve(stmt->initializer().get());
+            resolve(stmt->initializer());
         }
         auto declType = stmt->isConst() ? DeclarationType::CONST : DeclarationType::LET;
         declare(stmt, stmt->name(), declType);
@@ -152,16 +152,16 @@ namespace klong {
     }
 
     void ResolveVisitor::visitWhileStmt(While* stmt) {
-        resolve(stmt->condition().get());
-        resolve(stmt->body().get());
+        resolve(stmt->condition());
+        resolve(stmt->body());
     }
 
     void ResolveVisitor::visitForStmt(For* stmt) {
         enterScope();
-        resolve(stmt->initializer().get());
-        resolve(stmt->condition().get());
-        resolve(stmt->increment().get());
-        resolve(stmt->body().get());
+        resolve(stmt->initializer());
+        resolve(stmt->condition());
+        resolve(stmt->increment());
+        resolve(stmt->body());
         exitScope();
     }
 
@@ -172,9 +172,9 @@ namespace klong {
 
     // Expr
     void ResolveVisitor::visitAssignExpr(Assign* expr) {
-        resolve(expr->value().get());
+        resolve(expr->value());
         if (expr->isTargetVariable()) {
-            resolveLocal(expr->target().get());
+            resolveLocal(expr->target());
             auto varDeclRes = expr->target()->resolvesTo();
             if (varDeclRes->kind() == StatementKind::VAR_DECL) {
                 auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
@@ -183,33 +183,33 @@ namespace klong {
                 }
             }
         } else {
-            resolve(expr->targetDeref().get());
+            resolve(expr->targetDeref());
         }
     }
 
     void ResolveVisitor::visitBinaryExpr(Binary* expr) {
-        resolve(expr->left().get());
-        resolve(expr->right().get());
+        resolve(expr->left());
+        resolve(expr->right());
     }
 
     void ResolveVisitor::visitCallExpr(Call* expr) {
-        resolve(expr->callee().get());
+        resolve(expr->callee());
         for (const auto& arg : expr->args()) {
-            resolve(arg.get());
+            resolve(arg);
         }
     }
 
     void ResolveVisitor::visitGroupingExpr(Grouping* expr) {
-        resolve(expr->expression().get());
+        resolve(expr->expression());
     }
 
     void ResolveVisitor::visitLogicalExpr(Logical* expr) {
-        resolve(expr->left().get());
-        resolve(expr->right().get());
+        resolve(expr->left());
+        resolve(expr->right());
     }
 
     void ResolveVisitor::visitUnaryExpr(Unary* expr) {
-        resolve(expr->right().get());
+        resolve(expr->right());
     }
 
     void ResolveVisitor::visitSizeOfExpr(SizeOf* expr) {

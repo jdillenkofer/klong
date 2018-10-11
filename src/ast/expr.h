@@ -39,8 +39,8 @@ namespace klong {
             _type = std::move(type);
         }
 
-        TypePtr type() const {
-            return _type;
+        Type* type() const {
+            return _type.get();
         }
 
         SourceRange sourceRange() const {
@@ -71,20 +71,20 @@ namespace klong {
             visitor->visitAssignExpr(this);
         }
 
-        std::shared_ptr<Variable> target() const {
-            return _target;
+        Variable* target() const {
+            return _target.get();
         }
 
-        std::shared_ptr<Unary> targetDeref() const {
-            return _targetDeref;
+        Unary* targetDeref() const {
+            return _targetDeref.get();
         }
 
         bool isTargetVariable() const {
             return _target != nullptr;
         }
 
-        ExprPtr value() const {
-            return _value;
+        Expr* value() const {
+            return _value.get();
         }
 
     private:
@@ -124,16 +124,16 @@ namespace klong {
             visitor->visitBinaryExpr(this);
         }
 
-        ExprPtr left() const {
-            return _left;
+        Expr* left() const {
+            return _left.get();
         }
 
         BinaryOperation op() const {
             return _op;
         }
 
-        ExprPtr right() const {
-            return _right;
+        Expr* right() const {
+            return _right.get();
         }
 
     private:
@@ -153,12 +153,16 @@ namespace klong {
             visitor->visitCallExpr(this);
         }
 
-        ExprPtr callee() const {
-            return _callee;
+        Expr* callee() const {
+            return _callee.get();
         }
 
-        std::vector<ExprPtr> args() const {
-            return _args;
+        std::vector<Expr*> args() const {
+            std::vector<Expr*> args;
+            for (auto& arg : _args) {
+                args.push_back(arg.get());
+            }
+            return args;
         }
 
     private:
@@ -177,8 +181,8 @@ namespace klong {
             visitor->visitGroupingExpr(this);
         }
 
-        ExprPtr expression() const {
-            return _expr;
+        Expr* expression() const {
+            return _expr.get();
         }
 
     private:
@@ -318,12 +322,12 @@ namespace klong {
             visitor->visitLogicalExpr(this);
         }
 
-        ExprPtr left() const {
-            return _left;
+        Expr* left() const {
+            return _left.get();
         }
 
-        ExprPtr right() const {
-            return _right;
+        Expr* right() const {
+            return _right.get();
         }
 
         LogicalOperation op() const {
@@ -358,8 +362,8 @@ namespace klong {
             return _op;
         }
 
-        ExprPtr right() const {
-            return _right;
+        Expr* right() const {
+            return _right.get();
         }
 
     private:
@@ -378,8 +382,8 @@ namespace klong {
             visitor->visitSizeOfExpr(this);
         }
 
-        TypePtr right() const {
-            return _right;
+        Type* right() const {
+            return _right.get();
         }
 
     private:

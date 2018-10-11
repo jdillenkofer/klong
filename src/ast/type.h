@@ -80,8 +80,12 @@ namespace klong {
             visitor->visitFunctionType(this);
         }
 
-        std::vector<TypePtr> paramTypes() const {
-            return _paramTypes;
+        std::vector<Type*> paramTypes() const {
+            std::vector<Type*> paramTypes;
+            for (auto& paramType : _paramTypes) {
+                paramTypes.push_back(paramType.get());
+            }
+            return paramTypes;
         }
 
         const TypePtr returnType() const {
@@ -99,21 +103,21 @@ namespace klong {
                     return false;
                 }
 
-                return matchesSignature(otherFunctionType->_paramTypes);
+                return matchesSignature(otherFunctionType->paramTypes());
             }
             return false;
         }
 
         Type* clone() const {
-            return new FunctionType(SourceRange(), this->paramTypes(), this->returnType());
+            return new FunctionType(SourceRange(), std::vector<TypePtr>(this->_paramTypes), this->returnType());
         }
 
-        bool matchesSignature(const std::vector<TypePtr>& callSignature) const {
+        bool matchesSignature(const std::vector<Type*>& callSignature) const {
             if (this->_paramTypes.size() != callSignature.size()) {
                 return false;
             }
             for (size_t i = 0; i < this->_paramTypes.size(); i++) {
-                if (!this->_paramTypes[i]->isEqual(callSignature[i].get())) {
+                if (!this->_paramTypes[i]->isEqual(callSignature[i])) {
                     return false;
                 }
             }
@@ -212,31 +216,31 @@ namespace klong {
     class PointerType : public Type {
     public:
         PointerType(SourceRange sourceRange, TypePtr type):
-                Type(TypeKind::POINTER, sourceRange), _type(std::move(type)) {
+                Type(TypeKind::POINTER, sourceRange), _pointsTo(std::move(type)) {
         }
 
         void accept(TypeVisitor* visitor) {
             visitor->visitPointerType(this);
         }
 
-        TypePtr pointsTo() const {
-            return _type;
+        Type* pointsTo() const {
+            return _pointsTo.get();
         }
 
         bool isEqual(const Type* other) const {
             if (other->kind() == TypeKind::POINTER) {
                 auto otherPointerType = dynamic_cast<const PointerType*>(other);
-                return this->pointsTo()->isEqual(otherPointerType->pointsTo().get());
+                return this->pointsTo()->isEqual(otherPointerType->pointsTo());
             }
             return false;
         }
 
         Type* clone() const {
-            return new PointerType(SourceRange(), this->pointsTo());
+            return new PointerType(SourceRange(), this->_pointsTo);
         }
 
     private:
-        TypePtr _type;
+        TypePtr _pointsTo;
     };
 
     class SimpleType : public Type {

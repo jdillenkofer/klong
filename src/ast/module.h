@@ -20,8 +20,12 @@ namespace klong {
             visitor->visitModule(this);
         }
 
-        std::vector<StmtPtr> statements() const {
-            return _statements;
+        std::vector<Stmt*> statements() const {
+            std::vector<Stmt*> stmts;
+            for(auto& stmt : _statements) {
+                stmts.push_back(stmt.get());
+            }
+            return stmts;
         }
 
         std::string filename() const {
