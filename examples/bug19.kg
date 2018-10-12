@@ -1,0 +1,8 @@
+pub fun main() -> i64 {
+    return test();
+    return 2;
+}
+
+fun test() -> i64 {
+    return 1;
+}
