@@ -58,15 +58,19 @@ namespace klong {
 
     private:
         llvm::Value* emit(Expr* expr);
-        llvm::Value* emit(Stmt* stmt);
+        void emit(Stmt* stmt);
         void emitBlock(const std::vector<Stmt*>& statements);
         llvm::Value* getVariableAddress(Expr* expr);
     private:
+        static bool _initialized;
         std::unique_ptr<llvm::Module> _module;
         llvm::Value* _valueOfLastExpr = nullptr;
         llvm::Type* _valueOfLastType = nullptr;
         std::map<Stmt*, llvm::Value*> _namedValues;
         TypeKind _outerType = TypeKind::PRIMITIVE;
-        static bool _initialized;
+
+        // used for dead code elimination after return stmt
+        llvm::BasicBlock* _previousBlock = nullptr;
+        bool _eliminateDeadCodeInCurrentBlock;
     };
 }

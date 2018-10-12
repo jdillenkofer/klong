@@ -41,14 +41,22 @@ namespace klong {
         return _valueOfLastExpr;
     }
 
-    llvm::Value* LLVMEmitVisitor::emit(Stmt* stmt) {
+    void LLVMEmitVisitor::emit(Stmt* stmt) {
+        // eliminate dead code after return
+        bool blockChanged = IRBuilder.GetInsertBlock() != _previousBlock;
+        if (blockChanged) {
+            _previousBlock = IRBuilder.GetInsertBlock();
+            _eliminateDeadCodeInCurrentBlock = false;
+        }
+        if (_eliminateDeadCodeInCurrentBlock) {
+            return;
+        }
         stmt->accept(this);
-        return _valueOfLastExpr;
     }
 
     void LLVMEmitVisitor::emitBlock(const std::vector<Stmt*>& statements) {
         for (auto& stmt : statements) {
-            stmt->accept(this);
+            emit(stmt);
         }
     }
 
@@ -127,9 +135,7 @@ namespace klong {
             }
         }
 
-        for (auto& statement : stmt->body()) {
-            emit(statement);
-        }
+        emitBlock(stmt->body());
         llvm::verifyFunction(*function);
     }
 
@@ -168,6 +174,7 @@ namespace klong {
             emit(stmt->value());
         }
         IRBuilder.CreateRet(_valueOfLastExpr);
+        _eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
