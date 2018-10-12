@@ -219,13 +219,13 @@ namespace klong {
     }
     
     Token Lexer::next() {
+        skipWhitespace(_currentPosition);
+        updateLocation();
+
         if (_currentPosition >= _code.length()) {
             _currentPosition++;
             return Token { { _sourceLocation, _sourceLocation }, TokenType::END_OF_FILE };
         }
-
-        skipWhitespace(_currentPosition);
-        updateLocation();
 
         auto ch = read(false);
         Token token {{ _source, _source }, TokenType::NONE, std::string(1, ch)};
