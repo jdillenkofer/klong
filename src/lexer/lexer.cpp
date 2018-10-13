@@ -329,7 +329,8 @@ namespace klong {
             }
             pos++;
         }
-        return !isAlphanumeric(read(false));
+        c = read(false);
+        return !isAlphanumeric(c) && c != '_';
     }
     
     bool Lexer::matchesKeyword(Token& token, const std::string& keyword, TokenType type) {

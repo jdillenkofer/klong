@@ -461,22 +461,26 @@ namespace klong {
         expr->targetType()->accept(this);
         llvm::Type* targetType = _valueOfLastType;
         {
-            auto mySourceType = dynamic_cast<PrimitiveType*>(expr->right()->type());
-            auto myTargetType = dynamic_cast<PrimitiveType*>(expr->targetType());
-            if (mySourceType && myTargetType) {
-                if ((mySourceType->isInteger() || mySourceType->isBoolean()) &&
-                    (myTargetType->isInteger() || myTargetType->isBoolean())) {
-                    _valueOfLastExpr = IRBuilder.CreateIntCast(value, targetType, myTargetType->isSigned());
+            auto myPrimSourceType = dynamic_cast<PrimitiveType*>(expr->right()->type());
+            auto myPrimTargetType = dynamic_cast<PrimitiveType*>(expr->targetType());
+
+            auto myPointerSourceType = dynamic_cast<PointerType*>(expr->right()->type());
+            auto myPointerTargetType = dynamic_cast<PointerType*>(expr->targetType());
+
+            if (myPrimSourceType && myPrimTargetType) {
+                if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) &&
+                    (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
+                    _valueOfLastExpr = IRBuilder.CreateIntCast(value, targetType, myPrimTargetType->isSigned());
                     return;
                 }
 
-                if (mySourceType->isFloat() && myTargetType->isFloat()) {
+                if (myPrimSourceType->isFloat() && myPrimTargetType->isFloat()) {
                     _valueOfLastExpr = IRBuilder.CreateFPCast(value, targetType);
                     return;
                 }
 
-                if ((mySourceType->isInteger() || mySourceType->isBoolean()) && (myTargetType->isFloat())) {
-                    if (mySourceType->isSigned()) {
+                if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) && (myPrimTargetType->isFloat())) {
+                    if (myPrimSourceType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateSIToFP(value, targetType);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateUIToFP(value, targetType);
@@ -484,8 +488,8 @@ namespace klong {
                     return;
                 }
 
-                if ((mySourceType->isFloat()) || (myTargetType->isInteger() || myTargetType->isBoolean())) {
-                    if (myTargetType->isSigned()) {
+                if ((myPrimSourceType->isFloat()) || (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
+                    if (myPrimTargetType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateFPToSI(value, targetType);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateFPToUI(value, targetType);
@@ -493,10 +497,42 @@ namespace klong {
                     return;
                 }
             }
-        }
-        {
 
+            if (myPrimSourceType && myPrimSourceType->isFloat() && myPointerTargetType) {
+                auto valueAsU64 = IRBuilder.CreateFPToUI(value, llvm::IntegerType::getInt64Ty(context));
+                _valueOfLastExpr = IRBuilder.CreateIntToPtr(valueAsU64, targetType);
+                return;
+            }
+
+            if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isFloat()) {
+                auto valueAsU64 = IRBuilder.CreatePtrToInt(value, llvm::IntegerType::getInt64Ty(context));
+                _valueOfLastExpr = IRBuilder.CreateUIToFP(valueAsU64, targetType);
+                return;
+            }
+
+            if (myPointerSourceType && myPointerTargetType) {
+                _valueOfLastExpr = IRBuilder.CreatePointerCast(value, targetType);
+                return;
+            }
+            if (myPrimSourceType && myPrimSourceType->isInteger() && myPointerTargetType) {
+                _valueOfLastExpr = IRBuilder.CreateIntToPtr(value, targetType);
+                return;
+            }
+            if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isInteger()) {
+                _valueOfLastExpr = IRBuilder.CreatePtrToInt(value, targetType);
+                return;
+            }
+
+            auto myFunctionTargetType = dynamic_cast<FunctionType*>(expr->targetType());
+            if (myPointerSourceType && myFunctionTargetType) {
+                _valueOfLastExpr = IRBuilder.CreateBitCast(value, llvm::PointerType::get(targetType, 0));
+                return;
+            }
         }
+
+        // Type conversion failed
+        _valueOfLastExpr = value;
+        assert(false);
     }
 
     void LLVMEmitVisitor::visitVariableExpr(Variable* expr) {

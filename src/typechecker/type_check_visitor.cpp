@@ -399,7 +399,12 @@ namespace klong {
 
     void TypeCheckVisitor::visitCastExpr(Cast* expr) {
         check(expr->right());
-        expr->type(std::shared_ptr<Type>(expr->targetType()->clone()));
+        std::shared_ptr<Type> targetType = std::shared_ptr<Type>(expr->targetType()->clone());
+        if (expr->targetType()->kind() == TypeKind::FUNCTION) {
+            targetType = std::make_shared<PointerType>(expr->targetType()->sourceRange(),
+                                                       std::shared_ptr<Type>(expr->targetType()->clone()));
+        }
+        expr->type(targetType);
     }
 
     void TypeCheckVisitor::visitVariableExpr(Variable* expr) {
