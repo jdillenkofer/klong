@@ -7,10 +7,6 @@
 namespace klong {
     class TypeChecker {
     public:
-        Result<ModulePtr, TypeCheckException> check(ModulePtr module) {
-            auto typeCheckVisitor = TypeCheckVisitor();
-            module->accept(&typeCheckVisitor);
-            return typeCheckVisitor.getResult();
-        }
+        Result<ModulePtr, TypeCheckException> check(ModulePtr module);
     };
 }

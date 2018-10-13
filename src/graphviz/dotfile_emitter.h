@@ -9,17 +9,6 @@
 namespace klong {
     class DotfileEmitter {
     public:
-        bool emit(const std::string& filename, ModulePtr module) {
-            auto graphvizVisitor = DotfileVisitor();
-            module->accept(&graphvizVisitor);
-            auto output = graphvizVisitor.getDotfileOutput();
-            std::ofstream out(filename);
-            if (!out) {
-                return false;
-            }
-            out << output;
-            out.close();
-            return true;
-        }
+        bool emit(const std::string& filename, ModulePtr module);
     };
 }

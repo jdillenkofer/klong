@@ -60,7 +60,12 @@ set(SOURCE_FILES
 	src/codegen/llvm_emit_visitor.cpp
 	src/graphviz/dotfile_visitor.cpp
     src/ast/string_helper.cpp
-        src/compiler.cpp)
+    src/compiler.cpp
+    src/typechecker/typechecker.cpp
+    src/resolver/resolver.cpp
+    src/codegen/llvm_emitter.cpp
+    src/graphviz/dotfile_emitter.cpp
+)
 
 set(HEADER_FILES
     src/common/defer.h
@@ -88,7 +93,8 @@ set(HEADER_FILES
 	src/codegen/llvm_emitter.h
 	src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
-        src/compiler.h)
+    src/compiler.h
+)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

@@ -7,10 +7,6 @@
 namespace klong {
     class Resolver {
     public:
-        Result<ModulePtr, ResolveException> resolve(ModulePtr module) {
-            auto resolveVisitor = ResolveVisitor();
-            module->accept(&resolveVisitor);
-            return resolveVisitor.getResult();
-        }
+        Result<ModulePtr, ResolveException> resolve(ModulePtr module);
     };
 }
