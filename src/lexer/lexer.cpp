@@ -843,11 +843,11 @@ namespace klong {
         auto identifierStart = _currentPosition;
         auto startLocation = _sourceLocation;
         char c = read();
-        if (!isAlpha(c)) {
+        if (!isAlpha(c) && c != '_') {
             _currentPosition = identifierStart;
             return false;
         }
-        while((c = read(false)) && isAlphanumeric(c)) {
+        while((c = read(false)) && (isAlphanumeric(c) || c == '_')) {
             // skip alphanumeric chars
             _currentPosition++;
         }
