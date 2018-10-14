@@ -36,6 +36,11 @@ namespace klong {
         return _module.get();
     }
 
+    llvm::Type* LLVMEmitVisitor::getLLVMType(Type *type) {
+        type->accept(this);
+        return _valueOfLastType;
+    }
+
     llvm::Value* LLVMEmitVisitor::emit(Expr* expr) {
         expr->accept(this);
         return _valueOfLastExpr;
@@ -60,6 +65,66 @@ namespace klong {
         }
     }
 
+    llvm::Value* LLVMEmitVisitor::emitCast(llvm::Value *value, Type *from, Type *to) {
+        auto targetType = getLLVMType(to);
+        auto myPrimSourceType = dynamic_cast<PrimitiveType*>(from);
+        auto myPrimTargetType = dynamic_cast<PrimitiveType*>(to);
+
+        auto myPointerSourceType = dynamic_cast<PointerType*>(from);
+        auto myPointerTargetType = dynamic_cast<PointerType*>(to);
+
+        if (myPrimSourceType && myPrimTargetType) {
+            if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) &&
+                (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
+                return IRBuilder.CreateIntCast(value, targetType, myPrimTargetType->isSigned());
+            }
+
+            if (myPrimSourceType->isFloat() && myPrimTargetType->isFloat()) {
+                return IRBuilder.CreateFPCast(value, targetType);
+            }
+
+            if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) && (myPrimTargetType->isFloat())) {
+                if (myPrimSourceType->isSigned()) {
+                    return IRBuilder.CreateSIToFP(value, targetType);
+                } else {
+                    return IRBuilder.CreateUIToFP(value, targetType);
+                }
+            }
+
+            if ((myPrimSourceType->isFloat()) || (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
+                if (myPrimTargetType->isSigned()) {
+                    return IRBuilder.CreateFPToSI(value, targetType);
+                } else {
+                    return IRBuilder.CreateFPToUI(value, targetType);
+                }
+            }
+        }
+
+        if (myPrimSourceType && myPrimSourceType->isFloat() && myPointerTargetType) {
+            auto valueAsU64 = IRBuilder.CreateFPToUI(value, llvm::IntegerType::getInt64Ty(context));
+            return IRBuilder.CreateIntToPtr(valueAsU64, targetType);
+        }
+
+        if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isFloat()) {
+            auto valueAsU64 = IRBuilder.CreatePtrToInt(value, llvm::IntegerType::getInt64Ty(context));
+            return IRBuilder.CreateUIToFP(valueAsU64, targetType);
+        }
+
+        if (myPointerSourceType && myPointerTargetType) {
+            return IRBuilder.CreatePointerCast(value, targetType);
+        }
+        if (myPrimSourceType && myPrimSourceType->isInteger() && myPointerTargetType) {
+            return IRBuilder.CreateIntToPtr(value, targetType);
+        }
+        if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isInteger()) {
+            return IRBuilder.CreatePtrToInt(value, targetType);
+        }
+
+        // Type conversion failed
+        assert(false);
+        return value;
+    }
+
     void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), context);
 
@@ -69,8 +134,7 @@ namespace klong {
                 auto linkage = function->isPublic() ?
                         llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage;
 
-                function->functionType()->accept(this);
-                auto functionType = (llvm::FunctionType*) _valueOfLastType;
+                auto functionType = (llvm::FunctionType*) getLLVMType(function->functionType());
 
                 auto llvmFunction = llvm::Function::Create(functionType,
                         linkage, function->name(), _module.get());
@@ -93,8 +157,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
-        stmt->type()->accept(this);
-        auto type = _valueOfLastType;
+        auto type = getLLVMType(stmt->type());
 
         bool isFunction = stmt->type()->kind() == TypeKind::FUNCTION;
         bool isPointer = stmt->type()->kind() == TypeKind::POINTER;
@@ -103,8 +166,7 @@ namespace klong {
             auto pointsToType = pointerType->pointsTo();
             if (pointsToType->kind() == TypeKind::FUNCTION) {
                 isFunction = true;
-                pointsToType->accept(this);
-                type = _valueOfLastType;
+                type = getLLVMType(pointsToType);
             }
         }
 
@@ -126,8 +188,7 @@ namespace klong {
         {
             size_t i = 0;
             for (auto& arg : function->args()) {
-                stmt->params()[i]->type()->accept(this);
-                llvm::Type* paramType = _valueOfLastType;
+                llvm::Type* paramType = getLLVMType(stmt->params()[i]->type());
                 auto param = IRBuilder.CreateAlloca(paramType);
                 IRBuilder.CreateStore(&arg, param);
                 _namedValues[stmt->params()[i]] = param;
@@ -178,8 +239,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
-        stmt->type()->accept(this);
-        llvm::Type* type = _valueOfLastType;
+        llvm::Type* type = getLLVMType(stmt->type());
 
         if (stmt->isGlobal()) {
             _module->getOrInsertGlobal(stmt->name(), type);
@@ -448,8 +508,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitSizeOfExpr(SizeOf* expr) {
-        expr->right()->accept(this);
-        auto pointerType = llvm::PointerType::get(_valueOfLastType, 0);
+        auto pointerType = llvm::PointerType::get(getLLVMType(expr->right()), 0);
         llvm::Value* null = llvm::ConstantPointerNull::get(pointerType);
         llvm::Value* one = llvm::ConstantInt::get(context, llvm::APInt(64, (uint64_t) 1, true));
         llvm::Value* size = IRBuilder.CreateGEP(null, one);
@@ -457,82 +516,11 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitCastExpr(Cast* expr) {
-        llvm::Value* value = emit(expr->right());
-        expr->targetType()->accept(this);
-        llvm::Type* targetType = _valueOfLastType;
-        {
-            auto myPrimSourceType = dynamic_cast<PrimitiveType*>(expr->right()->type());
-            auto myPrimTargetType = dynamic_cast<PrimitiveType*>(expr->targetType());
+        auto value = emit(expr->right());
+        auto from = expr->right()->type();
+        auto to = expr->targetType();
 
-            auto myPointerSourceType = dynamic_cast<PointerType*>(expr->right()->type());
-            auto myPointerTargetType = dynamic_cast<PointerType*>(expr->targetType());
-
-            if (myPrimSourceType && myPrimTargetType) {
-                if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) &&
-                    (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
-                    _valueOfLastExpr = IRBuilder.CreateIntCast(value, targetType, myPrimTargetType->isSigned());
-                    return;
-                }
-
-                if (myPrimSourceType->isFloat() && myPrimTargetType->isFloat()) {
-                    _valueOfLastExpr = IRBuilder.CreateFPCast(value, targetType);
-                    return;
-                }
-
-                if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) && (myPrimTargetType->isFloat())) {
-                    if (myPrimSourceType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateSIToFP(value, targetType);
-                    } else {
-                        _valueOfLastExpr = IRBuilder.CreateUIToFP(value, targetType);
-                    }
-                    return;
-                }
-
-                if ((myPrimSourceType->isFloat()) || (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
-                    if (myPrimTargetType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateFPToSI(value, targetType);
-                    } else {
-                        _valueOfLastExpr = IRBuilder.CreateFPToUI(value, targetType);
-                    }
-                    return;
-                }
-            }
-
-            if (myPrimSourceType && myPrimSourceType->isFloat() && myPointerTargetType) {
-                auto valueAsU64 = IRBuilder.CreateFPToUI(value, llvm::IntegerType::getInt64Ty(context));
-                _valueOfLastExpr = IRBuilder.CreateIntToPtr(valueAsU64, targetType);
-                return;
-            }
-
-            if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isFloat()) {
-                auto valueAsU64 = IRBuilder.CreatePtrToInt(value, llvm::IntegerType::getInt64Ty(context));
-                _valueOfLastExpr = IRBuilder.CreateUIToFP(valueAsU64, targetType);
-                return;
-            }
-
-            if (myPointerSourceType && myPointerTargetType) {
-                _valueOfLastExpr = IRBuilder.CreatePointerCast(value, targetType);
-                return;
-            }
-            if (myPrimSourceType && myPrimSourceType->isInteger() && myPointerTargetType) {
-                _valueOfLastExpr = IRBuilder.CreateIntToPtr(value, targetType);
-                return;
-            }
-            if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isInteger()) {
-                _valueOfLastExpr = IRBuilder.CreatePtrToInt(value, targetType);
-                return;
-            }
-
-            auto myFunctionTargetType = dynamic_cast<FunctionType*>(expr->targetType());
-            if (myPointerSourceType && myFunctionTargetType) {
-                _valueOfLastExpr = IRBuilder.CreateBitCast(value, llvm::PointerType::get(targetType, 0));
-                return;
-            }
-        }
-
-        // Type conversion failed
-        _valueOfLastExpr = value;
-        assert(false);
+        _valueOfLastExpr = emitCast(value, from, to);
     }
 
     void LLVMEmitVisitor::visitVariableExpr(Variable* expr) {
@@ -614,15 +602,13 @@ namespace klong {
         auto prevOuterType = _outerType;
         _outerType = TypeKind::FUNCTION;
 
-        for (auto& t : type->paramTypes()) {
-            t->accept(this);
-            paramTypes.push_back(_valueOfLastType);
+        for (auto& paramType : type->paramTypes()) {
+            paramTypes.push_back(getLLVMType(paramType));
         }
-        type->returnType()->accept(this);
+        llvm::Type* returnType = getLLVMType(type->returnType());
 
         _outerType = prevOuterType;
 
-        llvm::Type* returnType = _valueOfLastType;
         _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
     }
 
@@ -671,9 +657,9 @@ namespace klong {
     void LLVMEmitVisitor::visitPointerType(klong::PointerType *type) {
         auto prevOuterType = _outerType;
         _outerType = TypeKind::POINTER;
-        type->pointsTo()->accept(this);
+        auto innerType = getLLVMType(type->pointsTo());
         _outerType = prevOuterType;
-        _valueOfLastType = llvm::PointerType::get(_valueOfLastType, 0);
+        _valueOfLastType = llvm::PointerType::get(innerType, 0);
     }
 
     void LLVMEmitVisitor::visitSimpleType(SimpleType *type) {
@@ -682,5 +668,6 @@ namespace klong {
         _outerType = TypeKind::SIMPLE;
         (void) type;
         _outerType = prevOuterType;
+        assert(false);
     }
 }

@@ -70,12 +70,6 @@ namespace klong {
         void check(Stmt* stmt);
         void check(Expr* expr);
         bool getAndResetReturnsValue();
-
-        bool isBoolean(Expr* expr);
-        bool isInteger(Expr* expr);
-        bool isFloat(Expr* expr);
-        bool isString(Expr* expr);
-        bool isPointer(Expr* expr);
     private:
         Function* currentFunction = nullptr;
         Result<ModulePtr, TypeCheckException> _result;

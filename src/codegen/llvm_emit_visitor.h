@@ -57,10 +57,12 @@ namespace klong {
         void visitSimpleType(SimpleType *type) override;
 
     private:
+        llvm::Type* getLLVMType(Type *type);
         llvm::Value* emit(Expr* expr);
         void emit(Stmt* stmt);
         void emitBlock(const std::vector<Stmt*>& statements);
         llvm::Value* getVariableAddress(Expr* expr);
+        llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
     private:
         static bool _initialized;
         std::unique_ptr<llvm::Module> _module;
