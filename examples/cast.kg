@@ -1,5 +1,5 @@
 pub fun main() -> i64 {
     let i = 1;
-    let f = cast<f64>(&i);
-    return i;
+    let f = i + 5.5;
+    return cast<i64>(f);
 }

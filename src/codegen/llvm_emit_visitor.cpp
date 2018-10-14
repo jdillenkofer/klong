@@ -331,8 +331,14 @@ namespace klong {
     void LLVMEmitVisitor::visitBinaryExpr(Binary* expr) {
         llvm::Value* left = emit(expr->left());
         llvm::Value* right = emit(expr->right());
-        auto primitiveType = dynamic_cast<PrimitiveType*>(expr->left()->type());
-        if (primitiveType->isInteger()) {
+        auto targetType = dynamic_cast<PrimitiveType*>(expr->type());
+        if (targetType->isInteger()) {
+            if (!expr->type()->isEqual(expr->left()->type())) {
+                left = emitCast(left, expr->left()->type(), expr->type());
+            }
+            if (!expr->type()->isEqual(expr->right()->type())) {
+                right = emitCast(right, expr->right()->type(), expr->type());
+            }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = IRBuilder.CreateAdd(left, right);
@@ -344,14 +350,14 @@ namespace klong {
                     _valueOfLastExpr = IRBuilder.CreateMul(left, right);
                     break;
                 case BinaryOperation::DIVISION:
-                    if (primitiveType->isSigned()) {
+                    if (targetType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateSDiv(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateUDiv(left, right);
                     }
                     break;
                 case BinaryOperation::MODULO:
-                    if (primitiveType->isSigned()) {
+                    if (targetType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateSRem(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateURem(left, right);
@@ -382,28 +388,28 @@ namespace klong {
                     _valueOfLastExpr = IRBuilder.CreateICmpNE(left, right);
                     break;
                 case BinaryOperation::LESS_THAN:
-                    if (primitiveType->isSigned()) {
+                    if (targetType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSLT(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpULT(left, right);
                     }
                     break;
                 case BinaryOperation::LESS_EQUAL:
-                    if (primitiveType->isSigned()) {
+                    if (targetType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSLE(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpULE(left, right);
                     }
                     break;
                 case BinaryOperation::GREATER_THAN:
-                    if (primitiveType->isSigned()) {
+                    if (targetType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSGT(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpUGT(left, right);
                     }
                     break;
                 case BinaryOperation::GREATER_EQUAL:
-                    if (primitiveType->isSigned()) {
+                    if (targetType->isSigned()) {
                         _valueOfLastExpr = IRBuilder.CreateICmpSGE(left, right);
                     } else {
                         _valueOfLastExpr = IRBuilder.CreateICmpUGE(left, right);
@@ -414,7 +420,13 @@ namespace klong {
             }
             return;
         }
-        if (primitiveType->isFloat()) {
+        if (targetType->isFloat()) {
+            if (!expr->type()->isEqual(expr->left()->type())) {
+                left = emitCast(left, expr->left()->type(), expr->type());
+            }
+            if (!expr->type()->isEqual(expr->right()->type())) {
+                right = emitCast(right, expr->right()->type(), expr->type());
+            }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = IRBuilder.CreateFAdd(left, right);

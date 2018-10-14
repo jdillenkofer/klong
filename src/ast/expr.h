@@ -48,51 +48,6 @@ namespace klong {
             return _sourceRange;
         }
 
-        static bool isBoolean(Expr* expr) {
-            Type* type = expr->type();
-            if (type && type->kind() == TypeKind::PRIMITIVE) {
-                auto primitiveType = dynamic_cast<PrimitiveType*>(type);
-                return primitiveType->isBoolean();
-            }
-            return false;
-        }
-
-        static bool isFloat(Expr* expr) {
-            Type* type = expr->type();
-            if (type && type->kind() == TypeKind::PRIMITIVE) {
-                auto primitiveType = dynamic_cast<PrimitiveType*>(type);
-                return primitiveType->isFloat();
-            }
-            return false;
-        }
-
-        static bool isInteger(Expr* expr) {
-            Type* type = expr->type();
-            if (type && type->kind() == TypeKind::PRIMITIVE) {
-                auto primitiveType = dynamic_cast<PrimitiveType*>(type);
-                return primitiveType->isInteger();
-            }
-            return false;
-        }
-
-        static bool isString(Expr* expr) {
-            Type* type = expr->type();
-            if (type && type->kind() == TypeKind::PRIMITIVE) {
-                auto primitiveType = dynamic_cast<PrimitiveType*>(type);
-                return primitiveType->isString();
-            }
-            return false;
-        }
-
-        static bool isPointer(Expr* expr) {
-            Type* type = expr->type();
-            if (type->kind() == TypeKind::POINTER) {
-                auto pointerType = dynamic_cast<PointerType*>(type);
-                return pointerType != nullptr;
-            }
-            return false;
-        }
-
     private:
         ExprKind _kind;
         TypePtr _type = nullptr;

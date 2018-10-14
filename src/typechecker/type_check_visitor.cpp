@@ -35,6 +35,41 @@ namespace klong {
         return returnsValue;
     }
 
+    TypePtr TypeCheckVisitor::applyIntegerPromotion(Type* type) {
+        auto primitiveType = dynamic_cast<PrimitiveType*>(type);
+        if (primitiveType && primitiveType->isInteger()) {
+            if (primitiveType->isSigned()) {
+                return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::I64);
+            } else {
+                return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::U64);
+            }
+        }
+        return nullptr;
+    }
+
+    TypePtr TypeCheckVisitor::applyArithmeticPromotion(Type* left, Type* right) {
+        size_t leftIndex = 0;
+        size_t rightIndex = 0;
+        for (auto& type : _arithmeticConversionStack) {
+            if (type->isEqual(left)) {
+                break;
+            }
+            leftIndex++;
+        }
+
+        for (auto& type : _arithmeticConversionStack) {
+            if (type->isEqual(right)) {
+                break;
+            }
+            rightIndex++;
+        }
+        if (leftIndex > rightIndex) {
+            return _arithmeticConversionStack[leftIndex];
+        } else {
+            return _arithmeticConversionStack[rightIndex];
+        }
+    }
+
     // Module
     void TypeCheckVisitor::visitModule(Module* module) {
         check(module->statements());
@@ -80,7 +115,7 @@ namespace klong {
 
     void TypeCheckVisitor::visitIfStmt(If* stmt) {
         check(stmt->condition());
-        if (!Expr::isBoolean(stmt->condition())) {
+        if (!Type::isBoolean(stmt->condition()->type())) {
             _result.addError(
                     TypeCheckException(stmt->condition()->sourceRange(), "Expect bool condition in if-statement."));
         }
@@ -126,7 +161,7 @@ namespace klong {
 
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
         check(stmt->condition());
-        if (!Expr::isBoolean(stmt->condition())) {
+        if (!Type::isBoolean(stmt->condition()->type())) {
             _result.addError(
                     TypeCheckException(stmt->condition()->sourceRange(), "while condition expects bool type."));
         }
@@ -136,7 +171,7 @@ namespace klong {
     void TypeCheckVisitor::visitForStmt(For* stmt) {
         check(stmt->initializer());
         check(stmt->condition());
-        if (!Expr::isBoolean(stmt->condition())) {
+        if (!Type::isBoolean(stmt->condition()->type())) {
             _result.addError(
                     TypeCheckException(stmt->condition()->sourceRange(), "for condition expects bool type."));
         }
@@ -176,13 +211,12 @@ namespace klong {
     void TypeCheckVisitor::visitBinaryExpr(Binary* expr) {
         check(expr->left());
         check(expr->right());
-        // TODO: primitive type hierarchie
-        if (Expr::isInteger(expr->left()) && Expr::isInteger(expr->right())) {
+        auto leftType = expr->left()->type();
+        auto rightType = expr->right()->type();
+        auto resultType = std::shared_ptr<Type>(expr->left()->type()->clone());
+
+        if (!Type::isInteger(leftType) || !Type::isInteger(rightType)) {
             switch(expr->op()) {
-                case BinaryOperation::PLUS:
-                case BinaryOperation::MINUS:
-                case BinaryOperation::MULTIPLICATION:
-                case BinaryOperation::DIVISION:
                 case BinaryOperation::MODULO:
                 case BinaryOperation::LSL:
                 case BinaryOperation::LSR:
@@ -190,36 +224,19 @@ namespace klong {
                 case BinaryOperation::AND:
                 case BinaryOperation::XOR:
                 case BinaryOperation::OR:
-                {
-                    // TODO: cast to biggest number type
-                    expr->type(std::shared_ptr<Type>(expr->left()->type()->clone()));
+                    _result.addError(
+                            TypeCheckException(expr->sourceRange(),
+                                    "Illegal Operation"));
+                    expr->type(std::make_shared<PrimitiveType>(SourceRange {}, PrimitiveTypeKind::I64));
+                    return;
+                default:
                     break;
-                }
-                case BinaryOperation::LESS_THAN:
-                case BinaryOperation::LESS_EQUAL:
-                case BinaryOperation::EQUALITY:
-                case BinaryOperation::INEQUALITY:
-                case BinaryOperation::GREATER_THAN:
-                case BinaryOperation::GREATER_EQUAL:
-                {
-                    expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
-                    break;
-                }
             }
-            return;
         }
 
-        if (Expr::isFloat(expr->left()) && Expr::isFloat(expr->right())) {
-            switch(expr->op()) {
-                case BinaryOperation::PLUS:
-                case BinaryOperation::MINUS:
-                case BinaryOperation::MULTIPLICATION:
-                case BinaryOperation::DIVISION:
-                {
-                    // TODO: cast to biggest number type
-                    expr->type(std::shared_ptr<Type>(expr->left()->type()->clone()));
-                    break;
-                }
+        if ((Type::isInteger(leftType) || Type::isFloat(leftType))
+        && (Type::isInteger(rightType) || Type::isFloat(rightType))) {
+            switch (expr->op()) {
                 case BinaryOperation::LESS_THAN:
                 case BinaryOperation::LESS_EQUAL:
                 case BinaryOperation::EQUALITY:
@@ -231,25 +248,41 @@ namespace klong {
                     break;
                 }
                 default:
-                    _result.addError(
-                            TypeCheckException(expr->sourceRange(), "Illegal operation for floating number."));
+                    break;
             }
+        }
+        if ((Type::isInteger(leftType) || Type::isFloat(leftType))
+            && (Type::isInteger(rightType) || Type::isFloat(rightType))) {
+            if (!leftType->isEqual(rightType)) {
+                auto promotedLeftType = applyIntegerPromotion(leftType);
+                auto promotedRightType = applyIntegerPromotion(rightType);
+                if (promotedLeftType && promotedRightType &&
+                    promotedLeftType->isEqual(promotedRightType.get())) {
+                    resultType = promotedLeftType;
+                } else {
+                    // arithmetic promotion
+                    auto arithmeticPromotedType = applyArithmeticPromotion(leftType, rightType);
+                    resultType = arithmeticPromotedType;
+                }
+            }
+            expr->type(resultType);
             return;
         }
 
         if (expr->op() == BinaryOperation::PLUS) {
-            std::function<bool(Expr*)> isValidOtherType = [this](Expr* exprPtr) {
-                return Expr::isFloat(exprPtr) || Expr::isInteger(exprPtr) || Expr::isBoolean(exprPtr);
+            std::function<bool(Type*)> isValidOtherType = [](Type* type) {
+                return Type::isFloat(type) || Type::isInteger(type) || Type::isBoolean(type);
             };
-            if ((Expr::isString(expr->left()) && isValidOtherType(expr->right()))
-                || (isValidOtherType(expr->left()) && Expr::isString(expr->right()))
-                || (Expr::isString(expr->left()) && Expr::isString(expr->right()))) {
+            if ((Type::isString(expr->left()->type()) && isValidOtherType(expr->right()->type()))
+                || (isValidOtherType(expr->left()->type()) && Type::isString(expr->right()->type()))
+                || (Type::isString(expr->left()->type()) && Type::isString(expr->right()->type()))) {
                 expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::STRING));
                 return;
             }
         }
         _result.addError(
-                TypeCheckException(expr->sourceRange(), "Illegal type in binary op."));
+                TypeCheckException(expr->sourceRange(),
+                        "Illegal type in binary op."));
     }
 
     void TypeCheckVisitor::visitCallExpr(Call* expr) {
@@ -283,12 +316,12 @@ namespace klong {
 
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left());
-        if (!Expr::isBoolean(expr->left())) {
+        if (!Type::isBoolean(expr->left()->type())) {
             _result.addError(
                     TypeCheckException(expr->left()->sourceRange(), "Expect boolean expr."));
         }
         check(expr->right());
-        if (!Expr::isBoolean(expr->right())) {
+        if (!Type::isBoolean(expr->right()->type())) {
             _result.addError(
                     TypeCheckException(expr->right()->sourceRange(), "Expect boolean expr."));
         }
@@ -298,18 +331,18 @@ namespace klong {
     void TypeCheckVisitor::visitUnaryExpr(Unary* expr) {
         check(expr->right());
 
-        if (expr->op() == UnaryOperation::NOT && !Expr::isBoolean(expr->right())) {
+        if (expr->op() == UnaryOperation::NOT && !Type::isBoolean(expr->right()->type())) {
             _result.addError(
                     TypeCheckException(expr->sourceRange(), "'!' expects boolean expression."));
         }
 
-        if (expr->op() == UnaryOperation::MINUS && !Expr::isInteger(expr->right())) {
+        if (expr->op() == UnaryOperation::MINUS && !Type::isInteger(expr->right()->type())) {
             _result.addError(
                     TypeCheckException(expr->sourceRange(), "Unary '-' expects number expression."));
         }
 
         if (expr->op() == UnaryOperation::DEREF) {
-            if (!Expr::isPointer(expr->right())) {
+            if (!Type::isPointer(expr->right()->type())) {
                 _result.addError(
                         TypeCheckException(expr->sourceRange(), "Deref expects pointer type."));
                 return;

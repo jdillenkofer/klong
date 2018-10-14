@@ -70,9 +70,23 @@ namespace klong {
         void check(Stmt* stmt);
         void check(Expr* expr);
         bool getAndResetReturnsValue();
+        TypePtr applyIntegerPromotion(Type* type);
+        TypePtr applyArithmeticPromotion(Type* left, Type* right);
     private:
         Function* currentFunction = nullptr;
         Result<ModulePtr, TypeCheckException> _result;
         bool _returnsValue = false;
+        std::vector<TypePtr> _arithmeticConversionStack = {
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::I8),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::U8),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::I16),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::U16),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::I32),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::U32),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::I64),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::U64),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::F32),
+                std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::F64)
+        };
     };
 }

@@ -57,6 +57,13 @@ namespace klong {
 
         virtual Type* clone() const = 0;
 
+        static bool isBoolean(Type* type);
+        static bool isFloat(Type* type);
+        static bool isInteger(Type* type);
+        static bool isString(Type* type);
+        static bool isPointer(Type* type);
+
+
     private:
         TypeKind _kind;
         SourceRange _sourceRange;

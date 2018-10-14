@@ -65,6 +65,7 @@ set(SOURCE_FILES
     src/resolver/resolver.cpp
     src/codegen/llvm_emitter.cpp
     src/graphviz/dotfile_emitter.cpp
+    src/ast/type.cpp
 )
 
 set(HEADER_FILES
