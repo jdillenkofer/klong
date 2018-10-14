@@ -331,6 +331,7 @@ namespace klong {
     void LLVMEmitVisitor::visitBinaryExpr(Binary* expr) {
         llvm::Value* left = emit(expr->left());
         llvm::Value* right = emit(expr->right());
+        auto leftType = dynamic_cast<PrimitiveType*>(expr->left()->type());
         auto targetType = dynamic_cast<PrimitiveType*>(expr->type());
         if (targetType->isInteger()) {
             if (!expr->type()->isEqual(expr->left()->type())) {
@@ -381,41 +382,8 @@ namespace klong {
                 case BinaryOperation::OR:
                     _valueOfLastExpr = IRBuilder.CreateOr(left, right);
                     break;
-                case BinaryOperation::EQUALITY:
-                    _valueOfLastExpr = IRBuilder.CreateICmpEQ(left, right);
-                    break;
-                case BinaryOperation::INEQUALITY:
-                    _valueOfLastExpr = IRBuilder.CreateICmpNE(left, right);
-                    break;
-                case BinaryOperation::LESS_THAN:
-                    if (targetType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSLT(left, right);
-                    } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpULT(left, right);
-                    }
-                    break;
-                case BinaryOperation::LESS_EQUAL:
-                    if (targetType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSLE(left, right);
-                    } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpULE(left, right);
-                    }
-                    break;
-                case BinaryOperation::GREATER_THAN:
-                    if (targetType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSGT(left, right);
-                    } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpUGT(left, right);
-                    }
-                    break;
-                case BinaryOperation::GREATER_EQUAL:
-                    if (targetType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSGE(left, right);
-                    } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpUGE(left, right);
-                    }
-                    break;
                 default:
+                    assert(false);
                     break;
             }
             return;
@@ -443,6 +411,55 @@ namespace klong {
                 case BinaryOperation::MODULO:
                     _valueOfLastExpr = IRBuilder.CreateFRem(left, right);
                     break;
+                default:
+                    assert(false);
+                    break;
+            }
+            return;
+        }
+        if (leftType->isInteger() && targetType->isBoolean()) {
+            switch (expr->op()) {
+                case BinaryOperation::EQUALITY:
+                    _valueOfLastExpr = IRBuilder.CreateICmpEQ(left, right);
+                    break;
+                case BinaryOperation::INEQUALITY:
+                    _valueOfLastExpr = IRBuilder.CreateICmpNE(left, right);
+                    break;
+                case BinaryOperation::LESS_THAN:
+                    if (leftType->isSigned()) {
+                        _valueOfLastExpr = IRBuilder.CreateICmpSLT(left, right);
+                    } else {
+                        _valueOfLastExpr = IRBuilder.CreateICmpULT(left, right);
+                    }
+                    break;
+                case BinaryOperation::LESS_EQUAL:
+                    if (leftType->isSigned()) {
+                        _valueOfLastExpr = IRBuilder.CreateICmpSLE(left, right);
+                    } else {
+                        _valueOfLastExpr = IRBuilder.CreateICmpULE(left, right);
+                    }
+                    break;
+                case BinaryOperation::GREATER_THAN:
+                    if (leftType->isSigned()) {
+                        _valueOfLastExpr = IRBuilder.CreateICmpSGT(left, right);
+                    } else {
+                        _valueOfLastExpr = IRBuilder.CreateICmpUGT(left, right);
+                    }
+                    break;
+                case BinaryOperation::GREATER_EQUAL:
+                    if (leftType->isSigned()) {
+                        _valueOfLastExpr = IRBuilder.CreateICmpSGE(left, right);
+                    } else {
+                        _valueOfLastExpr = IRBuilder.CreateICmpUGE(left, right);
+                    }
+                    break;
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+        if (leftType->isFloat() && targetType->isBoolean()) {
+            switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = IRBuilder.CreateFCmpUEQ(left, right);
                     break;
@@ -462,9 +479,9 @@ namespace klong {
                     _valueOfLastExpr = IRBuilder.CreateFCmpUGE(left, right);
                     break;
                 default:
+                    assert(false);
                     break;
             }
-            return;
         }
     }
 

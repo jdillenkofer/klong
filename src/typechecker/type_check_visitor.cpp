@@ -44,6 +44,9 @@ namespace klong {
                 return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::U64);
             }
         }
+        if (primitiveType && primitiveType->isFloat()) {
+            return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::F64);
+        }
         return nullptr;
     }
 
@@ -234,8 +237,8 @@ namespace klong {
             }
         }
 
-        if ((Type::isInteger(leftType) || Type::isFloat(leftType))
-        && (Type::isInteger(rightType) || Type::isFloat(rightType))) {
+        if ((Type::isInteger(leftType) && Type::isInteger(rightType))
+            || (Type::isFloat(leftType) && Type::isFloat(rightType))) {
             switch (expr->op()) {
                 case BinaryOperation::LESS_THAN:
                 case BinaryOperation::LESS_EQUAL:
@@ -245,7 +248,7 @@ namespace klong {
                 case BinaryOperation::GREATER_EQUAL:
                 {
                     expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
-                    break;
+                    return;
                 }
                 default:
                     break;
