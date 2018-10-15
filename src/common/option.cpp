@@ -40,6 +40,11 @@ namespace klong {
             }
             // add the argument as target file to the options
             option.filepath = std::string(argv[optind]);
+			optind++;
+			if (optind != argc) {
+				optionResult.addError("Invalid argument after target file.");
+				return optionResult;
+			}
         }
         optionResult.setSuccess(std::move(option));
         return optionResult;
