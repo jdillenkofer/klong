@@ -230,7 +230,7 @@ namespace klong {
                     _result.addError(
                             TypeCheckException(expr->sourceRange(),
                                     "Illegal Operation"));
-                    expr->type(std::make_shared<PrimitiveType>(SourceRange {}, PrimitiveTypeKind::I64));
+                    expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::I64));
                     return;
                 default:
                     break;
@@ -247,7 +247,7 @@ namespace klong {
                 case BinaryOperation::GREATER_THAN:
                 case BinaryOperation::GREATER_EQUAL:
                 {
-                    expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
+                    expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
                     return;
                 }
                 default:
@@ -279,7 +279,7 @@ namespace klong {
             if ((Type::isString(expr->left()->type()) && isValidOtherType(expr->right()->type()))
                 || (isValidOtherType(expr->left()->type()) && Type::isString(expr->right()->type()))
                 || (Type::isString(expr->left()->type()) && Type::isString(expr->right()->type()))) {
-                expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::STRING));
+                expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::STRING));
                 return;
             }
         }
@@ -328,7 +328,7 @@ namespace klong {
             _result.addError(
                     TypeCheckException(expr->right()->sourceRange(), "Expect boolean expr."));
         }
-        expr->type(std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::BOOL));
+        expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
     }
 
     void TypeCheckVisitor::visitUnaryExpr(Unary* expr) {

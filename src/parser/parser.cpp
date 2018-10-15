@@ -203,7 +203,7 @@ namespace klong {
                                 type));
 
                 if (type->kind() == TypeKind::PRIMITIVE) {
-                    PrimitiveType* primitiveType = dynamic_cast<PrimitiveType*>(type.get());
+                    auto primitiveType = dynamic_cast<PrimitiveType*>(type.get());
                     if (primitiveType->type() == PrimitiveTypeKind::VOID) {
                         throw ParseException(primitiveType->sourceRange(), "Illegal type 'void' in argument list.");
                     }

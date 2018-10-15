@@ -4,11 +4,8 @@
 #include "ast/stmt.h"
 #include "ast/expr.h"
 
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
@@ -19,26 +16,15 @@
 
 namespace klong {
 
-    bool LLVMEmitVisitor::_initialized = false;
+    LLVMEmitVisitor::LLVMEmitVisitor() :
+        _context(),
+        _builder(_context),
+        _typeEmitVisitor(_context) {
 
-    LLVMEmitVisitor::LLVMEmitVisitor() {
-        if (!_initialized) {
-            llvm::InitializeAllTargetInfos();
-            llvm::InitializeAllTargets();
-            llvm::InitializeAllTargetMCs();
-            llvm::InitializeAllAsmParsers();
-            llvm::InitializeAllAsmPrinters();
-            _initialized = true;
-        }
     }
 
     llvm::Module* LLVMEmitVisitor::getModule() {
         return _module.get();
-    }
-
-    llvm::Type* LLVMEmitVisitor::getLLVMType(Type *type) {
-        type->accept(this);
-        return _valueOfLastType;
     }
 
     llvm::Value* LLVMEmitVisitor::emit(Expr* expr) {
@@ -48,9 +34,9 @@ namespace klong {
 
     void LLVMEmitVisitor::emit(Stmt* stmt) {
         // eliminate dead code after return
-        bool blockChanged = IRBuilder.GetInsertBlock() != _previousBlock;
+        bool blockChanged = _builder.GetInsertBlock() != _previousBlock;
         if (blockChanged) {
-            _previousBlock = IRBuilder.GetInsertBlock();
+            _previousBlock = _builder.GetInsertBlock();
             _eliminateDeadCodeInCurrentBlock = false;
         }
         if (_eliminateDeadCodeInCurrentBlock) {
@@ -66,7 +52,7 @@ namespace klong {
     }
 
     llvm::Value* LLVMEmitVisitor::emitCast(llvm::Value *value, Type *from, Type *to) {
-        auto targetType = getLLVMType(to);
+        auto targetType = _typeEmitVisitor.getLLVMType(to);
         auto myPrimSourceType = dynamic_cast<PrimitiveType*>(from);
         auto myPrimTargetType = dynamic_cast<PrimitiveType*>(to);
 
@@ -76,48 +62,48 @@ namespace klong {
         if (myPrimSourceType && myPrimTargetType) {
             if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) &&
                 (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
-                return IRBuilder.CreateIntCast(value, targetType, myPrimTargetType->isSigned());
+                return _builder.CreateIntCast(value, targetType, myPrimTargetType->isSigned());
             }
 
             if (myPrimSourceType->isFloat() && myPrimTargetType->isFloat()) {
-                return IRBuilder.CreateFPCast(value, targetType);
+                return _builder.CreateFPCast(value, targetType);
             }
 
             if ((myPrimSourceType->isInteger() || myPrimSourceType->isBoolean()) && (myPrimTargetType->isFloat())) {
                 if (myPrimSourceType->isSigned()) {
-                    return IRBuilder.CreateSIToFP(value, targetType);
+                    return _builder.CreateSIToFP(value, targetType);
                 } else {
-                    return IRBuilder.CreateUIToFP(value, targetType);
+                    return _builder.CreateUIToFP(value, targetType);
                 }
             }
 
             if ((myPrimSourceType->isFloat()) || (myPrimTargetType->isInteger() || myPrimTargetType->isBoolean())) {
                 if (myPrimTargetType->isSigned()) {
-                    return IRBuilder.CreateFPToSI(value, targetType);
+                    return _builder.CreateFPToSI(value, targetType);
                 } else {
-                    return IRBuilder.CreateFPToUI(value, targetType);
+                    return _builder.CreateFPToUI(value, targetType);
                 }
             }
         }
 
         if (myPrimSourceType && myPrimSourceType->isFloat() && myPointerTargetType) {
-            auto valueAsU64 = IRBuilder.CreateFPToUI(value, llvm::IntegerType::getInt64Ty(context));
-            return IRBuilder.CreateIntToPtr(valueAsU64, targetType);
+            auto valueAsU64 = _builder.CreateFPToUI(value, llvm::IntegerType::getInt64Ty(_context));
+            return _builder.CreateIntToPtr(valueAsU64, targetType);
         }
 
         if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isFloat()) {
-            auto valueAsU64 = IRBuilder.CreatePtrToInt(value, llvm::IntegerType::getInt64Ty(context));
-            return IRBuilder.CreateUIToFP(valueAsU64, targetType);
+            auto valueAsU64 = _builder.CreatePtrToInt(value, llvm::IntegerType::getInt64Ty(_context));
+            return _builder.CreateUIToFP(valueAsU64, targetType);
         }
 
         if (myPointerSourceType && myPointerTargetType) {
-            return IRBuilder.CreatePointerCast(value, targetType);
+            return _builder.CreatePointerCast(value, targetType);
         }
         if (myPrimSourceType && myPrimSourceType->isInteger() && myPointerTargetType) {
-            return IRBuilder.CreateIntToPtr(value, targetType);
+            return _builder.CreateIntToPtr(value, targetType);
         }
         if (myPointerSourceType && myPrimTargetType && myPrimTargetType->isInteger()) {
-            return IRBuilder.CreatePtrToInt(value, targetType);
+            return _builder.CreatePtrToInt(value, targetType);
         }
 
         // Type conversion failed
@@ -126,7 +112,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitModule(Module* module) {
-        _module = llvm::make_unique<llvm::Module>(module->filename(), context);
+        _module = llvm::make_unique<llvm::Module>(module->filename(), _context);
 
         for (auto& stmt : module->statements()) {
             if (stmt->kind() == StatementKind::FUNCTION) {
@@ -134,7 +120,7 @@ namespace klong {
                 auto linkage = function->isPublic() ?
                         llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage;
 
-                auto functionType = (llvm::FunctionType*) getLLVMType(function->functionType());
+                auto functionType = (llvm::FunctionType*) _typeEmitVisitor.getLLVMType(function->functionType());
 
                 auto llvmFunction = llvm::Function::Create(functionType,
                         linkage, function->name(), _module.get());
@@ -157,7 +143,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
-        auto type = getLLVMType(stmt->type());
+        auto type = _typeEmitVisitor.getLLVMType(stmt->type());
 
         bool isFunction = stmt->type()->kind() == TypeKind::FUNCTION;
         bool isPointer = stmt->type()->kind() == TypeKind::POINTER;
@@ -166,7 +152,7 @@ namespace klong {
             auto pointsToType = pointerType->pointsTo();
             if (pointsToType->kind() == TypeKind::FUNCTION) {
                 isFunction = true;
-                type = getLLVMType(pointsToType);
+                type = _typeEmitVisitor.getLLVMType(pointsToType);
             }
         }
 
@@ -182,15 +168,15 @@ namespace klong {
         llvm::Function* function = _module->getFunction(stmt->name());
 
         // Function body
-        llvm::BasicBlock* bb = llvm::BasicBlock::Create(context, "entry", function);
-        IRBuilder.SetInsertPoint(bb);
+        llvm::BasicBlock* bb = llvm::BasicBlock::Create(_context, "entry", function);
+        _builder.SetInsertPoint(bb);
 
         {
             size_t i = 0;
             for (auto& arg : function->args()) {
-                llvm::Type* paramType = getLLVMType(stmt->params()[i]->type());
-                auto param = IRBuilder.CreateAlloca(paramType);
-                IRBuilder.CreateStore(&arg, param);
+                llvm::Type* paramType = _typeEmitVisitor.getLLVMType(stmt->params()[i]->type());
+                auto param = _builder.CreateAlloca(paramType);
+                _builder.CreateStore(&arg, param);
                 _namedValues[stmt->params()[i]] = param;
                 i++;
             }
@@ -206,26 +192,26 @@ namespace klong {
 
     void LLVMEmitVisitor::visitIfStmt(If* stmt) {
         llvm::Value* condV = emit(stmt->condition());
-        llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
-        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(context, "thenBranch", function);
-        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(context, "elseBranch", function);
-        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(context, "mergeBranch", function);
+        llvm::Function* function = _builder.GetInsertBlock()->getParent();
+        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(_context, "thenBranch", function);
+        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(_context, "elseBranch", function);
+        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(_context, "mergeBranch", function);
 
-        IRBuilder.CreateCondBr(condV, thenBB, elseBB);
+        _builder.CreateCondBr(condV, thenBB, elseBB);
 
-        IRBuilder.SetInsertPoint(thenBB);
+        _builder.SetInsertPoint(thenBB);
         emit(stmt->thenBranch());
-        IRBuilder.CreateBr(mergeBB);
+        _builder.CreateBr(mergeBB);
 
-        IRBuilder.SetInsertPoint(elseBB);
+        _builder.SetInsertPoint(elseBB);
         if (stmt->elseBranch() != nullptr) {
             emit(stmt->elseBranch());
         }
-        IRBuilder.CreateBr(mergeBB);
+        _builder.CreateBr(mergeBB);
 
-        IRBuilder.SetInsertPoint(mergeBB);
+        _builder.SetInsertPoint(mergeBB);
         if (stmt->isMergeUnreachable()) {
-            IRBuilder.CreateUnreachable();
+            _builder.CreateUnreachable();
         }
     }
 
@@ -234,12 +220,12 @@ namespace klong {
         if (stmt->value() != nullptr) {
             emit(stmt->value());
         }
-        IRBuilder.CreateRet(_valueOfLastExpr);
+        _builder.CreateRet(_valueOfLastExpr);
         _eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
-        llvm::Type* type = getLLVMType(stmt->type());
+        auto type = _typeEmitVisitor.getLLVMType(stmt->type());
 
         if (stmt->isGlobal()) {
             _module->getOrInsertGlobal(stmt->name(), type);
@@ -252,62 +238,62 @@ namespace klong {
             global->setInitializer((llvm::Constant*) emit(stmt->initializer()));
             _namedValues[stmt] = global;
         } else {
-            auto stackPtr = IRBuilder.CreateAlloca(type);
+            auto stackPtr = _builder.CreateAlloca(type);
             _namedValues[stmt] = stackPtr;
             auto value = emit(stmt->initializer());
-            IRBuilder.CreateStore(value, stackPtr);
+            _builder.CreateStore(value, stackPtr);
         }
     }
 
     void LLVMEmitVisitor::visitWhileStmt(While* stmt) {
-        llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
+        llvm::Function* function = _builder.GetInsertBlock()->getParent();
 
-        llvm::BasicBlock* whileCondBB = llvm::BasicBlock::Create(context, "whileCond", function);
-        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(context, "whileBody", function);
-        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(context, "mergeWhile", function);
+        llvm::BasicBlock* whileCondBB = llvm::BasicBlock::Create(_context, "whileCond", function);
+        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(_context, "whileBody", function);
+        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(_context, "mergeWhile", function);
 
-        IRBuilder.CreateBr(whileCondBB);
+        _builder.CreateBr(whileCondBB);
 
-        IRBuilder.SetInsertPoint(whileCondBB);
+        _builder.SetInsertPoint(whileCondBB);
         llvm::Value* condV = emit(stmt->condition());
-        IRBuilder.CreateCondBr(condV, whileBodyBB, mergeWhileBB);
+        _builder.CreateCondBr(condV, whileBodyBB, mergeWhileBB);
 
-        IRBuilder.SetInsertPoint(whileBodyBB);
+        _builder.SetInsertPoint(whileBodyBB);
 
         emit(stmt->body());
-        IRBuilder.CreateBr(whileCondBB);
+        _builder.CreateBr(whileCondBB);
 
-        IRBuilder.SetInsertPoint(mergeWhileBB);
+        _builder.SetInsertPoint(mergeWhileBB);
     }
 
     void LLVMEmitVisitor::visitForStmt(For* stmt) {
-        llvm::Function* function = IRBuilder.GetInsertBlock()->getParent();
+        llvm::Function* function = _builder.GetInsertBlock()->getParent();
 
-        llvm::BasicBlock* forInitBB = llvm::BasicBlock::Create(context, "forInit", function);
-        llvm::BasicBlock* forCondBB = llvm::BasicBlock::Create(context, "forCond", function);
-        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(context, "forBody", function);
-        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(context, "mergeFor", function);
+        llvm::BasicBlock* forInitBB = llvm::BasicBlock::Create(_context, "forInit", function);
+        llvm::BasicBlock* forCondBB = llvm::BasicBlock::Create(_context, "forCond", function);
+        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(_context, "forBody", function);
+        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(_context, "mergeFor", function);
 
-        IRBuilder.CreateBr(forInitBB);
+        _builder.CreateBr(forInitBB);
 
-        IRBuilder.SetInsertPoint(forInitBB);
+        _builder.SetInsertPoint(forInitBB);
         if (stmt->initializer() != nullptr) {
             emit(stmt->initializer());
         }
-        IRBuilder.CreateBr(forCondBB);
+        _builder.CreateBr(forCondBB);
 
-        IRBuilder.SetInsertPoint(forCondBB);
+        _builder.SetInsertPoint(forCondBB);
         llvm::Value* condV = emit(stmt->condition());
-        IRBuilder.CreateCondBr(condV, forBodyBB, mergeForBB);
+        _builder.CreateCondBr(condV, forBodyBB, mergeForBB);
 
-        IRBuilder.SetInsertPoint(forBodyBB);
+        _builder.SetInsertPoint(forBodyBB);
         emit(stmt->body());
         if (stmt->increment() != nullptr) {
             emit(stmt->increment());
         }
-        IRBuilder.CreateBr(forCondBB);
+        _builder.CreateBr(forCondBB);
 
-        IRBuilder.SetInsertPoint(mergeForBB);
+        _builder.SetInsertPoint(mergeForBB);
     }
 
     void LLVMEmitVisitor::visitCommentStmt(Comment* stmt) {
@@ -324,7 +310,7 @@ namespace klong {
             // just get the address of the variable
             address = emit(expr->targetDeref()->right());
         }
-        IRBuilder.CreateStore(value, address);
+        _builder.CreateStore(value, address);
         _valueOfLastExpr = value;
     }
 
@@ -342,45 +328,45 @@ namespace klong {
             }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
-                    _valueOfLastExpr = IRBuilder.CreateAdd(left, right);
+                    _valueOfLastExpr = _builder.CreateAdd(left, right);
                     break;
                 case BinaryOperation::MINUS:
-                    _valueOfLastExpr = IRBuilder.CreateSub(left, right);
+                    _valueOfLastExpr = _builder.CreateSub(left, right);
                     break;
                 case BinaryOperation::MULTIPLICATION:
-                    _valueOfLastExpr = IRBuilder.CreateMul(left, right);
+                    _valueOfLastExpr = _builder.CreateMul(left, right);
                     break;
                 case BinaryOperation::DIVISION:
                     if (targetType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateSDiv(left, right);
+                        _valueOfLastExpr = _builder.CreateSDiv(left, right);
                     } else {
-                        _valueOfLastExpr = IRBuilder.CreateUDiv(left, right);
+                        _valueOfLastExpr = _builder.CreateUDiv(left, right);
                     }
                     break;
                 case BinaryOperation::MODULO:
                     if (targetType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateSRem(left, right);
+                        _valueOfLastExpr = _builder.CreateSRem(left, right);
                     } else {
-                        _valueOfLastExpr = IRBuilder.CreateURem(left, right);
+                        _valueOfLastExpr = _builder.CreateURem(left, right);
                     }
                     break;
                 case BinaryOperation::LSL:
-                    _valueOfLastExpr = IRBuilder.CreateShl(left, right);
+                    _valueOfLastExpr = _builder.CreateShl(left, right);
                     break;
                 case BinaryOperation::LSR:
-                    _valueOfLastExpr = IRBuilder.CreateLShr(left, right);
+                    _valueOfLastExpr = _builder.CreateLShr(left, right);
                     break;
                 case BinaryOperation::ASR:
-                    _valueOfLastExpr = IRBuilder.CreateAShr(left, right);
+                    _valueOfLastExpr = _builder.CreateAShr(left, right);
                     break;
                 case BinaryOperation::AND:
-                    _valueOfLastExpr = IRBuilder.CreateAnd(left, right);
+                    _valueOfLastExpr = _builder.CreateAnd(left, right);
                     break;
                 case BinaryOperation::XOR:
-                    _valueOfLastExpr = IRBuilder.CreateXor(left, right);
+                    _valueOfLastExpr = _builder.CreateXor(left, right);
                     break;
                 case BinaryOperation::OR:
-                    _valueOfLastExpr = IRBuilder.CreateOr(left, right);
+                    _valueOfLastExpr = _builder.CreateOr(left, right);
                     break;
                 default:
                     assert(false);
@@ -397,19 +383,19 @@ namespace klong {
             }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
-                    _valueOfLastExpr = IRBuilder.CreateFAdd(left, right);
+                    _valueOfLastExpr = _builder.CreateFAdd(left, right);
                     break;
                 case BinaryOperation::MINUS:
-                    _valueOfLastExpr = IRBuilder.CreateFSub(left, right);
+                    _valueOfLastExpr = _builder.CreateFSub(left, right);
                     break;
                 case BinaryOperation::MULTIPLICATION:
-                    _valueOfLastExpr = IRBuilder.CreateFMul(left, right);
+                    _valueOfLastExpr = _builder.CreateFMul(left, right);
                     break;
                 case BinaryOperation::DIVISION:
-                    _valueOfLastExpr = IRBuilder.CreateFDiv(left, right);
+                    _valueOfLastExpr = _builder.CreateFDiv(left, right);
                     break;
                 case BinaryOperation::MODULO:
-                    _valueOfLastExpr = IRBuilder.CreateFRem(left, right);
+                    _valueOfLastExpr = _builder.CreateFRem(left, right);
                     break;
                 default:
                     assert(false);
@@ -420,37 +406,37 @@ namespace klong {
         if (leftType->isInteger() && targetType->isBoolean()) {
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
-                    _valueOfLastExpr = IRBuilder.CreateICmpEQ(left, right);
+                    _valueOfLastExpr = _builder.CreateICmpEQ(left, right);
                     break;
                 case BinaryOperation::INEQUALITY:
-                    _valueOfLastExpr = IRBuilder.CreateICmpNE(left, right);
+                    _valueOfLastExpr = _builder.CreateICmpNE(left, right);
                     break;
                 case BinaryOperation::LESS_THAN:
                     if (leftType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSLT(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpSLT(left, right);
                     } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpULT(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpULT(left, right);
                     }
                     break;
                 case BinaryOperation::LESS_EQUAL:
                     if (leftType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSLE(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpSLE(left, right);
                     } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpULE(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpULE(left, right);
                     }
                     break;
                 case BinaryOperation::GREATER_THAN:
                     if (leftType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSGT(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpSGT(left, right);
                     } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpUGT(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpUGT(left, right);
                     }
                     break;
                 case BinaryOperation::GREATER_EQUAL:
                     if (leftType->isSigned()) {
-                        _valueOfLastExpr = IRBuilder.CreateICmpSGE(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpSGE(left, right);
                     } else {
-                        _valueOfLastExpr = IRBuilder.CreateICmpUGE(left, right);
+                        _valueOfLastExpr = _builder.CreateICmpUGE(left, right);
                     }
                     break;
                 default:
@@ -461,22 +447,22 @@ namespace klong {
         if (leftType->isFloat() && targetType->isBoolean()) {
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
-                    _valueOfLastExpr = IRBuilder.CreateFCmpUEQ(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpUEQ(left, right);
                     break;
                 case BinaryOperation::INEQUALITY:
-                    _valueOfLastExpr = IRBuilder.CreateFCmpUNE(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpUNE(left, right);
                     break;
                 case BinaryOperation::LESS_THAN:
-                    _valueOfLastExpr = IRBuilder.CreateFCmpULT(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpULT(left, right);
                     break;
                 case BinaryOperation::LESS_EQUAL:
-                    _valueOfLastExpr = IRBuilder.CreateFCmpULE(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpULE(left, right);
                     break;
                 case BinaryOperation::GREATER_THAN:
-                    _valueOfLastExpr = IRBuilder.CreateFCmpUGT(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpUGT(left, right);
                     break;
                 case BinaryOperation::GREATER_EQUAL:
-                    _valueOfLastExpr = IRBuilder.CreateFCmpUGE(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpUGE(left, right);
                     break;
                 default:
                     assert(false);
@@ -491,7 +477,7 @@ namespace klong {
         for (auto& arg : expr->args()) {
             argsV.push_back(emit(arg));
         }
-        _valueOfLastExpr = IRBuilder.CreateCall(calleeF, argsV);
+        _valueOfLastExpr = _builder.CreateCall(calleeF, argsV);
     }
 
     void LLVMEmitVisitor::visitGroupingExpr(Grouping* expr) {
@@ -503,10 +489,10 @@ namespace klong {
         llvm::Value* right = emit(expr->right());
         switch (expr->op()) {
             case LogicalOperation::AND:
-                _valueOfLastExpr = IRBuilder.CreateAnd(left, right);
+                _valueOfLastExpr = _builder.CreateAnd(left, right);
                 break;
             case LogicalOperation::OR:
-                _valueOfLastExpr = IRBuilder.CreateOr(left, right);
+                _valueOfLastExpr = _builder.CreateOr(left, right);
                 break;
         }
     }
@@ -515,13 +501,13 @@ namespace klong {
         llvm::Value* right = emit(expr->right());
         switch(expr->op()) {
             case UnaryOperation::MINUS:
-                _valueOfLastExpr = IRBuilder.CreateNeg(right);
+                _valueOfLastExpr = _builder.CreateNeg(right);
                 break;
             case UnaryOperation::NOT:
-                _valueOfLastExpr = IRBuilder.CreateNot(right);
+                _valueOfLastExpr = _builder.CreateNot(right);
                 break;
             case UnaryOperation::DEREF:
-                _valueOfLastExpr = IRBuilder.CreateLoad(right);
+                _valueOfLastExpr = _builder.CreateLoad(right);
                 break;
             case UnaryOperation::ADDRESS_OF:
                 _valueOfLastExpr = getVariableAddress(expr->right());
@@ -537,11 +523,11 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitSizeOfExpr(SizeOf* expr) {
-        auto pointerType = llvm::PointerType::get(getLLVMType(expr->right()), 0);
+        auto pointerType = llvm::PointerType::get(_typeEmitVisitor.getLLVMType(expr->right()), 0);
         llvm::Value* null = llvm::ConstantPointerNull::get(pointerType);
-        llvm::Value* one = llvm::ConstantInt::get(context, llvm::APInt(64, (uint64_t) 1, true));
-        llvm::Value* size = IRBuilder.CreateGEP(null, one);
-        _valueOfLastExpr = IRBuilder.CreatePtrToInt(size, llvm::Type::getInt64Ty(context));
+        llvm::Value* one = llvm::ConstantInt::get(_context, llvm::APInt(64, (uint64_t) 1, true));
+        llvm::Value* size = _builder.CreateGEP(null, one);
+        _valueOfLastExpr = _builder.CreatePtrToInt(size, llvm::Type::getInt64Ty(_context));
     }
 
     void LLVMEmitVisitor::visitCastExpr(Cast* expr) {
@@ -558,7 +544,7 @@ namespace klong {
             case StatementKind::PARAMETER:
             {
                 llvm::Value* value = _namedValues[expr->resolvesTo()];
-                _valueOfLastExpr = IRBuilder.CreateLoad(value);
+                _valueOfLastExpr = _builder.CreateLoad(value);
                 break;
             }
             case StatementKind::FUNCTION:
@@ -573,13 +559,13 @@ namespace klong {
     void LLVMEmitVisitor::visitNumberLiteral(NumberLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::I64:
-                _valueOfLastExpr = llvm::ConstantInt::get(context, llvm::APInt(64, (uint64_t) expr->i64(), true));
+                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(64, (uint64_t) expr->i64(), true));
                 break;
             case PrimitiveTypeKind::U64:
-                _valueOfLastExpr = llvm::ConstantInt::get(context, llvm::APInt(64, expr->u64(), false));
+                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(64, expr->u64(), false));
                 break;
             case PrimitiveTypeKind::F64:
-                _valueOfLastExpr = llvm::ConstantFP::get(context, llvm::APFloat(expr->f64()));
+                _valueOfLastExpr = llvm::ConstantFP::get(_context, llvm::APFloat(expr->f64()));
                 break;
             default:
                 // TODO: Error handling
@@ -591,7 +577,7 @@ namespace klong {
     void LLVMEmitVisitor::visitBoolLiteral(BoolLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::BOOL:
-                _valueOfLastExpr = llvm::ConstantInt::get(context, llvm::APInt(1, (uint64_t) expr->value()));
+                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(1, (uint64_t) expr->value()));
                 break;
             default:
                 // TODO: Error handling
@@ -603,7 +589,7 @@ namespace klong {
     void LLVMEmitVisitor::visitStringLiteral(StringLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::STRING:
-                _valueOfLastExpr = llvm::ConstantDataArray::getString(context, expr->value(), true);
+                _valueOfLastExpr = llvm::ConstantDataArray::getString(_context, expr->value(), true);
                 break;
             default:
                 // TODO: Error handling
@@ -615,88 +601,12 @@ namespace klong {
     void LLVMEmitVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
         switch (expr->literalType()) {
             case PrimitiveTypeKind::I8:
-                _valueOfLastExpr = llvm::ConstantInt::get(context, llvm::APInt(8, (uint32_t) expr->value()));
+                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(8, (uint32_t) expr->value()));
                 break;
             default:
                 // TODO: Error handling
                 assert(false);
                 break;
         }
-    }
-
-    void LLVMEmitVisitor::visitFunctionType(FunctionType* type) {
-
-        std::vector<llvm::Type*> paramTypes;
-
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::FUNCTION;
-
-        for (auto& paramType : type->paramTypes()) {
-            paramTypes.push_back(getLLVMType(paramType));
-        }
-        llvm::Type* returnType = getLLVMType(type->returnType());
-
-        _outerType = prevOuterType;
-
-        _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
-    }
-
-    void LLVMEmitVisitor::visitPrimitiveType(PrimitiveType *type) {
-        switch (type->type()) {
-            case PrimitiveTypeKind::VOID:
-                {
-                    if (_outerType == TypeKind::POINTER) {
-                        _valueOfLastType = llvm::Type::getInt8Ty(context);
-                        break;
-                    }
-                    _valueOfLastType = llvm::Type::getVoidTy(context);
-                    break;
-                }
-            case PrimitiveTypeKind::BOOL:
-                _valueOfLastType = llvm::Type::getInt1Ty(context);
-                break;
-            case PrimitiveTypeKind::I8:
-            case PrimitiveTypeKind::U8:
-                _valueOfLastType = llvm::Type::getInt8Ty(context);
-                break;
-            case PrimitiveTypeKind::I16:
-            case PrimitiveTypeKind::U16:
-                _valueOfLastType = llvm::Type::getInt16Ty(context);
-                break;
-            case PrimitiveTypeKind::I32:
-            case PrimitiveTypeKind::U32:
-                _valueOfLastType = llvm::Type::getInt32Ty(context);
-                break;
-            case PrimitiveTypeKind::I64:
-            case PrimitiveTypeKind::U64:
-                _valueOfLastType = llvm::Type::getInt64Ty(context);
-                break;
-            case PrimitiveTypeKind::F32:
-                _valueOfLastType = llvm::Type::getFloatTy(context);
-                break;
-            case PrimitiveTypeKind::F64:
-                _valueOfLastType = llvm::Type::getDoubleTy(context);
-                break;
-            default:
-                // TODO: how to handle the other types
-                assert(false);
-        }
-    }
-
-    void LLVMEmitVisitor::visitPointerType(klong::PointerType *type) {
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::POINTER;
-        auto innerType = getLLVMType(type->pointsTo());
-        _outerType = prevOuterType;
-        _valueOfLastType = llvm::PointerType::get(innerType, 0);
-    }
-
-    void LLVMEmitVisitor::visitSimpleType(SimpleType *type) {
-        // TODO: how to handle the other types
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::SIMPLE;
-        (void) type;
-        _outerType = prevOuterType;
-        assert(false);
     }
 }

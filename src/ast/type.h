@@ -79,7 +79,7 @@ namespace klong {
             _returnType(returnType) {
             if (returnType == nullptr) {
             _returnType = std::static_pointer_cast<Type>(
-                    std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::VOID));
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::VOID));
             }
         }
 
@@ -139,6 +139,10 @@ namespace klong {
 
     class PrimitiveType : public Type {
     public:
+        PrimitiveType(PrimitiveTypeKind type):
+            Type(TypeKind::PRIMITIVE, SourceRange()), _type(type) {
+        }
+
         PrimitiveType(SourceRange sourceRange, PrimitiveTypeKind type):
             Type(TypeKind::PRIMITIVE, sourceRange), _type(type) {
         }
