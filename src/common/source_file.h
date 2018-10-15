@@ -10,12 +10,12 @@ namespace klong {
     public:
         explicit SourceFile(std::string path):
             _path(std::move(path)),
-            _filename(std::filesystem::path(_path).filename()) {
+			_filename(std::filesystem::path(_path).filename().string()) {
         }
 
         SourceFile(std::string path, std::string code):
             _path(std::move(path)),
-            _filename(std::filesystem::path(_path).filename()),
+            _filename(std::filesystem::path(_path).filename().string()),
             _code(std::move(code)) {
         }
 
