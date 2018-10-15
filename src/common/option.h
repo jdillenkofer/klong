@@ -3,7 +3,9 @@
 #include <string>
 
 #include "common/result.h"
+extern "C" {
 #include "common/getopt.h"
+}
 
 namespace klong {
     struct Option {
