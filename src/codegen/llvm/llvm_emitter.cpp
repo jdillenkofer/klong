@@ -7,8 +7,23 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
+#include "llvm/Support/TargetSelect.h"
 
 namespace klong {
+
+    bool LLVMEmitter::_initialized = false;
+
+    void LLVMEmitter::init() {
+        if (!_initialized) {
+            llvm::InitializeAllTargetInfos();
+            llvm::InitializeAllTargets();
+            llvm::InitializeAllTargetMCs();
+            llvm::InitializeAllAsmParsers();
+            llvm::InitializeAllAsmPrinters();
+            _initialized = true;
+        }
+    }
+
     void LLVMEmitter::emit(ModulePtr module) {
         module->accept(&llvmEmitVisitor);
     }
@@ -61,5 +76,12 @@ namespace klong {
         pass.run(*module);
         destination.flush();
         return true;
+    }
+
+    void LLVMEmitter::destroy() {
+        if (_initialized) {
+            llvm::llvm_shutdown();
+            _initialized = false;
+        }
     }
 }

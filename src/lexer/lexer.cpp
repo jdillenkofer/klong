@@ -104,6 +104,7 @@ namespace klong {
         // function
         {'f', std::bind(&Lexer::funKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'s', std::bind(&Lexer::sizeofKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'c', std::bind(&Lexer::castKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'r', std::bind(&Lexer::returnKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // control flow keyword
@@ -318,7 +319,7 @@ namespace klong {
         return true;
     }
 
-    bool Lexer::matches(const std::string& str, bool allowAlphanumericAtEnd) {
+    bool Lexer::matches(const std::string& str) {
         size_t pos = 0;
         char c;
         while(pos < str.size()) {
@@ -328,15 +329,14 @@ namespace klong {
             }
             pos++;
         }
-        if (!allowAlphanumericAtEnd)
-            return !isAlphanumeric(read(false));
-        return true;
+        c = read(false);
+        return !isAlphanumeric(c) && c != '_';
     }
     
-    bool Lexer::matchesKeyword(Token& token, const std::string& keyword, TokenType type, bool allowAlphanumericAtEnd) {
+    bool Lexer::matchesKeyword(Token& token, const std::string& keyword, TokenType type) {
         auto startLocation = _sourceLocation;
         auto keywordStart = _currentPosition;
-        if (matches(keyword, allowAlphanumericAtEnd)) {
+        if (matches(keyword)) {
             auto keywordEnd = _currentPosition;
             updateLocation();
             auto endLocation = _sourceLocation;
@@ -542,7 +542,11 @@ namespace klong {
     }
 
     bool Lexer::sizeofKeyword(Token &token) {
-        return matchesKeyword(token, "sizeof", TokenType::SIZEOF, true);
+        return matchesKeyword(token, "sizeof", TokenType::SIZEOF);
+    }
+
+    bool Lexer::castKeyword(Token& token) {
+        return matchesKeyword(token, "cast", TokenType::CAST);
     }
 
     bool Lexer::returnKeyword(Token& token) {

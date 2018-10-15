@@ -18,7 +18,8 @@ namespace klong {
         LOGICAL,
         UNARY,
         VARIABLE,
-        SIZE_OF
+        SIZE_OF,
+        CAST
     };
     
     class Expr {
@@ -388,6 +389,31 @@ namespace klong {
 
     private:
         TypePtr _right;
+    };
+
+    class Cast : public Expr {
+    public:
+        Cast(SourceRange sourceRange, TypePtr targetType, ExprPtr right):
+        Expr(ExprKind::CAST, sourceRange),
+        _targetType(std::move(targetType)),
+        _right(std::move(right)){
+        }
+
+        void accept(ExprVisitor* visitor) {
+            visitor->visitCastExpr(this);
+        }
+
+        Type* targetType() const {
+            return _targetType.get();
+        }
+
+        Expr* right() const {
+            return _right.get();
+        }
+
+    private:
+        TypePtr _targetType;
+        ExprPtr _right;
     };
 
     class Stmt;

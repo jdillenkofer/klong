@@ -27,7 +27,7 @@ namespace klong {
         return true;
     }
 
-    bool Compiler::resolve(klong::ModulePtr &module) {
+    bool Compiler::resolve(ModulePtr &module) {
         Resolver resolver;
         auto resolveResult = resolver.resolve(module);
         if (resolveResult.hasErrors()) {
@@ -39,7 +39,7 @@ namespace klong {
         return true;
     }
 
-    bool Compiler::typecheck(klong::ModulePtr &module) {
+    bool Compiler::typecheck(ModulePtr &module) {
         TypeChecker typeChecker;
         auto typeCheckResult = typeChecker.check(module);
         if (typeCheckResult.hasErrors()) {
@@ -131,6 +131,8 @@ namespace klong {
         }
 
         /* CODEGEN */
+        LLVMEmitter::init();
+        defer(LLVMEmitter::destroy());
         LLVMEmitter llvmEmitter;
         {
             auto llvmEmissionStart = std::chrono::high_resolution_clock::now();

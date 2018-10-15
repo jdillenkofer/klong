@@ -3,15 +3,14 @@
 #include "ast/stmt.h"
 #include "ast/visitor.h"
 
+#include "llvm_type_emit_visitor.h"
+
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 
 namespace klong {
 
-    static llvm::LLVMContext context;
-    static llvm::IRBuilder<> IRBuilder(context);
-
-    class LLVMEmitVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
+    class LLVMEmitVisitor : public StmtVisitor, public ExprVisitor {
     public:
         LLVMEmitVisitor();
 
@@ -41,6 +40,7 @@ namespace klong {
         void visitLogicalExpr(Logical* expr) override;
         void visitUnaryExpr(Unary* expr) override;
         void visitSizeOfExpr(SizeOf* expr) override;
+        void visitCastExpr(Cast* expr) override;
         void visitVariableExpr(Variable* expr) override;
 
         // Literals
@@ -49,24 +49,21 @@ namespace klong {
         void visitStringLiteral(StringLiteral* expr) override;
         void visitCharacterLiteral(CharacterLiteral* expr) override;
 
-        // Types
-        void visitFunctionType(FunctionType* type) override;
-        void visitPrimitiveType(PrimitiveType* type) override;
-        void visitPointerType(PointerType* type) override;
-        void visitSimpleType(SimpleType *type) override;
-
     private:
         llvm::Value* emit(Expr* expr);
         void emit(Stmt* stmt);
         void emitBlock(const std::vector<Stmt*>& statements);
         llvm::Value* getVariableAddress(Expr* expr);
+        llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
     private:
-        static bool _initialized;
+        llvm::LLVMContext _context;
+        llvm::IRBuilder<> _builder;
+        LLVMTypeEmitVisitor _typeEmitVisitor;
+
         std::unique_ptr<llvm::Module> _module;
+
         llvm::Value* _valueOfLastExpr = nullptr;
-        llvm::Type* _valueOfLastType = nullptr;
         std::map<Stmt*, llvm::Value*> _namedValues;
-        TypeKind _outerType = TypeKind::PRIMITIVE;
 
         // used for dead code elimination after return stmt
         llvm::BasicBlock* _previousBlock = nullptr;

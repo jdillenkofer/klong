@@ -4,12 +4,13 @@
 
 #include "common/option.h"
 #include "ast/module.h"
-#include "codegen/llvm_emitter.h"
+#include "codegen/llvm/llvm_emitter.h"
 
 namespace klong {
     class Compiler {
     public:
-        Compiler(Option option) : _option(option) {
+        Compiler(Option option) :
+            _option(std::move(option)) {
         }
 
         bool parse(ModulePtr& module, SourceFile &sourceFile);

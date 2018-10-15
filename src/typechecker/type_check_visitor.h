@@ -54,6 +54,7 @@ namespace klong {
         void visitLogicalExpr(Logical* expr) override;
         void visitUnaryExpr(Unary* expr) override;
         void visitSizeOfExpr(SizeOf* expr) override;
+        void visitCastExpr(Cast* expr) override;
         void visitVariableExpr(Variable* expr) override;
 
         // Literals
@@ -69,15 +70,23 @@ namespace klong {
         void check(Stmt* stmt);
         void check(Expr* expr);
         bool getAndResetReturnsValue();
-
-        bool isBoolean(Expr* expr);
-        bool isInteger(Expr* expr);
-        bool isFloat(Expr* expr);
-        bool isString(Expr* expr);
-        bool isPointer(Expr* expr);
+        TypePtr applyIntegerPromotion(Type* type);
+        TypePtr applyArithmeticPromotion(Type* left, Type* right);
     private:
         Function* currentFunction = nullptr;
         Result<ModulePtr, TypeCheckException> _result;
         bool _returnsValue = false;
+        std::vector<TypePtr> _arithmeticConversionStack = {
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::U8),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::I16),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::U16),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::I32),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::U32),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::I64),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::U64),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::F32),
+                std::make_shared<PrimitiveType>(PrimitiveTypeKind::F64)
+        };
     };
 }

@@ -57,6 +57,13 @@ namespace klong {
 
         virtual Type* clone() const = 0;
 
+        static bool isBoolean(Type* type);
+        static bool isFloat(Type* type);
+        static bool isInteger(Type* type);
+        static bool isString(Type* type);
+        static bool isPointer(Type* type);
+
+
     private:
         TypeKind _kind;
         SourceRange _sourceRange;
@@ -72,7 +79,7 @@ namespace klong {
             _returnType(returnType) {
             if (returnType == nullptr) {
             _returnType = std::static_pointer_cast<Type>(
-                    std::make_shared<PrimitiveType>(SourceRange(), PrimitiveTypeKind::VOID));
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::VOID));
             }
         }
 
@@ -88,8 +95,8 @@ namespace klong {
             return paramTypes;
         }
 
-        const TypePtr returnType() const {
-            return _returnType;
+        Type* returnType() const {
+            return _returnType.get();
         }
 
         bool isEqual(const Type* other) const {
@@ -109,7 +116,8 @@ namespace klong {
         }
 
         Type* clone() const {
-            return new FunctionType(SourceRange(), std::vector<TypePtr>(this->_paramTypes), this->returnType());
+            return new FunctionType(SourceRange(), std::vector<TypePtr>(this->_paramTypes),
+                    std::shared_ptr<Type>(this->_returnType->clone()));
         }
 
         bool matchesSignature(const std::vector<Type*>& callSignature) const {
@@ -131,6 +139,10 @@ namespace klong {
 
     class PrimitiveType : public Type {
     public:
+        PrimitiveType(PrimitiveTypeKind type):
+            Type(TypeKind::PRIMITIVE, SourceRange()), _type(type) {
+        }
+
         PrimitiveType(SourceRange sourceRange, PrimitiveTypeKind type):
             Type(TypeKind::PRIMITIVE, sourceRange), _type(type) {
         }

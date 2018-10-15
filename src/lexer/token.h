@@ -22,6 +22,7 @@ namespace klong {
         // Functions
         FUN,
         SIZEOF,
+        CAST,
         RETURN,
 
         // Control flow
