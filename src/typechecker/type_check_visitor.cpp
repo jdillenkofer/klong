@@ -131,7 +131,7 @@ namespace klong {
             _returnsValue = false;
         }
         if (_returnsValue) {
-            stmt->setMergeUnreachable();
+			stmt->setMergeUnreachable();
         }
     }
 

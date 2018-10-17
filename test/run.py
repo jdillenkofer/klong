@@ -52,7 +52,7 @@ def link(objfile, executable):
             "/LIBPATH:C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.15.26726/lib/x64",
             "/LIBPATH:C:/Program Files (x86)/Windows Kits/10/Lib/10.0.17134.0/um/x64", 
             "/LIBPATH:C:/Program Files (x86)/Windows Kits/10/Lib/10.0.17134.0/ucrt/x64"
-        ])
+        ], stdout=subprocess.PIPE)
     else:
         result = subprocess.call([
             # use ld here instead of gcc
@@ -60,12 +60,12 @@ def link(objfile, executable):
             "-o",
             executable,
             objfile
-        ])
+        ], stdout=subprocess.PIPE)
     return result
         
 
 def run(executable):
-    return subprocess.call([os.path.join(".", executable)])
+    return subprocess.call([os.path.join(".", executable)], stdout=subprocess.PIPE)
 
 def runTests(path_to_compiler, tests):
     test_results = []
@@ -79,11 +79,14 @@ def runTests(path_to_compiler, tests):
         link_result = False
         run_result = False
 
-        compile_result = compile(path_to_compiler, test) == 0
-        if (compile_result):
-            link_result = link(test_filename + ".o", test_filename + ".exe") == 0
-        if (link_result):
-            run_result = run(test_filename + ".exe") == 0
+        try:
+            compile_result = compile(path_to_compiler, test) == 0
+            if (compile_result):
+                link_result = link(test_filename + ".o", test_filename + ".exe") == 0
+            if (link_result):
+                run_result = run(test_filename + ".exe") == 0
+        except:
+            pass
 
         if (compile_result and link_result and run_result):
             test_results.append((".", None))
