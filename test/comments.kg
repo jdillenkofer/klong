@@ -1,0 +1,7 @@
+pub fun main() -> i64 {
+    // comment test
+    /* 
+     multiline comments
+    */
+    return 0;
+}

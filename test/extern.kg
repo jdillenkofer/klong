@@ -1,0 +1,6 @@
+extern exit: (i64) -> void;
+
+pub fun main() -> i64 {
+    exit(0);
+    return 1;
+}

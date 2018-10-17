@@ -1,0 +1,7 @@
+pub fun main() -> i64 {
+    return call();
+}
+
+fun call() -> i64 {
+    return 0;
+}
