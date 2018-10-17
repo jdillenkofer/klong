@@ -1,0 +1,6 @@
+pub fun main() -> i64 {
+    if ((1 | 2) == 3) {
+        return 0;
+    }
+    return 1;
+}

@@ -1,0 +1,6 @@
+pub fun main() -> i64 {
+    let a: i64 = 5;
+    let addr: ptr<i64> = &a;
+    *addr = 0;
+    return *addr;
+}
