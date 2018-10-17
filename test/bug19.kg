@@ -4,5 +4,5 @@ pub fun main() -> i64 {
 }
 
 fun test() -> i64 {
-    return 1;
+    return 0;
 }
