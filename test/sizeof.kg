@@ -1,0 +1,7 @@
+pub fun main() -> i64 {
+    if (sizeof(i64) != 8) {
+        return 1;
+    }
+    // potential bug with multiple sizeof calls
+    return 0;
+}
