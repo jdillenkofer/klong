@@ -203,7 +203,8 @@ namespace klong {
             Stmt(StatementKind::IF, sourceRange),
             _condition(std::move(condition)),
             _thenBranch(std::move(thenBranch)),
-            _elseBranch(std::move(elseBranch)) {
+            _elseBranch(std::move(elseBranch)),
+			_isMergeUnreachable(false) {
         }
 
         void accept(StmtVisitor* visitor) {
