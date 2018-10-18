@@ -271,6 +271,34 @@ namespace klong {
             expr->type(resultType);
             return;
         }
+        if (Type::isPointer(leftType) && Type::isInteger(rightType)) {
+            switch (expr->op()) {
+                case BinaryOperation::PLUS:
+                case BinaryOperation::MINUS:
+                {
+                    expr->type(std::shared_ptr<Type>(leftType->clone()));
+                    return;
+                }
+                default:
+                    break;
+            }
+        }
+        if (Type::isPointer(leftType) && Type::isPointer(rightType)) {
+            switch (expr->op()) {
+                case BinaryOperation::LESS_THAN:
+                case BinaryOperation::LESS_EQUAL:
+                case BinaryOperation::EQUALITY:
+                case BinaryOperation::INEQUALITY:
+                case BinaryOperation::GREATER_THAN:
+                case BinaryOperation::GREATER_EQUAL:
+                {
+                    expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
+                    return;
+                }
+                default:
+                    break;
+            }
+        }
         _result.addError(
                 TypeCheckException(expr->sourceRange(),
                         "Illegal type in binary op."));

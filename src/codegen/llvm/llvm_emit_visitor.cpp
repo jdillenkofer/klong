@@ -319,7 +319,7 @@ namespace klong {
         llvm::Value* right = emit(expr->right());
         auto leftType = dynamic_cast<PrimitiveType*>(expr->left()->type());
         auto targetType = dynamic_cast<PrimitiveType*>(expr->type());
-        if (targetType->isInteger()) {
+        if (targetType && targetType->isInteger()) {
             if (!expr->type()->isEqual(expr->left()->type())) {
                 left = emitCast(left, expr->left()->type(), expr->type());
             }
@@ -374,7 +374,7 @@ namespace klong {
             }
             return;
         }
-        if (targetType->isFloat()) {
+        if (targetType && targetType->isFloat()) {
             if (!expr->type()->isEqual(expr->left()->type())) {
                 left = emitCast(left, expr->left()->type(), expr->type());
             }
@@ -403,7 +403,7 @@ namespace klong {
             }
             return;
         }
-        if (leftType->isInteger() && targetType->isBoolean()) {
+        if (leftType && targetType && leftType->isInteger() && targetType->isBoolean()) {
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateICmpEQ(left, right);
@@ -444,7 +444,7 @@ namespace klong {
                     break;
             }
         }
-        if (leftType->isFloat() && targetType->isBoolean()) {
+        if (leftType && targetType && leftType->isFloat() && targetType->isBoolean()) {
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateFCmpUEQ(left, right);
@@ -463,6 +463,47 @@ namespace klong {
                     break;
                 case BinaryOperation::GREATER_EQUAL:
                     _valueOfLastExpr = _builder.CreateFCmpUGE(left, right);
+                    break;
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+        auto leftPointerType = dynamic_cast<PointerType*>(expr->left()->type());
+        auto rightType = dynamic_cast<PrimitiveType*>(expr->right()->type());
+        if (leftPointerType && rightType && rightType->isInteger()) {
+            switch (expr->op()) {
+                case BinaryOperation::PLUS:
+                    _valueOfLastExpr = _builder.CreateGEP(left, right);
+                    break;
+                case BinaryOperation::MINUS:
+                    _valueOfLastExpr = _builder.CreateGEP(left, _builder.CreateNeg(right));
+                    break;
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+        auto rightPointerType = dynamic_cast<PointerType*>(expr->right()->type());
+        if (leftPointerType && rightPointerType) {
+            switch (expr->op()) {
+                case BinaryOperation::EQUALITY:
+                    _valueOfLastExpr = _builder.CreateICmpEQ(left, right);
+                    break;
+                case BinaryOperation::INEQUALITY:
+                    _valueOfLastExpr = _builder.CreateICmpNE(left, right);
+                    break;
+                case BinaryOperation::LESS_THAN:
+                    _valueOfLastExpr = _builder.CreateICmpULT(left, right);
+                    break;
+                case BinaryOperation::LESS_EQUAL:
+                    _valueOfLastExpr = _builder.CreateICmpULE(left, right);
+                    break;
+                case BinaryOperation::GREATER_THAN:
+                    _valueOfLastExpr = _builder.CreateICmpUGT(left, right);
+                    break;
+                case BinaryOperation::GREATER_EQUAL:
+                    _valueOfLastExpr = _builder.CreateICmpUGE(left, right);
                     break;
                 default:
                     assert(false);
