@@ -218,35 +218,49 @@ namespace klong {
         auto rightType = expr->right()->type();
         auto resultType = std::shared_ptr<Type>(expr->left()->type()->clone());
 
-        if (!Type::isInteger(leftType) || !Type::isInteger(rightType)) {
-            switch(expr->op()) {
-                case BinaryOperation::MODULO:
-                case BinaryOperation::LSL:
-                case BinaryOperation::LSR:
-                case BinaryOperation::ASR:
-                case BinaryOperation::AND:
-                case BinaryOperation::XOR:
-                case BinaryOperation::OR:
-                    _result.addError(
-                            TypeCheckException(expr->sourceRange(),
-                                    "Illegal Operation"));
-                    expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::I64));
-                    return;
-                default:
+        switch(expr->op())
+        {
+            case BinaryOperation::PLUS:
+            case BinaryOperation::MINUS:
+            {
+                if (Type::isPointer(leftType) && Type::isInteger(rightType)) {
+                    expr->type(std::shared_ptr<Type>(leftType->clone()));
                     break;
+                }
+                [[fallthrough]];
             }
-        }
-
-        if ((Type::isInteger(leftType) && Type::isInteger(rightType))
-            || (Type::isFloat(leftType) && Type::isFloat(rightType))) {
-            switch (expr->op()) {
-                case BinaryOperation::LESS_THAN:
-                case BinaryOperation::LESS_EQUAL:
-                case BinaryOperation::EQUALITY:
-                case BinaryOperation::INEQUALITY:
-                case BinaryOperation::GREATER_THAN:
-                case BinaryOperation::GREATER_EQUAL:
-                {
+            case BinaryOperation::MULTIPLICATION:
+            case BinaryOperation::DIVISION:
+            {
+                if ((Type::isInteger(leftType) || Type::isFloat(leftType))
+                    && (Type::isInteger(rightType) || Type::isFloat(rightType))) {
+                    if (!leftType->isEqual(rightType)) {
+                        auto promotedLeftType = applyIntegerPromotion(leftType);
+                        auto promotedRightType = applyIntegerPromotion(rightType);
+                        if (promotedLeftType && promotedRightType &&
+                            promotedLeftType->isEqual(promotedRightType.get())) {
+                            resultType = promotedLeftType;
+                        } else {
+                            // arithmetic promotion
+                            auto arithmeticPromotedType = applyArithmeticPromotion(leftType, rightType);
+                            resultType = arithmeticPromotedType;
+                        }
+                    }
+                    expr->castToType(resultType);
+                    expr->type(resultType);
+                    break;
+                }
+                [[fallthrough]];
+            }
+            case BinaryOperation::GREATER_THAN:
+            case BinaryOperation::GREATER_EQUAL:
+            case BinaryOperation::LESS_THAN:
+            case BinaryOperation::LESS_EQUAL:
+            case BinaryOperation::EQUALITY:
+            case BinaryOperation::INEQUALITY:
+            {
+                if ((Type::isInteger(leftType) && Type::isInteger(rightType))
+                    || (Type::isFloat(leftType) && Type::isFloat(rightType))) {
                     auto promotedLeftType = applyIntegerPromotion(leftType);
                     auto promotedRightType = applyIntegerPromotion(rightType);
                     if (promotedLeftType && promotedRightType &&
@@ -255,76 +269,37 @@ namespace klong {
                     }
                     expr->castToType(resultType);
                     expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
-                    return;
-                }
-                default:
                     break;
-            }
-        }
-        if ((Type::isInteger(leftType) || Type::isFloat(leftType))
-            && (Type::isInteger(rightType) || Type::isFloat(rightType))) {
-            if (!leftType->isEqual(rightType)) {
-                auto promotedLeftType = applyIntegerPromotion(leftType);
-                auto promotedRightType = applyIntegerPromotion(rightType);
-                if (promotedLeftType && promotedRightType &&
-                    promotedLeftType->isEqual(promotedRightType.get())) {
-                    resultType = promotedLeftType;
-                } else {
-                    // arithmetic promotion
-                    auto arithmeticPromotedType = applyArithmeticPromotion(leftType, rightType);
-                    resultType = arithmeticPromotedType;
                 }
-            }
-            switch (expr->op()) {
-                case BinaryOperation::LESS_THAN:
-                case BinaryOperation::LESS_EQUAL:
-                case BinaryOperation::EQUALITY:
-                case BinaryOperation::INEQUALITY:
-                case BinaryOperation::GREATER_THAN:
-                case BinaryOperation::GREATER_EQUAL:
-                    _result.addError(TypeCheckException(expr->sourceRange(),
-                            "Comparisons must be of the same type."));
+                if (Type::isPointer(leftType) && Type::isPointer(rightType)) {
+                    expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
                     break;
-                default:
-                {
-                    expr->castToType(resultType);
+                }
+                _result.addError(TypeCheckException(expr->sourceRange(),
+                        "Comparisons must be of the same type."));
+                break;
+            }
+            case BinaryOperation::MODULO:
+            case BinaryOperation::LSL:
+            case BinaryOperation::LSR:
+            case BinaryOperation::ASR:
+            case BinaryOperation::AND:
+            case BinaryOperation::XOR:
+            case BinaryOperation::OR:
+            {
+                if (Type::isInteger(leftType) || Type::isInteger(rightType)) {
                     expr->type(resultType);
                     break;
                 }
+                _result.addError(TypeCheckException(expr->sourceRange(), "Illegal Operation"));
+                break;
             }
-            return;
+            default:
+                _result.addError(
+                        TypeCheckException(expr->sourceRange(),
+                                           "Illegal type in binary op."));
+                break;
         }
-        if (Type::isPointer(leftType) && Type::isInteger(rightType)) {
-            switch (expr->op()) {
-                case BinaryOperation::PLUS:
-                case BinaryOperation::MINUS:
-                {
-                    expr->type(std::shared_ptr<Type>(leftType->clone()));
-                    return;
-                }
-                default:
-                    break;
-            }
-        }
-        if (Type::isPointer(leftType) && Type::isPointer(rightType)) {
-            switch (expr->op()) {
-                case BinaryOperation::LESS_THAN:
-                case BinaryOperation::LESS_EQUAL:
-                case BinaryOperation::EQUALITY:
-                case BinaryOperation::INEQUALITY:
-                case BinaryOperation::GREATER_THAN:
-                case BinaryOperation::GREATER_EQUAL:
-                {
-                    expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
-                    return;
-                }
-                default:
-                    break;
-            }
-        }
-        _result.addError(
-                TypeCheckException(expr->sourceRange(),
-                        "Illegal type in binary op."));
     }
 
     void TypeCheckVisitor::visitCallExpr(Call* expr) {

@@ -22,7 +22,9 @@ int main(int argc, char* argv[]) {
     }
 
     Compiler compiler(option);
-    compiler.compile(entryFile);
+    if (!compiler.compile(entryFile)) {
+        return 1;
+    }
     return 0;
 }
 
