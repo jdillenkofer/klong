@@ -44,6 +44,14 @@ namespace klong {
             return _type.get();
         }
 
+        void castToType(TypePtr castType) {
+            _castToType = std::move(castType);
+        }
+
+        Type* castToType() const {
+            return _castToType.get();
+        }
+
         SourceRange sourceRange() const {
             return _sourceRange;
         }
@@ -51,6 +59,7 @@ namespace klong {
     private:
         ExprKind _kind;
         TypePtr _type = nullptr;
+        TypePtr _castToType = nullptr;
         SourceRange _sourceRange;
     };
 

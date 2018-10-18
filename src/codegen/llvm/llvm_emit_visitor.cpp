@@ -404,6 +404,10 @@ namespace klong {
             return;
         }
         if (leftType && targetType && leftType->isInteger() && targetType->isBoolean()) {
+            if (expr->castToType()) {
+                left = emitCast(left, expr->left()->type(), expr->castToType());
+                right = emitCast(right, expr->right()->type(), expr->castToType());
+            }
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateICmpEQ(left, right);

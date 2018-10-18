@@ -247,6 +247,13 @@ namespace klong {
                 case BinaryOperation::GREATER_THAN:
                 case BinaryOperation::GREATER_EQUAL:
                 {
+                    auto promotedLeftType = applyIntegerPromotion(leftType);
+                    auto promotedRightType = applyIntegerPromotion(rightType);
+                    if (promotedLeftType && promotedRightType &&
+                        promotedLeftType->isEqual(promotedRightType.get())) {
+                        resultType = promotedLeftType;
+                    }
+                    expr->castToType(resultType);
                     expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
                     return;
                 }
@@ -268,7 +275,23 @@ namespace klong {
                     resultType = arithmeticPromotedType;
                 }
             }
-            expr->type(resultType);
+            switch (expr->op()) {
+                case BinaryOperation::LESS_THAN:
+                case BinaryOperation::LESS_EQUAL:
+                case BinaryOperation::EQUALITY:
+                case BinaryOperation::INEQUALITY:
+                case BinaryOperation::GREATER_THAN:
+                case BinaryOperation::GREATER_EQUAL:
+                    _result.addError(TypeCheckException(expr->sourceRange(),
+                            "Comparisons must be of the same type."));
+                    break;
+                default:
+                {
+                    expr->castToType(resultType);
+                    expr->type(resultType);
+                    break;
+                }
+            }
             return;
         }
         if (Type::isPointer(leftType) && Type::isInteger(rightType)) {
