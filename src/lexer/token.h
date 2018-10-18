@@ -89,7 +89,6 @@ namespace klong {
         // Types
         PTR,
         VOID,
-        STRING,
         BOOL,
         I8,
         I16,

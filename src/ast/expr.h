@@ -192,41 +192,51 @@ namespace klong {
     
     class Literal : public Expr {
     public:
-        Literal(SourceRange sourceRange, PrimitiveTypeKind literalType):
+        Literal(SourceRange sourceRange, TypePtr literalType):
             Expr(ExprKind::LITERAL, sourceRange),
-            _literalType(literalType) {
+            _literalType(std::move(literalType)) {
         }
 
-        Literal(PrimitiveTypeKind literalType):
+        Literal(TypePtr literalType):
             Expr(ExprKind::LITERAL, SourceRange()),
-            _literalType(literalType) {
+            _literalType(std::move(literalType)) {
         }
 
         void accept(ExprVisitor* visitor) = 0;
 
-        PrimitiveTypeKind literalType() const {
-            return _literalType;
+        Type* literalType() const {
+            return _literalType.get();
         }
 
     private:
-        PrimitiveTypeKind _literalType;
+        TypePtr _literalType;
     };
 
     class NumberLiteral: public Literal {
     public:
         NumberLiteral(SourceRange sourceRange, double value):
-            Literal(sourceRange, PrimitiveTypeKind::F64) {
+            Literal(sourceRange,
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::F64)),
+                    _primitiveTypeKind(PrimitiveTypeKind::F64) {
             _value.f = value;
         }
 
         NumberLiteral(SourceRange sourceRange, int64_t value):
-            Literal(sourceRange, PrimitiveTypeKind::I64) {
+            Literal(sourceRange,
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::I64)),
+                    _primitiveTypeKind(PrimitiveTypeKind::I64){
             _value.i = value;
         }
 
         NumberLiteral(SourceRange sourceRange, uint64_t value):
-            Literal(sourceRange, PrimitiveTypeKind::U64) {
+            Literal(sourceRange,
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::U64)),
+                    _primitiveTypeKind(PrimitiveTypeKind::U64) {
             _value.u = value;
+        }
+
+        PrimitiveTypeKind typeKind() const {
+            return _primitiveTypeKind;
         }
 
         double f64() const {
@@ -250,16 +260,21 @@ namespace klong {
             int64_t i;
             uint64_t u;
         } _value;
+        PrimitiveTypeKind _primitiveTypeKind;
     };
 
     class BoolLiteral: public Literal {
     public:
         BoolLiteral(SourceRange sourceRange, bool value):
-            Literal(sourceRange, PrimitiveTypeKind::BOOL), _value(value) {
+            Literal(sourceRange,
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL)),
+                    _value(value) {
         }
 
         BoolLiteral(bool value):
-            Literal(SourceRange(), PrimitiveTypeKind::BOOL), _value(value) {
+            Literal(SourceRange(),
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL)),
+                    _value(value) {
         }
 
         bool value() const {
@@ -276,7 +291,9 @@ namespace klong {
     class StringLiteral: public Literal {
     public:
         StringLiteral(SourceRange sourceRange, std::string value):
-            Literal(sourceRange, PrimitiveTypeKind::STRING), _value(std::move(value)) {
+            Literal(sourceRange,
+                    std::make_shared<PointerType>(std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8))),
+                    _value(std::move(value)) {
         }
 
         const std::string& value() const {
@@ -293,7 +310,9 @@ namespace klong {
     class CharacterLiteral: public Literal {
     public:
         CharacterLiteral(SourceRange sourceRange, char value):
-            Literal(sourceRange, PrimitiveTypeKind::I8), _value(value) {
+            Literal(sourceRange,
+                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8)),
+                    _value(value) {
         }
 
         char value() const {

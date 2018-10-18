@@ -17,7 +17,6 @@ namespace klong {
 
     enum class PrimitiveTypeKind {
         VOID,
-        STRING,
         BOOL,
         I8,
         I16,
@@ -60,7 +59,6 @@ namespace klong {
         static bool isBoolean(Type* type);
         static bool isFloat(Type* type);
         static bool isInteger(Type* type);
-        static bool isString(Type* type);
         static bool isPointer(Type* type);
 
 
@@ -171,10 +169,6 @@ namespace klong {
             return type() == PrimitiveTypeKind::BOOL;
         }
 
-        bool isString() const {
-            return type() == PrimitiveTypeKind::STRING;
-        }
-
         bool isInteger() const {
             switch(type()) {
                 case PrimitiveTypeKind::U8:
@@ -229,6 +223,11 @@ namespace klong {
     public:
         PointerType(SourceRange sourceRange, TypePtr type):
                 Type(TypeKind::POINTER, sourceRange), _pointsTo(std::move(type)) {
+        }
+
+        PointerType(TypePtr type):
+            Type(TypeKind::POINTER, SourceRange()), _pointsTo(std::move(type)) {
+
         }
 
         void accept(TypeVisitor* visitor) {

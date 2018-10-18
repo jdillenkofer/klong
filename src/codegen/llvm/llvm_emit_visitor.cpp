@@ -557,7 +557,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitNumberLiteral(NumberLiteral* expr) {
-        switch (expr->literalType()) {
+        switch (expr->typeKind()) {
             case PrimitiveTypeKind::I64:
                 _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(64, (uint64_t) expr->i64(), true));
                 break;
@@ -575,38 +575,14 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitBoolLiteral(BoolLiteral* expr) {
-        switch (expr->literalType()) {
-            case PrimitiveTypeKind::BOOL:
-                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(1, (uint64_t) expr->value()));
-                break;
-            default:
-                // TODO: Error handling
-                assert(false);
-                break;
-        }
+        _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(1, (uint64_t) expr->value()));
     }
 
     void LLVMEmitVisitor::visitStringLiteral(StringLiteral* expr) {
-        switch (expr->literalType()) {
-            case PrimitiveTypeKind::STRING:
-                _valueOfLastExpr = llvm::ConstantDataArray::getString(_context, expr->value(), true);
-                break;
-            default:
-                // TODO: Error handling
-                assert(false);
-                break;
-        }
+        _valueOfLastExpr = _builder.CreateGlobalStringPtr(expr->value(), "globalString");
     }
 
     void LLVMEmitVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
-        switch (expr->literalType()) {
-            case PrimitiveTypeKind::I8:
-                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(8, (uint32_t) expr->value()));
-                break;
-            default:
-                // TODO: Error handling
-                assert(false);
-                break;
-        }
+        _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(8, (uint32_t) expr->value()));
     }
 }

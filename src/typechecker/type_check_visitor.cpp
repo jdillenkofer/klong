@@ -271,18 +271,6 @@ namespace klong {
             expr->type(resultType);
             return;
         }
-
-        if (expr->op() == BinaryOperation::PLUS) {
-            std::function<bool(Type*)> isValidOtherType = [](Type* type) {
-                return Type::isFloat(type) || Type::isInteger(type) || Type::isBoolean(type);
-            };
-            if ((Type::isString(expr->left()->type()) && isValidOtherType(expr->right()->type()))
-                || (isValidOtherType(expr->left()->type()) && Type::isString(expr->right()->type()))
-                || (Type::isString(expr->left()->type()) && Type::isString(expr->right()->type()))) {
-                expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::STRING));
-                return;
-            }
-        }
         _result.addError(
                 TypeCheckException(expr->sourceRange(),
                         "Illegal type in binary op."));
@@ -452,20 +440,7 @@ namespace klong {
 
     // Literals
     void TypeCheckVisitor::visitNumberLiteral(NumberLiteral* expr) {
-        TypePtr type;
-        switch(expr->literalType()) {
-            case PrimitiveTypeKind::I64:
-                type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::I64);
-                break;
-            case PrimitiveTypeKind::U64:
-                type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::U64);
-                break;
-            case PrimitiveTypeKind::F64:
-                type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::F64);
-                break;
-            default:
-                break;
-        }
+        auto type = std::shared_ptr<Type>(expr->literalType()->clone());
         expr->type(type);
     }
 
@@ -475,7 +450,8 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitStringLiteral(StringLiteral* expr) {
-        TypePtr type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::STRING);
+        TypePtr type = std::make_shared<PointerType>(expr->sourceRange(),
+                std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::I8));
         expr->type(type);
     }
 

@@ -85,9 +85,6 @@ namespace klong {
             case TokenType::VOID:
                 primitiveTypeKind = PrimitiveTypeKind::VOID;
                 break;
-            case TokenType::STRING:
-                primitiveTypeKind = PrimitiveTypeKind::STRING;
-                break;
             case TokenType::BOOL:
                 primitiveTypeKind = PrimitiveTypeKind::BOOL;
                 break;
@@ -309,7 +306,6 @@ namespace klong {
                         pointsTo);
             }
             case TokenType::VOID:
-            case TokenType::STRING:
             case TokenType::BOOL:
             case TokenType::I8:
             case TokenType::I16:

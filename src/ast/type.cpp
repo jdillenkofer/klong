@@ -25,14 +25,6 @@ namespace klong {
         return false;
     }
 
-    bool Type::isString(Type* type) {
-        if (type && type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
-            return primitiveType->isString();
-        }
-        return false;
-    }
-
     bool Type::isPointer(Type* type) {
         if (type->kind() == TypeKind::POINTER) {
             auto pointerType = dynamic_cast<PointerType*>(type);

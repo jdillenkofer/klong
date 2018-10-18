@@ -107,7 +107,6 @@ namespace klong {
 
         bool ptrType(Token& token);
         bool voidType(Token& token);
-        bool stringType(Token& token);
         bool boolType(Token& token);
         bool i8Type(Token& token);
         bool i16Type(Token& token);

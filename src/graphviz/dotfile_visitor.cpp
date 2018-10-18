@@ -373,9 +373,6 @@ namespace klong {
             case PrimitiveTypeKind::VOID:
                 _typeOfLastExpr = "void";
                 break;
-            case PrimitiveTypeKind::STRING:
-                _typeOfLastExpr = "string";
-                break;
             case PrimitiveTypeKind::BOOL:
                 _typeOfLastExpr = "bool";
                 break;
