@@ -1,0 +1,12 @@
+pub fun main() -> i64 {
+    let sum = 0;
+    for (let x = 0; x < 5; x = x + 1) {
+        for (let y = 0; y < 5; y = y + 1) {
+            if (x == 0 && y == 0) {
+                break;
+            }
+            sum = sum + 1;
+        }
+    }
+    return sum - 20;
+}
