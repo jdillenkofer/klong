@@ -60,6 +60,8 @@ namespace klong {
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
         void visitWhileStmt(While* stmt) override;
         void visitForStmt(For* stmt) override;
+        void visitBreakStmt(Break* stmt) override;
+        void visitContinueStmt(Continue* stmt) override;
         void visitCommentStmt(Comment* expr) override;
 
         // Expr

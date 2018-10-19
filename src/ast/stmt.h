@@ -23,6 +23,8 @@ namespace klong {
         VAR_DECL,
         WHILE,
         FOR,
+        BREAK,
+        CONTINUE,
         COMMENT
     };
     
@@ -374,6 +376,28 @@ namespace klong {
         ExprPtr _condition;
         ExprPtr _increment;
         StmtPtr _body;
+    };
+
+    class Break : public Stmt {
+    public:
+        Break(SourceRange sourceRange):
+                Stmt(StatementKind::BREAK, sourceRange) {
+        }
+
+        void accept(StmtVisitor* visitor) {
+            visitor->visitBreakStmt(this);
+        }
+    };
+
+    class Continue : public Stmt {
+    public:
+        Continue(SourceRange sourceRange):
+            Stmt(StatementKind::CONTINUE, sourceRange) {
+        }
+
+        void accept(StmtVisitor* visitor) {
+            visitor->visitContinueStmt(this);
+        }
     };
 
     enum class CommentType {

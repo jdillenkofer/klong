@@ -365,7 +365,10 @@ namespace klong {
         consume(TokenType::LEFT_PAR, "Expect '(' after 'while'.");
         ExprPtr condition = expression();
         consume(TokenType::RIGHT_PAR, "Expect ')' after condition.");
+        auto prevIsInsideLoop = _isInsideLoop;
+        _isInsideLoop = true;
         StmtPtr body = statement();
+        _isInsideLoop = prevIsInsideLoop;
         return std::make_shared<While>(SourceRange { whileToken.sourceRange.start, body->sourceRange().end },
                 condition, body);
     }
@@ -396,7 +399,10 @@ namespace klong {
         }
         consume(TokenType::RIGHT_PAR, "Expect ')' after for clause.");
 
+        auto prevIsInsideLoop = _isInsideLoop;
+        _isInsideLoop = true;
         StmtPtr body = statement();
+        _isInsideLoop = prevIsInsideLoop;
         
         if (condition == nullptr) {
             // true token
@@ -405,6 +411,18 @@ namespace klong {
 
         return std::make_shared<For>(SourceRange { forToken.sourceRange.start, body->sourceRange().end },
                 initializer, condition, increment, body);
+    }
+
+    std::shared_ptr<Break> Parser::breakStmt() {
+        Token breakToken = previous();
+        auto semicolon = consume(TokenType::SEMICOLON, "Expect ';' after break stmt.");
+        return std::make_shared<Break>(SourceRange { breakToken.sourceRange.start, semicolon.sourceRange.end });
+    }
+
+    std::shared_ptr<Continue> Parser::continueStmt() {
+        Token continueToken = previous();
+        auto semicolon = consume(TokenType::SEMICOLON, "Expect ';' after break stmt.");
+        return std::make_shared<Continue>(SourceRange { continueToken.sourceRange.start, semicolon.sourceRange.end });
     }
 
     std::shared_ptr<Expression> Parser::expressionStmt() {
@@ -416,9 +434,6 @@ namespace klong {
     }
 
     StmtPtr Parser::statement() {
-        if (match(TokenType::FOR)) {
-            return forStmt();
-        }
         if (match(TokenType::IF)) {
             return ifStmt();
         }
@@ -427,6 +442,21 @@ namespace klong {
         }
         if (match(TokenType::WHILE)) {
             return whileStmt();
+        }
+        if (match(TokenType::FOR)) {
+            return forStmt();
+        }
+        if (match(TokenType::BREAK)) {
+            if (!_isInsideLoop) {
+                throw ParseException::from(previous(), "break stmt is not allowed outside of loops.");
+            }
+            return breakStmt();
+        }
+        if (match(TokenType::CONTINUE)) {
+            if (!_isInsideLoop) {
+                throw ParseException::from(previous(), "continue stmt is not allowed outside of loops.");
+            }
+            return continueStmt();
         }
         if (match(TokenType::LEFT_CURLY_BRACE)) {
             Token leftCurlyBrace = previous();

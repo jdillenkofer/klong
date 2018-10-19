@@ -51,6 +51,8 @@ namespace klong {
         std::shared_ptr<Return> returnStmt();
         std::shared_ptr<While> whileStmt();
         std::shared_ptr<For> forStmt();
+        std::shared_ptr<Break> breakStmt();
+        std::shared_ptr<Continue> continueStmt();
         std::shared_ptr<Expression> expressionStmt();
         StmtPtr statement();
         ExprPtr expression();
@@ -74,6 +76,7 @@ namespace klong {
         Token _previous;
         ILexer* _lexer;
         bool _isInsideFunction = false;
+        bool _isInsideLoop = false;
         std::vector<ParseException> _errors;
     };
 }
