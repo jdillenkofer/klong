@@ -1,0 +1,11 @@
+pub fun main() -> i64 {
+    let last_i_set = 0;
+    for (let i = 0; i < 5; i = i + 1) {
+        if (i < 5) {
+            last_i_set = i;
+            continue;
+        }
+        return 1;
+    }
+    return last_i_set - 4;
+}

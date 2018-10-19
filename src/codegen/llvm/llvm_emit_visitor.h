@@ -72,6 +72,7 @@ namespace klong {
         llvm::BasicBlock* _continueJmpTarget = nullptr;
 
         // used for dead code elimination after terminating stmt in block
-        llvm::BasicBlock* _previousBlock = nullptr;
+		llvm::BasicBlock* _previousBlock = nullptr;
+		bool _eliminateDeadCodeInCurrentBlock;
     };
 }
