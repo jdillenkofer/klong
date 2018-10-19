@@ -34,13 +34,14 @@ namespace klong {
 
     void LLVMEmitVisitor::emit(Stmt* stmt) {
         // eliminate dead code after return
-        bool blockChanged = _builder.GetInsertBlock() != _previousBlock;
-        if (blockChanged) {
-            _previousBlock = _builder.GetInsertBlock();
-        }
-        if (_previousBlock && !_previousBlock->getTerminator()) {
-                return;
-        }
+		bool blockChanged = _builder.GetInsertBlock() != _previousBlock;
+		if (blockChanged) {
+			_previousBlock = _builder.GetInsertBlock();
+			_eliminateDeadCodeInCurrentBlock = false;
+		}
+		if (_eliminateDeadCodeInCurrentBlock) {
+			return;
+		}
         stmt->accept(this);
     }
 
@@ -190,24 +191,36 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitIfStmt(If* stmt) {
-        llvm::Value* condV = emit(stmt->condition());
-        llvm::Function* function = _builder.GetInsertBlock()->getParent();
-        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(_context, "thenBranch", function);
-        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(_context, "elseBranch", function);
-        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(_context, "mergeBranch", function);
+        auto function = _builder.GetInsertBlock()->getParent();
+        
+		auto thenBB = llvm::BasicBlock::Create(_context, "thenBranch", function);
+        auto elseBB = llvm::BasicBlock::Create(_context, "elseBranch");
+        auto mergeBB = llvm::BasicBlock::Create(_context, "mergeBranch");
 
+		auto condV = emit(stmt->condition());
         _builder.CreateCondBr(condV, thenBB, elseBB);
 
         _builder.SetInsertPoint(thenBB);
         emit(stmt->thenBranch());
-        _builder.CreateBr(mergeBB);
+		if (!_eliminateDeadCodeInCurrentBlock) {
+			_builder.CreateBr(mergeBB);
+		}
 
+		function->getBasicBlockList().push_back(elseBB);
         _builder.SetInsertPoint(elseBB);
         if (stmt->elseBranch() != nullptr) {
             emit(stmt->elseBranch());
-        }
-        _builder.CreateBr(mergeBB);
+		} else {
+			// since no else branch exists we can be sure that, if the thenBranch is not taken,
+			// the next part of the code can still get executed
+			_eliminateDeadCodeInCurrentBlock = false;
+		}
 
+		if (!_eliminateDeadCodeInCurrentBlock) {
+			_builder.CreateBr(mergeBB);
+		}
+
+		function->getBasicBlockList().push_back(mergeBB);
         _builder.SetInsertPoint(mergeBB);
         if (stmt->isMergeUnreachable()) {
             _builder.CreateUnreachable();
@@ -215,11 +228,11 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
-        _valueOfLastExpr = nullptr;
         if (stmt->value() != nullptr) {
             emit(stmt->value());
         }
         _builder.CreateRet(_valueOfLastExpr);
+		_eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
@@ -246,9 +259,9 @@ namespace klong {
     void LLVMEmitVisitor::visitWhileStmt(While* stmt) {
         llvm::Function* function = _builder.GetInsertBlock()->getParent();
 
-        llvm::BasicBlock* whileCondBB = llvm::BasicBlock::Create(_context, "whileCond", function);
-        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(_context, "whileBody");
-        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(_context, "mergeWhile");
+        auto whileCondBB = llvm::BasicBlock::Create(_context, "whileCond", function);
+        auto whileBodyBB = llvm::BasicBlock::Create(_context, "whileBody");
+        auto mergeWhileBB = llvm::BasicBlock::Create(_context, "mergeWhile");
 
         _builder.CreateBr(whileCondBB);
 
@@ -269,7 +282,8 @@ namespace klong {
         _continueJmpTarget = prevContinueJmpTarget;
         _breakJmpTarget = prevBreakJmpTarget;
 
-        if (!whileBodyBB->getTerminator()) {
+		// we need to check here, if the body contains any terminators
+        if (!_eliminateDeadCodeInCurrentBlock) {
             _builder.CreateBr(whileCondBB);
         }
 
@@ -278,13 +292,13 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitForStmt(For* stmt) {
-        llvm::Function* function = _builder.GetInsertBlock()->getParent();
+        auto function = _builder.GetInsertBlock()->getParent();
 
-        llvm::BasicBlock* forInitBB = llvm::BasicBlock::Create(_context, "forInit", function);
-        llvm::BasicBlock* forCondBB = llvm::BasicBlock::Create(_context, "forCond", function);
-        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(_context, "forBody");
-        llvm::BasicBlock* forIncBB = llvm::BasicBlock::Create(_context, "forInc");
-        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(_context, "mergeFor");
+        auto forInitBB = llvm::BasicBlock::Create(_context, "forInit", function);
+        auto forCondBB = llvm::BasicBlock::Create(_context, "forCond", function);
+        auto forBodyBB = llvm::BasicBlock::Create(_context, "forBody");
+        auto forIncBB = llvm::BasicBlock::Create(_context, "forInc");
+        auto mergeForBB = llvm::BasicBlock::Create(_context, "mergeFor");
 
         _builder.CreateBr(forInitBB);
 
@@ -310,7 +324,8 @@ namespace klong {
         _continueJmpTarget = prevContinueJmpTarget;
         _breakJmpTarget = prevBreakJmpTarget;
 
-        if (!forBodyBB->getTerminator()) {
+		// we need to check here, if the body contains any terminators
+		if (!_eliminateDeadCodeInCurrentBlock) {
             _builder.CreateBr(forIncBB);
         }
 
@@ -328,11 +343,13 @@ namespace klong {
     void LLVMEmitVisitor::visitBreakStmt(Break* stmt) {
         (void) stmt;
         _builder.CreateBr(_breakJmpTarget);
+		_eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitContinueStmt(Continue* stmt) {
         (void) stmt;
         _builder.CreateBr(_continueJmpTarget);
+		_eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitCommentStmt(Comment* stmt) {
