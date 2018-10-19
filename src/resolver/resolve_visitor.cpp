@@ -165,6 +165,16 @@ namespace klong {
         exitScope();
     }
 
+    void ResolveVisitor::visitBreakStmt(Break* stmt) {
+        // Empty on purpose
+        (void) stmt;
+    }
+
+    void ResolveVisitor::visitContinueStmt(Continue* stmt) {
+        // Empty on purpose
+        (void) stmt;
+    }
+
     void ResolveVisitor::visitCommentStmt(Comment* expr) {
         // empty on purpose
         (void) expr;

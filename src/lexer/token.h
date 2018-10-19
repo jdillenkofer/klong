@@ -31,6 +31,8 @@ namespace klong {
         WHILE,
         FOR,
         DO,
+        BREAK,
+        CONTINUE,
 
         // Bitshifts
         LSL,

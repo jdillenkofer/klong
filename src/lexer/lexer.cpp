@@ -113,6 +113,8 @@ namespace klong {
         {'w', std::bind(&Lexer::whileKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'f', std::bind(&Lexer::forKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'d', std::bind(&Lexer::doKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'b', std::bind(&Lexer::breakKeyword, std::placeholders::_1, std::placeholders::_2)},
+        {'c', std::bind(&Lexer::continueKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // let and const keyword
         {'l', std::bind(&Lexer::letKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -570,6 +572,14 @@ namespace klong {
 
     bool Lexer::doKeyword(Token& token) {
         return matchesKeyword(token, "do", TokenType::DO);
+    }
+
+    bool Lexer::breakKeyword(Token& token) {
+        return matchesKeyword(token, "break", TokenType::BREAK);
+    }
+
+    bool Lexer::continueKeyword(Token& token) {
+        return matchesKeyword(token, "continue", TokenType::CONTINUE);
     }
     
     bool Lexer::letKeyword(Token& token) {

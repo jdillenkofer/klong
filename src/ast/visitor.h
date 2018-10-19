@@ -15,6 +15,8 @@ namespace klong {
     class VariableDeclaration;
     class While;
     class For;
+    class Break;
+    class Continue;
     class Comment;
 
     class StmtVisitor {
@@ -33,6 +35,8 @@ namespace klong {
         virtual void visitVarDeclStmt(VariableDeclaration* stmt) = 0;
         virtual void visitWhileStmt(While* stmt) = 0;
         virtual void visitForStmt(For* stmt) = 0;
+        virtual void visitBreakStmt(Break* stmt) = 0;
+        virtual void visitContinueStmt(Continue* stmt) = 0;
         virtual void visitCommentStmt(Comment* expr) = 0;
     };
     

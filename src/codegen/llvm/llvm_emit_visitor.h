@@ -30,6 +30,8 @@ namespace klong {
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
         void visitWhileStmt(While* stmt) override;
         void visitForStmt(For* stmt) override;
+        void visitBreakStmt(Break* stmt) override;
+        void visitContinueStmt(Continue* stmt) override;
         void visitCommentStmt(Comment* stmt) override;
 
         // Expr
@@ -65,8 +67,11 @@ namespace klong {
         llvm::Value* _valueOfLastExpr = nullptr;
         std::map<Stmt*, llvm::Value*> _namedValues;
 
-        // used for dead code elimination after return stmt
+        // used as jmp targets for break and continue
+        llvm::BasicBlock* _breakJmpTarget = nullptr;
+        llvm::BasicBlock* _continueJmpTarget = nullptr;
+
+        // used for dead code elimination after terminating stmt in block
         llvm::BasicBlock* _previousBlock = nullptr;
-        bool _eliminateDeadCodeInCurrentBlock;
     };
 }

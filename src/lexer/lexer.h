@@ -53,6 +53,8 @@ namespace klong {
         bool whileKeyword(Token& token);
         bool forKeyword(Token& token);
         bool doKeyword(Token& token);
+        bool breakKeyword(Token& token);
+        bool continueKeyword(Token& token);
 
         bool letKeyword(Token& token);
         bool constKeyword(Token& token);
@@ -98,7 +100,7 @@ namespace klong {
         bool rightSquaredBracket(Token& token);
 
         bool identifier(Token& token);
-            
+
         bool characterLiteral(Token& token);
         bool numberLiteral(Token& token);
         bool stringLiteral(Token& token);

@@ -37,10 +37,9 @@ namespace klong {
         bool blockChanged = _builder.GetInsertBlock() != _previousBlock;
         if (blockChanged) {
             _previousBlock = _builder.GetInsertBlock();
-            _eliminateDeadCodeInCurrentBlock = false;
         }
-        if (_eliminateDeadCodeInCurrentBlock) {
-            return;
+        if (_previousBlock && !_previousBlock->getTerminator()) {
+                return;
         }
         stmt->accept(this);
     }
@@ -221,7 +220,6 @@ namespace klong {
             emit(stmt->value());
         }
         _builder.CreateRet(_valueOfLastExpr);
-        _eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
@@ -249,8 +247,8 @@ namespace klong {
         llvm::Function* function = _builder.GetInsertBlock()->getParent();
 
         llvm::BasicBlock* whileCondBB = llvm::BasicBlock::Create(_context, "whileCond", function);
-        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(_context, "whileBody", function);
-        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(_context, "mergeWhile", function);
+        llvm::BasicBlock* whileBodyBB = llvm::BasicBlock::Create(_context, "whileBody");
+        llvm::BasicBlock* mergeWhileBB = llvm::BasicBlock::Create(_context, "mergeWhile");
 
         _builder.CreateBr(whileCondBB);
 
@@ -258,11 +256,24 @@ namespace klong {
         llvm::Value* condV = emit(stmt->condition());
         _builder.CreateCondBr(condV, whileBodyBB, mergeWhileBB);
 
+        function->getBasicBlockList().push_back(whileBodyBB);
         _builder.SetInsertPoint(whileBodyBB);
 
-        emit(stmt->body());
-        _builder.CreateBr(whileCondBB);
+        auto prevBreakJmpTarget = _breakJmpTarget;
+        auto prevContinueJmpTarget = _continueJmpTarget;
+        _breakJmpTarget = mergeWhileBB;
+        _continueJmpTarget = whileCondBB;
 
+        emit(stmt->body());
+
+        _continueJmpTarget = prevContinueJmpTarget;
+        _breakJmpTarget = prevBreakJmpTarget;
+
+        if (!whileBodyBB->getTerminator()) {
+            _builder.CreateBr(whileCondBB);
+        }
+
+        function->getBasicBlockList().push_back(mergeWhileBB);
         _builder.SetInsertPoint(mergeWhileBB);
     }
 
@@ -271,8 +282,9 @@ namespace klong {
 
         llvm::BasicBlock* forInitBB = llvm::BasicBlock::Create(_context, "forInit", function);
         llvm::BasicBlock* forCondBB = llvm::BasicBlock::Create(_context, "forCond", function);
-        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(_context, "forBody", function);
-        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(_context, "mergeFor", function);
+        llvm::BasicBlock* forBodyBB = llvm::BasicBlock::Create(_context, "forBody");
+        llvm::BasicBlock* forIncBB = llvm::BasicBlock::Create(_context, "forInc");
+        llvm::BasicBlock* mergeForBB = llvm::BasicBlock::Create(_context, "mergeFor");
 
         _builder.CreateBr(forInitBB);
 
@@ -286,14 +298,41 @@ namespace klong {
         llvm::Value* condV = emit(stmt->condition());
         _builder.CreateCondBr(condV, forBodyBB, mergeForBB);
 
+        function->getBasicBlockList().push_back(forBodyBB);
         _builder.SetInsertPoint(forBodyBB);
+        auto prevBreakJmpTarget = _breakJmpTarget;
+        auto prevContinueJmpTarget = _continueJmpTarget;
+        _breakJmpTarget = mergeForBB;
+        _continueJmpTarget = forIncBB;
+
         emit(stmt->body());
+
+        _continueJmpTarget = prevContinueJmpTarget;
+        _breakJmpTarget = prevBreakJmpTarget;
+
+        if (!forBodyBB->getTerminator()) {
+            _builder.CreateBr(forIncBB);
+        }
+
+        function->getBasicBlockList().push_back(forIncBB);
+        _builder.SetInsertPoint(forIncBB);
         if (stmt->increment() != nullptr) {
             emit(stmt->increment());
         }
         _builder.CreateBr(forCondBB);
 
+        function->getBasicBlockList().push_back(mergeForBB);
         _builder.SetInsertPoint(mergeForBB);
+    }
+
+    void LLVMEmitVisitor::visitBreakStmt(Break* stmt) {
+        (void) stmt;
+        _builder.CreateBr(_breakJmpTarget);
+    }
+
+    void LLVMEmitVisitor::visitContinueStmt(Continue* stmt) {
+        (void) stmt;
+        _builder.CreateBr(_continueJmpTarget);
     }
 
     void LLVMEmitVisitor::visitCommentStmt(Comment* stmt) {

@@ -180,6 +180,16 @@ namespace klong {
         appendLine(std::to_string(forStmtId) + " -> " + std::to_string(bodyStmtId)+ " [ label=\"body\" ]");
     }
 
+    void DotfileVisitor::visitBreakStmt(Break* stmt) {
+        auto breakStmtId = getStmtId(stmt);
+        appendLine(std::to_string(breakStmtId) + " [label=\"break\"]");
+    }
+
+    void DotfileVisitor::visitContinueStmt(Continue* stmt) {
+        auto continueStmtId = getStmtId(stmt);
+        appendLine(std::to_string(continueStmtId) + " [label=\"continue\"]");
+    }
+
     void DotfileVisitor::visitCommentStmt(Comment* stmt) {
         // print Comment stuff here
         auto commentStmtId = getStmtId(stmt);

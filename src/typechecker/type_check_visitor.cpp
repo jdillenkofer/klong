@@ -182,6 +182,17 @@ namespace klong {
         check(stmt->body());
     }
 
+
+    void TypeCheckVisitor::visitBreakStmt(Break* stmt) {
+        // empty on purpose
+        (void) stmt;
+    }
+
+    void TypeCheckVisitor::visitContinueStmt(Continue* stmt) {
+        // empty on purpose
+        (void) stmt;
+    }
+
     void TypeCheckVisitor::visitCommentStmt(Comment* stmt) {
         // empty on purpose
         (void) stmt;
