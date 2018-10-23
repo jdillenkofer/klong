@@ -375,13 +375,12 @@ namespace klong {
         llvm::Value* right = emit(expr->right());
         auto leftType = dynamic_cast<PrimitiveType*>(expr->left()->type());
         auto targetType = dynamic_cast<PrimitiveType*>(expr->type());
+		if (expr->castToType()) {
+			left = emitCast(left, expr->left()->type(), expr->castToType());
+			right = emitCast(right, expr->right()->type(), expr->castToType());
+		}
+
         if (targetType && targetType->isInteger()) {
-            if (!expr->type()->isEqual(expr->left()->type())) {
-                left = emitCast(left, expr->left()->type(), expr->type());
-            }
-            if (!expr->type()->isEqual(expr->right()->type())) {
-                right = emitCast(right, expr->right()->type(), expr->type());
-            }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = _builder.CreateAdd(left, right);
@@ -431,12 +430,6 @@ namespace klong {
             return;
         }
         if (targetType && targetType->isFloat()) {
-            if (!expr->type()->isEqual(expr->left()->type())) {
-                left = emitCast(left, expr->left()->type(), expr->type());
-            }
-            if (!expr->type()->isEqual(expr->right()->type())) {
-                right = emitCast(right, expr->right()->type(), expr->type());
-            }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = _builder.CreateFAdd(left, right);
@@ -459,11 +452,7 @@ namespace klong {
             }
             return;
         }
-        if (leftType && targetType && leftType->isInteger() && targetType->isBoolean()) {
-            if (expr->castToType()) {
-                left = emitCast(left, expr->left()->type(), expr->castToType());
-                right = emitCast(right, expr->right()->type(), expr->castToType());
-            }
+        if (leftType && targetType && Type::isInteger(expr->castToType()) && targetType->isBoolean()) {
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateICmpEQ(left, right);
@@ -504,7 +493,7 @@ namespace klong {
                     break;
             }
         }
-        if (leftType && targetType && leftType->isFloat() && targetType->isBoolean()) {
+        if (leftType && targetType && Type::isFloat(expr->castToType()) && targetType->isBoolean()) {
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateFCmpUEQ(left, right);

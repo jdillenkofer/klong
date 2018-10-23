@@ -225,9 +225,26 @@ namespace klong {
     void TypeCheckVisitor::visitBinaryExpr(Binary* expr) {
         check(expr->left());
         check(expr->right());
-        auto leftType = expr->left()->type();
+        
+		auto leftType = expr->left()->type();
         auto rightType = expr->right()->type();
         auto resultType = std::shared_ptr<Type>(expr->left()->type()->clone());
+		
+		auto applyBinaryPromotion = [this](Type*& leftType, Type*& rightType, TypePtr& resultType) {
+			if (!leftType->isEqual(rightType)) {
+				auto promotedLeftType = applyIntegerPromotion(leftType);
+				auto promotedRightType = applyIntegerPromotion(rightType);
+				if (promotedLeftType && promotedRightType &&
+					promotedLeftType->isEqual(promotedRightType.get())) {
+					resultType = promotedLeftType;
+				}
+				else {
+					// arithmetic promotion
+					auto arithmeticPromotedType = applyArithmeticPromotion(leftType, rightType);
+					resultType = arithmeticPromotedType;
+				}
+			}
+		};
 
         switch(expr->op())
         {
@@ -245,23 +262,13 @@ namespace klong {
             {
                 if ((Type::isInteger(leftType) || Type::isFloat(leftType))
                     && (Type::isInteger(rightType) || Type::isFloat(rightType))) {
-                    if (!leftType->isEqual(rightType)) {
-                        auto promotedLeftType = applyIntegerPromotion(leftType);
-                        auto promotedRightType = applyIntegerPromotion(rightType);
-                        if (promotedLeftType && promotedRightType &&
-                            promotedLeftType->isEqual(promotedRightType.get())) {
-                            resultType = promotedLeftType;
-                        } else {
-                            // arithmetic promotion
-                            auto arithmeticPromotedType = applyArithmeticPromotion(leftType, rightType);
-                            resultType = arithmeticPromotedType;
-                        }
-                    }
+					applyBinaryPromotion(leftType, rightType, resultType);
                     expr->castToType(resultType);
                     expr->type(resultType);
                     break;
                 }
-                [[fallthrough]];
+				_result.addError(TypeCheckException(expr->sourceRange(), "Illegal type in arithmetic operation."));
+				break;
             }
             case BinaryOperation::GREATER_THAN:
             case BinaryOperation::GREATER_EQUAL:
@@ -270,14 +277,9 @@ namespace klong {
             case BinaryOperation::EQUALITY:
             case BinaryOperation::INEQUALITY:
             {
-                if ((Type::isInteger(leftType) && Type::isInteger(rightType))
-                    || (Type::isFloat(leftType) && Type::isFloat(rightType))) {
-                    auto promotedLeftType = applyIntegerPromotion(leftType);
-                    auto promotedRightType = applyIntegerPromotion(rightType);
-                    if (promotedLeftType && promotedRightType &&
-                        promotedLeftType->isEqual(promotedRightType.get())) {
-                        resultType = promotedLeftType;
-                    }
+                if ((Type::isInteger(leftType) || Type::isFloat(leftType)) 
+					&& (Type::isInteger(rightType) || Type::isFloat(rightType))) {
+					applyBinaryPromotion(leftType, rightType, resultType);
                     expr->castToType(resultType);
                     expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
                     break;
@@ -302,13 +304,11 @@ namespace klong {
                     expr->type(resultType);
                     break;
                 }
-                _result.addError(TypeCheckException(expr->sourceRange(), "Illegal Operation"));
+                _result.addError(TypeCheckException(expr->sourceRange(), "Illegal type in binary operation"));
                 break;
             }
             default:
-                _result.addError(
-                        TypeCheckException(expr->sourceRange(),
-                                           "Illegal type in binary op."));
+                _result.addError(TypeCheckException(expr->sourceRange(), "Illegal binary op."));
                 break;
         }
     }
