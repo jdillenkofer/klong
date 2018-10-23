@@ -230,18 +230,18 @@ namespace klong {
         auto rightType = expr->right()->type();
         auto resultType = std::shared_ptr<Type>(expr->left()->type()->clone());
 		
-		auto applyBinaryPromotion = [this](Type*& leftType, Type*& rightType, TypePtr& resultType) {
-			if (!leftType->isEqual(rightType)) {
-				auto promotedLeftType = applyIntegerPromotion(leftType);
-				auto promotedRightType = applyIntegerPromotion(rightType);
+		auto applyBinaryPromotion = [this](Type*& lhsType, Type*& rhsType, TypePtr& resType) {
+			if (!lhsType->isEqual(rhsType)) {
+				auto promotedLeftType = applyIntegerPromotion(lhsType);
+				auto promotedRightType = applyIntegerPromotion(rhsType);
 				if (promotedLeftType && promotedRightType &&
 					promotedLeftType->isEqual(promotedRightType.get())) {
-					resultType = promotedLeftType;
+					resType = promotedLeftType;
 				}
 				else {
 					// arithmetic promotion
-					auto arithmeticPromotedType = applyArithmeticPromotion(leftType, rightType);
-					resultType = arithmeticPromotedType;
+					auto arithmeticPromotedType = applyArithmeticPromotion(lhsType, rhsType);
+					resType = arithmeticPromotedType;
 				}
 			}
 		};
