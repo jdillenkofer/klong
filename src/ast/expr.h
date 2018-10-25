@@ -72,9 +72,9 @@ namespace klong {
             _target(std::move(target)), _value(std::move(value)) {
         }
 
-        Assign(SourceRange sourceRange, std::shared_ptr<Unary> target, ExprPtr value):
+        Assign(SourceRange sourceRange, std::shared_ptr<Expr> target, ExprPtr value):
                 Expr(ExprKind::ASSIGN, sourceRange),
-                _targetDeref(std::move(target)), _value(std::move(value)) {
+                _targetExpr(std::move(target)), _value(std::move(value)) {
         }
 
         void accept(ExprVisitor* visitor) {
@@ -85,8 +85,8 @@ namespace klong {
             return _target.get();
         }
 
-        Unary* targetDeref() const {
-            return _targetDeref.get();
+        Expr* targetExpr() const {
+            return _targetExpr.get();
         }
 
         bool isTargetVariable() const {
@@ -99,7 +99,7 @@ namespace klong {
 
     private:
         std::shared_ptr<Variable> _target = nullptr;
-        std::shared_ptr<Unary> _targetDeref = nullptr;
+        std::shared_ptr<Expr> _targetExpr = nullptr;
         ExprPtr _value;
     };
 

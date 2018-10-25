@@ -193,7 +193,7 @@ namespace klong {
                 }
             }
         } else {
-            resolve(expr->targetDeref());
+            resolve(expr->targetExpr());
         }
     }
 

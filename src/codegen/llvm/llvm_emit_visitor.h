@@ -52,8 +52,9 @@ namespace klong {
         void visitCharacterLiteral(CharacterLiteral* expr) override;
 
     private:
-        llvm::Value* emit(Expr* expr);
-        void emit(Stmt* stmt);
+        llvm::Value* emitCodeL(Expr* expr);
+        llvm::Value* emitCodeR(Expr* expr);
+        void emitCode(Stmt *stmt);
         void emitBlock(const std::vector<Stmt*>& statements);
         llvm::Value* getVariableAddress(Expr* expr);
         llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
@@ -64,6 +65,7 @@ namespace klong {
 
         std::unique_ptr<llvm::Module> _module;
 
+        bool _isCodeL = false;
         llvm::Value* _valueOfLastExpr = nullptr;
         std::map<Stmt*, llvm::Value*> _namedValues;
 
