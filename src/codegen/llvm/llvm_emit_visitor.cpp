@@ -27,12 +27,19 @@ namespace klong {
         return _module.get();
     }
 
-    llvm::Value* LLVMEmitVisitor::emit(Expr* expr) {
+    llvm::Value* LLVMEmitVisitor::emitCodeL(Expr* expr) {
+        _isCodeL = true;
         expr->accept(this);
         return _valueOfLastExpr;
     }
 
-    void LLVMEmitVisitor::emit(Stmt* stmt) {
+    llvm::Value* LLVMEmitVisitor::emitCodeR(Expr *expr) {
+        _isCodeL = false;
+        expr->accept(this);
+        return _valueOfLastExpr;
+    }
+
+    void LLVMEmitVisitor::emitCode(Stmt *stmt) {
         // eliminate dead code after return
 		bool blockChanged = _builder.GetInsertBlock() != _previousBlock;
 		if (blockChanged) {
@@ -47,7 +54,7 @@ namespace klong {
 
     void LLVMEmitVisitor::emitBlock(const std::vector<Stmt*>& statements) {
         for (auto& stmt : statements) {
-            emit(stmt);
+            emitCode(stmt);
         }
     }
 
@@ -139,7 +146,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitExpressionStmt(Expression* stmt) {
-        _valueOfLastExpr = emit(stmt->expression());
+        _valueOfLastExpr = emitCodeR(stmt->expression());
     }
 
     void LLVMEmitVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
@@ -197,11 +204,11 @@ namespace klong {
         auto elseBB = llvm::BasicBlock::Create(_context, "elseBranch");
         auto mergeBB = llvm::BasicBlock::Create(_context, "mergeBranch");
 
-		auto condV = emit(stmt->condition());
+		auto condV = emitCodeR(stmt->condition());
         _builder.CreateCondBr(condV, thenBB, elseBB);
 
         _builder.SetInsertPoint(thenBB);
-        emit(stmt->thenBranch());
+        emitCode(stmt->thenBranch());
 		if (!_eliminateDeadCodeInCurrentBlock) {
 			_builder.CreateBr(mergeBB);
 		}
@@ -209,7 +216,7 @@ namespace klong {
 		function->getBasicBlockList().push_back(elseBB);
         _builder.SetInsertPoint(elseBB);
         if (stmt->elseBranch() != nullptr) {
-            emit(stmt->elseBranch());
+            emitCode(stmt->elseBranch());
 		} else {
 			// since no else branch exists we can be sure that, if the thenBranch is not taken,
 			// the next part of the code can still get executed
@@ -229,7 +236,7 @@ namespace klong {
 
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
         if (stmt->value() != nullptr) {
-            emit(stmt->value());
+            emitCodeR(stmt->value());
         }
         _builder.CreateRet(_valueOfLastExpr);
 		_eliminateDeadCodeInCurrentBlock = true;
@@ -246,12 +253,12 @@ namespace klong {
             if (stmt->isConst()) {
                 global->setConstant(true);
             }
-            global->setInitializer((llvm::Constant*) emit(stmt->initializer()));
+            global->setInitializer((llvm::Constant*) emitCodeR(stmt->initializer()));
             _namedValues[stmt] = global;
         } else {
             auto stackPtr = _builder.CreateAlloca(type);
             _namedValues[stmt] = stackPtr;
-            auto value = emit(stmt->initializer());
+            auto value = emitCodeR(stmt->initializer());
             _builder.CreateStore(value, stackPtr);
         }
     }
@@ -266,7 +273,7 @@ namespace klong {
         _builder.CreateBr(whileCondBB);
 
         _builder.SetInsertPoint(whileCondBB);
-        llvm::Value* condV = emit(stmt->condition());
+        llvm::Value* condV = emitCodeR(stmt->condition());
         _builder.CreateCondBr(condV, whileBodyBB, mergeWhileBB);
 
         function->getBasicBlockList().push_back(whileBodyBB);
@@ -277,7 +284,7 @@ namespace klong {
         _breakJmpTarget = mergeWhileBB;
         _continueJmpTarget = whileCondBB;
 
-        emit(stmt->body());
+        emitCode(stmt->body());
 
         _continueJmpTarget = prevContinueJmpTarget;
         _breakJmpTarget = prevBreakJmpTarget;
@@ -304,12 +311,12 @@ namespace klong {
 
         _builder.SetInsertPoint(forInitBB);
         if (stmt->initializer() != nullptr) {
-            emit(stmt->initializer());
+            emitCode(stmt->initializer());
         }
         _builder.CreateBr(forCondBB);
 
         _builder.SetInsertPoint(forCondBB);
-        llvm::Value* condV = emit(stmt->condition());
+        llvm::Value* condV = emitCodeR(stmt->condition());
         _builder.CreateCondBr(condV, forBodyBB, mergeForBB);
 
         function->getBasicBlockList().push_back(forBodyBB);
@@ -319,7 +326,7 @@ namespace klong {
         _breakJmpTarget = mergeForBB;
         _continueJmpTarget = forIncBB;
 
-        emit(stmt->body());
+        emitCode(stmt->body());
 
         _continueJmpTarget = prevContinueJmpTarget;
         _breakJmpTarget = prevBreakJmpTarget;
@@ -332,7 +339,7 @@ namespace klong {
         function->getBasicBlockList().push_back(forIncBB);
         _builder.SetInsertPoint(forIncBB);
         if (stmt->increment() != nullptr) {
-            emit(stmt->increment());
+            emitCodeR(stmt->increment());
         }
         _builder.CreateBr(forCondBB);
 
@@ -357,22 +364,20 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitAssignExpr(Assign* expr) {
-        auto value = emit(expr->value());
         llvm::Value* address = nullptr;
         if (expr->isTargetVariable()) {
-            address = getVariableAddress(expr->target());
+            address = emitCodeL(expr->target());
         } else {
-            // ignore the deref operator and
-            // just get the address of the variable
-            address = emit(expr->targetDeref()->right());
+            address = emitCodeL(expr->targetExpr());
         }
+        auto value = emitCodeR(expr->value());
         _builder.CreateStore(value, address);
         _valueOfLastExpr = value;
     }
 
     void LLVMEmitVisitor::visitBinaryExpr(Binary* expr) {
-        llvm::Value* left = emit(expr->left());
-        llvm::Value* right = emit(expr->right());
+        auto left = emitCodeR(expr->left());
+        auto right = emitCodeR(expr->right());
         auto leftType = dynamic_cast<PrimitiveType*>(expr->left()->type());
         auto targetType = dynamic_cast<PrimitiveType*>(expr->type());
 		if (expr->castToType()) {
@@ -562,21 +567,21 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitCallExpr(Call* expr) {
-        auto calleeF = emit(expr->callee());
+        auto calleeF = emitCodeR(expr->callee());
         std::vector<llvm::Value*> argsV;
         for (auto& arg : expr->args()) {
-            argsV.push_back(emit(arg));
+            argsV.push_back(emitCodeR(arg));
         }
         _valueOfLastExpr = _builder.CreateCall(calleeF, argsV);
     }
 
     void LLVMEmitVisitor::visitGroupingExpr(Grouping* expr) {
-        _valueOfLastExpr = emit(expr->expression());
+        _valueOfLastExpr = emitCodeR(expr->expression());
     }
 
     void LLVMEmitVisitor::visitLogicalExpr(Logical* expr) {
-        llvm::Value* left = emit(expr->left());
-        llvm::Value* right = emit(expr->right());
+        auto left = emitCodeR(expr->left());
+        auto right = emitCodeR(expr->right());
         switch (expr->op()) {
             case LogicalOperation::AND:
                 _valueOfLastExpr = _builder.CreateAnd(left, right);
@@ -588,21 +593,37 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitUnaryExpr(Unary* expr) {
-        llvm::Value* right = emit(expr->right());
-        switch(expr->op()) {
-            case UnaryOperation::MINUS:
-                _valueOfLastExpr = _builder.CreateNeg(right);
-                break;
-            case UnaryOperation::NOT:
-                _valueOfLastExpr = _builder.CreateNot(right);
-                break;
-            case UnaryOperation::DEREF:
-                _valueOfLastExpr = _builder.CreateLoad(right);
-                break;
-            case UnaryOperation::ADDRESS_OF:
-                _valueOfLastExpr = getVariableAddress(expr->right());
-                break;
+        auto isCodeL = _isCodeL;
+        auto right = emitCodeR(expr->right());
+
+        if (isCodeL) {
+            switch(expr->op()) {
+                case UnaryOperation::DEREF:
+                        // ignore the deref operator and
+                        // just get the address of the variable
+                        _valueOfLastExpr = right;
+                        break;
+                default:
+                    assert(false);
+                    break;
+            }
+        } else {
+            switch(expr->op()) {
+                case UnaryOperation::MINUS:
+                    _valueOfLastExpr = _builder.CreateNeg(right);
+                    break;
+                case UnaryOperation::NOT:
+                    _valueOfLastExpr = _builder.CreateNot(right);
+                    break;
+                case UnaryOperation::DEREF:
+                    _valueOfLastExpr = _builder.CreateLoad(right);
+                    break;
+                case UnaryOperation::ADDRESS_OF:
+                    _valueOfLastExpr = emitCodeL(expr->right());
+                    break;
+            }
         }
+
     }
 
     llvm::Value* LLVMEmitVisitor::getVariableAddress(Expr* expr) {
@@ -621,7 +642,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitCastExpr(Cast* expr) {
-        auto value = emit(expr->right());
+        auto value = emitCodeR(expr->right());
         auto from = expr->right()->type();
         auto to = expr->targetType();
 
@@ -629,19 +650,23 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitVariableExpr(Variable* expr) {
-        switch (expr->resolvesTo()->kind()) {
-            case StatementKind::VAR_DECL:
-            case StatementKind::PARAMETER:
-            {
-                llvm::Value* value = _namedValues[expr->resolvesTo()];
-                _valueOfLastExpr = _builder.CreateLoad(value);
-                break;
-            }
-            case StatementKind::FUNCTION:
-            default:
-            {
-                _valueOfLastExpr = _namedValues[expr->resolvesTo()];
-                break;
+        if (_isCodeL) {
+            _valueOfLastExpr = getVariableAddress(expr);
+        } else {
+            switch (expr->resolvesTo()->kind()) {
+                case StatementKind::VAR_DECL:
+                case StatementKind::PARAMETER:
+                {
+                    llvm::Value* value = _namedValues[expr->resolvesTo()];
+                    _valueOfLastExpr = _builder.CreateLoad(value);
+                    break;
+                }
+                case StatementKind::FUNCTION:
+                default:
+                {
+                    _valueOfLastExpr = _namedValues[expr->resolvesTo()];
+                    break;
+                }
             }
         }
     }
