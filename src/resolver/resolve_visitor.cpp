@@ -213,6 +213,11 @@ namespace klong {
         resolve(expr->expression());
     }
 
+	void ResolveVisitor::visitSubscriptExpr(Subscript* expr) {
+		resolve(expr->target());
+		resolve(expr->index());
+	}
+
     void ResolveVisitor::visitLogicalExpr(Logical* expr) {
         resolve(expr->left());
         resolve(expr->right());

@@ -14,7 +14,8 @@ namespace klong {
         BINARY,
         CALL,
         GROUPING,
-        LITERAL,
+        SUBSCRIPT,
+		LITERAL,
         LOGICAL,
         UNARY,
         VARIABLE,
@@ -199,6 +200,29 @@ namespace klong {
         ExprPtr _expr;
     };
     
+	class Subscript : public Expr {
+	public:
+		Subscript(SourceRange sourceRange, ExprPtr target, ExprPtr index): 
+			Expr(ExprKind::SUBSCRIPT, sourceRange), _target(target), _index(index) {
+		}
+
+		void accept(ExprVisitor* visitor) {
+			visitor->visitSubscriptExpr(this);
+		}
+
+		Expr* target() const {
+			return _target.get();
+		}
+
+		Expr* index() const {
+			return _index.get();
+		}
+
+	private:
+		ExprPtr _target;
+		ExprPtr _index;
+	};
+
     class Literal : public Expr {
     public:
         Literal(SourceRange sourceRange, TypePtr literalType):

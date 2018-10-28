@@ -579,6 +579,18 @@ namespace klong {
         _valueOfLastExpr = emitCodeR(expr->expression());
     }
 
+	void LLVMEmitVisitor::visitSubscriptExpr(Subscript* expr) {
+		// implement subscript operator
+		auto target = emitCodeR(expr->target());
+		auto index = emitCodeR(expr->index());
+		auto pointerToElement = _builder.CreateGEP(target, index);
+		if (_isCodeL) {
+			_valueOfLastExpr = pointerToElement;
+		} else {
+			_valueOfLastExpr = _builder.CreateLoad(pointerToElement);
+		}
+	}
+
     void LLVMEmitVisitor::visitLogicalExpr(Logical* expr) {
         auto left = emitCodeR(expr->left());
         auto right = emitCodeR(expr->right());
@@ -706,7 +718,9 @@ namespace klong {
         for (auto& arrayVal : expr->values()) {
             values.push_back((llvm::Constant*) emitCodeR(arrayVal));
         }
-        auto type = _typeEmitVisitor.getLLVMType(expr->type());
-        _valueOfLastExpr = llvm::ConstantArray::get((llvm::ArrayType*) type, values);
+		auto innerType = (dynamic_cast<PointerType*>(expr->type()))->pointsTo();
+        auto llvmInnerType = _typeEmitVisitor.getLLVMType(innerType);
+		auto llvmArrayType = llvm::ArrayType::get(llvmInnerType, expr->values().size());
+        _valueOfLastExpr = _builder.CreateConstInBoundsGEP1_64(llvm::ConstantArray::get(llvmArrayType, values), 0);
     }
 }

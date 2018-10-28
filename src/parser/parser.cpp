@@ -493,6 +493,12 @@ namespace klong {
                 }
             }
 
+			if (expr->kind() == ExprKind::SUBSCRIPT) {
+				auto subscript = std::dynamic_pointer_cast<Subscript>(expr);
+				return std::make_shared<Assign>(SourceRange{ expr->sourceRange().start, subscript->sourceRange().end },
+					subscript, value);
+			}
+
             throw ParseException::from(assign, "Invalid assign target");
         }
         return expr;
@@ -801,7 +807,15 @@ namespace klong {
         
         if (match(TokenType::IDENTIFIER)) {
             Token identifier = previous();
-            return std::make_shared<Variable>(identifier.sourceRange, identifier.value);
+			ExprPtr variableExpr = std::make_shared<Variable>(identifier.sourceRange, identifier.value);
+			while (match(TokenType::LEFT_SQUARED_BRACKET)) {
+				ExprPtr target = variableExpr;
+				ExprPtr index = expression();
+				auto rightSquaredBracket = consume(TokenType::RIGHT_SQUARED_BRACKET, "Expect ']' after index expression.");
+				variableExpr = std::make_shared<Subscript>(
+					SourceRange{ target->sourceRange().start, rightSquaredBracket.sourceRange.end }, target, index);
+			}
+			return variableExpr;
         }
 
         if (match(TokenType::LEFT_PAR)) {
