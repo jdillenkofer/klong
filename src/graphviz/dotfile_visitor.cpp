@@ -203,9 +203,17 @@ namespace klong {
         appendLine(std::to_string(assignmentExprId) + " [label=\"Assignment\\n"+ getType(expr->type()) + "\"]");
 
         // visit target
-        expr->target()->accept(this);
-        auto targetExprId = getExprId(expr->target());
-        appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(targetExprId)+ " [ label=\"target\" ]");
+		if (expr->target()) {
+			expr->target()->accept(this);
+			auto targetId = getExprId(expr->target());
+			appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(targetId) + " [ label=\"target\" ]");
+		}
+
+		if (expr->targetExpr()) {
+			expr->targetExpr()->accept(this);
+			auto targetExprId = getExprId(expr->targetExpr());
+			appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(targetExprId) + " [ label=\"targetExpr\" ]");
+		}
 
         // visit value
         expr->value()->accept(this);
@@ -259,6 +267,22 @@ namespace klong {
         auto exprId = getExprId(expr->expression());
         appendLine(std::to_string(groupingExprId) + " -> " + std::to_string(exprId));
     }
+
+	void DotfileVisitor::visitSubscriptExpr(Subscript* expr) {
+		// print Subscript stuff here
+		auto subscriptExprId = getExprId(expr);
+		appendLine(std::to_string(subscriptExprId) + " [label=\"Subscript\\n" + getType(expr->type()) + "\"]");
+
+		// visit target
+		expr->target()->accept(this);
+		auto targetExprId = getExprId(expr->target());
+		appendLine(std::to_string(subscriptExprId) + " -> " + std::to_string(targetExprId));
+
+		// visit index
+		expr->index()->accept(this);
+		auto indexExprId = getExprId(expr->index());
+		appendLine(std::to_string(subscriptExprId) + " -> " + std::to_string(indexExprId));
+	}
 
     void DotfileVisitor::visitLogicalExpr(Logical* expr) {
         // print Logical stuff here
@@ -364,10 +388,16 @@ namespace klong {
 
     void DotfileVisitor::visitArrayLiteral(ArrayLiteral* expr) {
         // print ArrayLiteral stuff here
-        auto charLiteralId = getExprId(expr);
-        appendLine(std::to_string(charLiteralId) + " [label=\"ArrayLiteral\\n"
-        // + "value: '" + std::to_string(expr->values()) + "\\n"
+        auto arrayLiteralId = getExprId(expr);
+        appendLine(std::to_string(arrayLiteralId) + " [label=\"ArrayLiteral\\n"
         + getType(expr->type())+ "\"]");
+
+		for (auto& value : expr->values()) {
+			// visit target
+			value->accept(this);
+			auto valueExprId = getExprId(value);
+			appendLine(std::to_string(arrayLiteralId) + " -> " + std::to_string(valueExprId));
+		}
     }
 
     // Types

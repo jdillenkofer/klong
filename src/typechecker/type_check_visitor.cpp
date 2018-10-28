@@ -342,6 +342,22 @@ namespace klong {
         expr->type(std::shared_ptr<Type>(expr->expression()->type()->clone()));
     }
 
+	void TypeCheckVisitor::visitSubscriptExpr(Subscript* expr) {
+		check(expr->target());
+		auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());
+		if (!pointerType) {
+			throw TypeCheckException(expr->sourceRange(), 
+				"Illegal target type for subscript expr. Target has to be of type pointer.");
+		}
+		check(expr->index());
+		auto numberType = dynamic_cast<PrimitiveType*>(expr->index()->type());
+		if (!numberType || !numberType->isInteger()) {
+			throw TypeCheckException(expr->sourceRange(), "Index of subscript operator has to be numeric.");
+		}
+		auto innerType = std::shared_ptr<Type>(pointerType->pointsTo()->clone());
+		expr->type(innerType);
+	}
+
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left());
         if (!Type::isBoolean(expr->left()->type())) {

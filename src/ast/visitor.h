@@ -45,6 +45,7 @@ namespace klong {
     class Binary;
     class Call;
     class Grouping;
+	class Subscript;
     class Logical;
     class Unary;
     class SizeOf;
@@ -66,6 +67,7 @@ namespace klong {
         virtual void visitBinaryExpr(Binary* expr) = 0;
         virtual void visitCallExpr(Call* expr) = 0;
         virtual void visitGroupingExpr(Grouping* expr) = 0;
+		virtual void visitSubscriptExpr(Subscript* expr) = 0;
         virtual void visitLogicalExpr(Logical* expr) = 0;
         virtual void visitUnaryExpr(Unary* expr) = 0;
         virtual void visitSizeOfExpr(SizeOf* expr) = 0;
