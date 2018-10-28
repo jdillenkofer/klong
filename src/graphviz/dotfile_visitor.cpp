@@ -356,9 +356,17 @@ namespace klong {
 
     void DotfileVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
         // print CharacterLiteral stuff here
-        auto boolLiteralId = getExprId(expr);
-        appendLine(std::to_string(boolLiteralId) + " [label=\"CharLiteral\\n"
+        auto charLiteralId = getExprId(expr);
+        appendLine(std::to_string(charLiteralId) + " [label=\"CharLiteral\\n"
         + "value: '" + std::to_string(expr->value()) + "\\n"
+        + getType(expr->type())+ "\"]");
+    }
+
+    void DotfileVisitor::visitArrayLiteral(ArrayLiteral* expr) {
+        // print ArrayLiteral stuff here
+        auto charLiteralId = getExprId(expr);
+        appendLine(std::to_string(charLiteralId) + " [label=\"ArrayLiteral\\n"
+        // + "value: '" + std::to_string(expr->values()) + "\\n"
         + getType(expr->type())+ "\"]");
     }
 

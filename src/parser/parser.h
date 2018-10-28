@@ -71,6 +71,7 @@ namespace klong {
         ExprPtr finishCallExpr(ExprPtr callee);
         ExprPtr callExpr();
         ExprPtr primary();
+        ExprPtr literal();
     private:
         Token _current;
         Token _previous;

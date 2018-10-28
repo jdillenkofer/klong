@@ -211,14 +211,22 @@ namespace klong {
             _literalType(std::move(literalType)) {
         }
 
+        Literal(SourceRange sourceRange):
+            Expr(ExprKind::LITERAL, sourceRange) {
+        }
+
         void accept(ExprVisitor* visitor) = 0;
 
         Type* literalType() const {
             return _literalType.get();
         }
 
+        void literalType(TypePtr type) {
+            _literalType = type;
+        }
+
     private:
-        TypePtr _literalType;
+        TypePtr _literalType = nullptr;
     };
 
     class NumberLiteral: public Literal {
@@ -333,6 +341,29 @@ namespace klong {
         };
     private:
         char _value;
+    };
+
+    class ArrayLiteral: public Literal {
+    public:
+        ArrayLiteral(SourceRange sourceRange, std::vector<ExprPtr>&& values):
+            Literal(sourceRange),
+            _values(values) {
+        }
+
+        std::vector<Expr*> values() const {
+            std::vector<Expr*> values;
+            for(auto& val : _values) {
+                values.push_back(val.get());
+            }
+            return values;
+        }
+
+        void accept(ExprVisitor* visitor) {
+            visitor->visitArrayLiteral(this);
+        }
+
+    private:
+        std::vector<ExprPtr> _values;
     };
 
     enum class LogicalOperation {

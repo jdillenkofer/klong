@@ -80,6 +80,7 @@ namespace klong {
         void visitBoolLiteral(BoolLiteral* expr) override;
         void visitStringLiteral(StringLiteral* expr) override;
         void visitCharacterLiteral(CharacterLiteral* expr) override;
+        void visitArrayLiteral(ArrayLiteral* expr) override;
 
         Result<ModulePtr, ResolveException> getResult() const;
 

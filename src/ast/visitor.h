@@ -56,6 +56,7 @@ namespace klong {
     class BoolLiteral;
     class StringLiteral;
     class CharacterLiteral;
+    class ArrayLiteral;
 
 
     class ExprVisitor {
@@ -76,6 +77,7 @@ namespace klong {
         virtual void visitBoolLiteral(BoolLiteral* expr) = 0;
         virtual void visitStringLiteral(StringLiteral* expr) = 0;
         virtual void visitCharacterLiteral(CharacterLiteral* expr) = 0;
+        virtual void visitArrayLiteral(ArrayLiteral* expr) = 0;
     };
 
     // Types

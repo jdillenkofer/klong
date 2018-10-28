@@ -263,6 +263,11 @@ namespace klong {
         (void) expr;
     }
 
+    void ResolveVisitor::visitArrayLiteral(ArrayLiteral* expr) {
+        // nothing to do here
+        (void) expr;
+    }
+
     Result<ModulePtr, ResolveException> ResolveVisitor::getResult() const {
         return _result;
     }
