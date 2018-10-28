@@ -794,56 +794,9 @@ namespace klong {
     }
 
     ExprPtr Parser::primary() {
-        Token literal = peek();
-        if (match(TokenType::FALSE_KEYWORD, 
-                TokenType::TRUE_KEYWORD)) {
-            return std::make_shared<BoolLiteral>(literal.sourceRange, literal.type == TokenType::TRUE_KEYWORD);
-        }
-
-        if (match(TokenType::NUMBER_LITERAL)) {
-            // TODO: enhance conversion result error handling
-            switch (literal.numberType) {
-                case NumberType::INT:
-                {
-                    int64_t i;
-                    auto conversionResult = literal.parse(i);
-                    if (conversionResult == NumberConversionResult::OK) {
-                        return std::make_shared<NumberLiteral>(literal.sourceRange, i);
-                    }
-                    break;
-                }
-                case NumberType::UINT:
-                {
-                    uint64_t u;
-                    auto conversionResult = literal.parse(u);
-                    if (conversionResult == NumberConversionResult::OK) {
-                        return std::make_shared<NumberLiteral>(literal.sourceRange, u);
-                    }
-                    break;
-                }
-                case NumberType::FLOAT:
-                {
-                    double d;
-                    auto conversionResult = literal.parse(d);
-                    if (conversionResult == NumberConversionResult::OK) {
-                        return std::make_shared<NumberLiteral>(literal.sourceRange, d);
-                    }
-                    break;
-                }
-                case NumberType::NONE:
-                default:
-                    throw ParseException(literal.sourceRange, "Unexpected numberType.");
-            }
-            throw ParseException(literal.sourceRange, "Couldn't convert numberLiteral.");
-        }
-
-        if (match(TokenType::CHARACTER_LITERAL)) {
-            char c = literal.value[0];
-            return std::make_shared<CharacterLiteral>(literal.sourceRange, c);
-        }
-
-        if (match(TokenType::STRING_LITERAL)) {
-            return std::make_shared<StringLiteral>(literal.sourceRange, literal.value);
+        auto literalPtr = literal();
+        if (literalPtr) {
+            return literalPtr;
         }
         
         if (match(TokenType::IDENTIFIER)) {
@@ -861,5 +814,70 @@ namespace klong {
         }
 
         throw ParseException::from(peek(), "Expect expression.");
+    }
+
+    ExprPtr Parser::literal() {
+        Token literalToken = peek();
+        if (match(TokenType::FALSE_KEYWORD,
+                  TokenType::TRUE_KEYWORD)) {
+            return std::make_shared<BoolLiteral>(literalToken.sourceRange, literalToken.type == TokenType::TRUE_KEYWORD);
+        }
+
+        if (match(TokenType::NUMBER_LITERAL)) {
+            // TODO: enhance conversion result error handling
+            switch (literalToken.numberType) {
+                case NumberType::INT:
+                {
+                    int64_t i;
+                    auto conversionResult = literalToken.parse(i);
+                    if (conversionResult == NumberConversionResult::OK) {
+                        return std::make_shared<NumberLiteral>(literalToken.sourceRange, i);
+                    }
+                    break;
+                }
+                case NumberType::UINT:
+                {
+                    uint64_t u;
+                    auto conversionResult = literalToken.parse(u);
+                    if (conversionResult == NumberConversionResult::OK) {
+                        return std::make_shared<NumberLiteral>(literalToken.sourceRange, u);
+                    }
+                    break;
+                }
+                case NumberType::FLOAT:
+                {
+                    double d;
+                    auto conversionResult = literalToken.parse(d);
+                    if (conversionResult == NumberConversionResult::OK) {
+                        return std::make_shared<NumberLiteral>(literalToken.sourceRange, d);
+                    }
+                    break;
+                }
+                case NumberType::NONE:
+                default:
+                    throw ParseException(literalToken.sourceRange, "Unexpected numberType.");
+            }
+            throw ParseException(literalToken.sourceRange, "Couldn't convert numberLiteral.");
+        }
+
+        if (match(TokenType::CHARACTER_LITERAL)) {
+            char c = literalToken.value[0];
+            return std::make_shared<CharacterLiteral>(literalToken.sourceRange, c);
+        }
+
+        if (match(TokenType::STRING_LITERAL)) {
+            return std::make_shared<StringLiteral>(literalToken.sourceRange, literalToken.value);
+        }
+
+        if (match(TokenType::LEFT_SQUARED_BRACKET)) {
+            std::vector<ExprPtr> values;
+            do {
+                values.push_back(literal());
+            } while(match(TokenType::COMMA));
+            auto rightSquaredBracket = consume(TokenType::RIGHT_SQUARED_BRACKET, "Expect ']' at the end of an array literal.");
+            return std::make_shared<ArrayLiteral>(
+                    SourceRange { literalToken.sourceRange.start, rightSquaredBracket.sourceRange.end }, std::move(values));
+        }
+        return nullptr;
     }
 }

@@ -700,4 +700,13 @@ namespace klong {
     void LLVMEmitVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
         _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(8, (uint32_t) expr->value()));
     }
+
+    void LLVMEmitVisitor::visitArrayLiteral(ArrayLiteral* expr) {
+        std::vector<llvm::Constant*> values;
+        for (auto& arrayVal : expr->values()) {
+            values.push_back((llvm::Constant*) emitCodeR(arrayVal));
+        }
+        auto type = _typeEmitVisitor.getLLVMType(expr->type());
+        _valueOfLastExpr = llvm::ConstantArray::get((llvm::ArrayType*) type, values);
+    }
 }

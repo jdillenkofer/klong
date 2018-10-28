@@ -497,6 +497,22 @@ namespace klong {
         expr->type(type);
     }
 
+    void TypeCheckVisitor::visitArrayLiteral(ArrayLiteral* expr) {
+        for (auto& val : expr->values()) {
+            check(val);
+        }
+
+        auto valueType = expr->values()[0]->type();
+        for (auto& val : expr->values()) {
+            if (!valueType->isEqual(val->type())) {
+                throw TypeCheckException(expr->sourceRange(), "Not all array values are of the same type.");
+            }
+        }
+
+        TypePtr type = std::make_shared<PointerType>(expr->sourceRange(), std::shared_ptr<Type>(valueType->clone()));
+        expr->type(type);
+    }
+
     Result<ModulePtr, TypeCheckException> TypeCheckVisitor::getResult() const {
         return _result;
     }
