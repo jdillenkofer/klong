@@ -153,7 +153,17 @@ namespace klong {
         }
         check(stmt->initializer());
         if (stmt->type() == nullptr) {
-            stmt->type(std::shared_ptr<Type>(stmt->initializer()->type()->clone()));
+            auto clonedInitType = std::shared_ptr<Type>(stmt->initializer()->type()->clone());
+
+            // propagate array type meta info
+            auto initAsPointerType = dynamic_cast<PointerType*>(stmt->initializer()->type());
+            if (initAsPointerType && initAsPointerType->isArray()) {
+                auto clonedInitasPointerType = dynamic_cast<PointerType*>(clonedInitType.get());
+                clonedInitasPointerType->isArray(true);
+                clonedInitasPointerType->size(initAsPointerType->size());
+            }
+
+            stmt->type(clonedInitType);
         } else {
             if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type())) {
                 _result.addError(
@@ -476,7 +486,15 @@ namespace klong {
             case StatementKind::VAR_DECL:
             {
                 auto varDecl = dynamic_cast<VariableDeclaration*>(resolvesTo);
-                expr->type(std::shared_ptr<Type>(varDecl->type()->clone()));
+                auto clonedVarDeclType = std::shared_ptr<Type>(varDecl->type()->clone());
+                // propagate array type meta info
+                auto varDeclAsPointerType = dynamic_cast<PointerType*>(varDecl->type());
+                if (varDeclAsPointerType && varDeclAsPointerType->isArray()) {
+                    auto clonedVarDeclTypeAsPtr = dynamic_cast<PointerType*>(clonedVarDeclType.get());
+                    clonedVarDeclTypeAsPtr->isArray(true);
+                    clonedVarDeclTypeAsPtr->size(varDeclAsPointerType->size());
+                }
+                expr->type(clonedVarDeclType);
                 break;
             }
             case StatementKind::PARAMETER:
@@ -525,7 +543,10 @@ namespace klong {
             }
         }
 
-        TypePtr type = std::make_shared<PointerType>(expr->sourceRange(), std::shared_ptr<Type>(valueType->clone()));
+        auto type = std::make_shared<PointerType>(expr->sourceRange(),
+                std::shared_ptr<Type>(valueType->clone()));
+        type->isArray(true);
+        type->size(expr->values().size());
         expr->type(type);
     }
 

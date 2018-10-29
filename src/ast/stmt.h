@@ -100,7 +100,7 @@ namespace klong {
         ExternalDeclaration(SourceRange sourceRange, std::string name, TypePtr type):
             Stmt(StatementKind::EXT_DECL, sourceRange),
             _name(std::move(name)),
-            _type(type) {
+            _type(std::move(type)) {
         }
 
         void accept(StmtVisitor* visitor) {

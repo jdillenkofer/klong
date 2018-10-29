@@ -305,6 +305,21 @@ namespace klong {
                         SourceRange { type.sourceRange.start, gtToken.sourceRange.end },
                         pointsTo);
             }
+            case TokenType::RIGHT_SQUARED_BRACKET:
+            {
+                auto innerType = typeDeclaration();
+                consume(TokenType::COMMA, "Expect ',' after array-type declaration.");
+                auto arraySizeToken = consume(TokenType::NUMBER_LITERAL, "Expect array size.");
+                auto leftSquaredBracket = consume(TokenType::LEFT_SQUARED_BRACKET,
+                                                  "Expect ']' at the end of array-type declaration.");
+                uint64_t arraySize;
+                arraySizeToken.parse(arraySize);
+                auto arrayType = std::make_shared<PointerType>(
+                        SourceRange { type.sourceRange.start, leftSquaredBracket.sourceRange.end }, innerType);
+                arrayType->isArray(true);
+                arrayType->size(arraySize);
+                return arrayType;
+            }
             case TokenType::VOID:
             case TokenType::BOOL:
             case TokenType::I8:

@@ -92,8 +92,8 @@ namespace klong {
     public:
         // Types
         virtual void visitFunctionType(FunctionType* type) = 0;
-        virtual void visitPrimitiveType(PrimitiveType *type) = 0;
-        virtual void visitPointerType(PointerType *type) = 0;
-        virtual void visitSimpleType(SimpleType *type) = 0;
+        virtual void visitPrimitiveType(PrimitiveType* type) = 0;
+        virtual void visitPointerType(PointerType* type) = 0;
+        virtual void visitSimpleType(SimpleType* type) = 0;
     };
 }

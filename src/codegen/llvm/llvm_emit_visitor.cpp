@@ -580,11 +580,12 @@ namespace klong {
     }
 
 	void LLVMEmitVisitor::visitSubscriptExpr(Subscript* expr) {
+        auto savedCodeL = _isCodeL;
 		// implement subscript operator
-		auto target = emitCodeR(expr->target());
+		auto target = emitCodeL(expr->target());
 		auto index = emitCodeR(expr->index());
 		auto pointerToElement = _builder.CreateGEP(target, index);
-		if (_isCodeL) {
+		if (savedCodeL) {
 			_valueOfLastExpr = pointerToElement;
 		} else {
 			_valueOfLastExpr = _builder.CreateLoad(pointerToElement);
@@ -642,6 +643,13 @@ namespace klong {
         auto variable = dynamic_cast<Variable*>(expr);
         assert(variable != nullptr);
         auto address = _namedValues[variable->resolvesTo()];
+        if (Type::isPointer(expr->type())) {
+            auto asPointer = dynamic_cast<PointerType*>(expr->type());
+            if (asPointer->isArray()) {
+                auto clonedPtr = std::shared_ptr<Type>(asPointer->clone());
+                address = _builder.CreateBitCast(address, _typeEmitVisitor.getLLVMType(clonedPtr.get()));
+            }
+        }
         return address;
     }
 
@@ -718,9 +726,7 @@ namespace klong {
         for (auto& arrayVal : expr->values()) {
             values.push_back((llvm::Constant*) emitCodeR(arrayVal));
         }
-		auto innerType = (dynamic_cast<PointerType*>(expr->type()))->pointsTo();
-        auto llvmInnerType = _typeEmitVisitor.getLLVMType(innerType);
-		auto llvmArrayType = llvm::ArrayType::get(llvmInnerType, expr->values().size());
-        _valueOfLastExpr = _builder.CreateConstInBoundsGEP1_64(llvm::ConstantArray::get(llvmArrayType, values), 0);
+		auto llvmArrayType = _typeEmitVisitor.getLLVMType(expr->type());
+        _valueOfLastExpr = llvm::ConstantArray::get((llvm::ArrayType*)llvmArrayType, values);
     }
 }
