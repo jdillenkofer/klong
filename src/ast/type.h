@@ -238,6 +238,22 @@ namespace klong {
             return _pointsTo.get();
         }
 
+        bool isArray() const {
+            return _isArray;
+        }
+
+        void isArray(bool val) {
+            _isArray = val;
+        }
+
+        uint64_t size() const {
+            return _size;
+        }
+
+        void size(uint64_t val) {
+            _size = val;
+        }
+
         bool isEqual(const Type* other) const {
             if (other->kind() == TypeKind::POINTER) {
                 auto otherPointerType = dynamic_cast<const PointerType*>(other);
@@ -251,6 +267,8 @@ namespace klong {
         }
 
     private:
+        bool _isArray = false;
+        uint64_t _size = 0;
         TypePtr _pointsTo;
     };
 

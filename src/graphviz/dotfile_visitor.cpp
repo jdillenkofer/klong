@@ -460,9 +460,18 @@ namespace klong {
     }
 
     void DotfileVisitor::visitPointerType(PointerType *type) {
-        std::string str = "ptr&#60;";
-        type->pointsTo()->accept(this);
-        str += _typeOfLastExpr + "&#62;";
+        std::string str = "";
+        if (type->isArray()) {
+            str += "[";
+            type->pointsTo()->accept(this);
+            str += _typeOfLastExpr;
+            str += ", " + std::to_string(type->size()) + "]";
+
+        } else {
+            str += "ptr&#60;";
+            type->pointsTo()->accept(this);
+            str += _typeOfLastExpr + "&#62;";
+        }
         _typeOfLastExpr = str;
     }
 

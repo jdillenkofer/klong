@@ -1,8 +1,6 @@
 const from = 0;
 const to = 5;
 
-const f = [ 1, 2, 3 ];
-
 pub fun main() -> i64 {
     // a b c
     let funVariable = fib;

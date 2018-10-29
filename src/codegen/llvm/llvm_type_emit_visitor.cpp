@@ -67,12 +67,16 @@ namespace klong {
         }
     }
 
-    void LLVMTypeEmitVisitor::visitPointerType(klong::PointerType *type) {
+    void LLVMTypeEmitVisitor::visitPointerType(PointerType *type) {
         auto prevOuterType = _outerType;
         _outerType = TypeKind::POINTER;
         auto innerType = getLLVMType(type->pointsTo());
         _outerType = prevOuterType;
-        _valueOfLastType = llvm::PointerType::get(innerType, 0);
+        if (type->isArray()) {
+            _valueOfLastType = llvm::ArrayType::get(innerType, type->size());
+        } else {
+            _valueOfLastType = llvm::PointerType::get(innerType, 0);
+        }
     }
 
     void LLVMTypeEmitVisitor::visitSimpleType(SimpleType *type) {
