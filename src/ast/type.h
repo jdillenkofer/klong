@@ -257,7 +257,11 @@ namespace klong {
         bool isEqual(const Type* other) const {
             if (other->kind() == TypeKind::POINTER) {
                 auto otherPointerType = dynamic_cast<const PointerType*>(other);
-                return this->pointsTo()->isEqual(otherPointerType->pointsTo());
+                auto innerTypesEqual = this->pointsTo()->isEqual(otherPointerType->pointsTo());
+                if (this->isArray() && otherPointerType->isArray() && this->size() != otherPointerType->size()) {
+                    return false;
+                }
+                return innerTypesEqual;
             }
             return false;
         }
