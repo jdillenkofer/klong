@@ -607,29 +607,28 @@ namespace klong {
 
     void LLVMEmitVisitor::visitUnaryExpr(Unary* expr) {
         auto isCodeL = _isCodeL;
-        auto right = emitCodeR(expr->right());
 
         if (isCodeL) {
             switch(expr->op()) {
                 case UnaryOperation::DEREF:
                         // ignore the deref operator and
                         // just get the address of the variable
-                        _valueOfLastExpr = right;
+                        _valueOfLastExpr = emitCodeR(expr->right());
                         break;
                 default:
                     assert(false);
                     break;
             }
         } else {
-            switch(expr->op()) {
+			switch(expr->op()) {
                 case UnaryOperation::MINUS:
-                    _valueOfLastExpr = _builder.CreateNeg(right);
+                    _valueOfLastExpr = _builder.CreateNeg(emitCodeR(expr->right()));
                     break;
                 case UnaryOperation::NOT:
-                    _valueOfLastExpr = _builder.CreateNot(right);
+                    _valueOfLastExpr = _builder.CreateNot(emitCodeR(expr->right()));
                     break;
                 case UnaryOperation::DEREF:
-                    _valueOfLastExpr = _builder.CreateLoad(right);
+                    _valueOfLastExpr = _builder.CreateLoad(emitCodeR(expr->right()));
                     break;
                 case UnaryOperation::ADDRESS_OF:
                     _valueOfLastExpr = emitCodeL(expr->right());
