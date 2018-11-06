@@ -7,6 +7,14 @@ pub fun main() -> i64 {
         return 1;
     }
 
+    if (*f != a[0]) {
+        return 1;
+    }
+
+    if (*f != *a) {
+        return 1;
+    }
+
     f[0] = 5;
     if (f[0] != 5) {
         return 1;

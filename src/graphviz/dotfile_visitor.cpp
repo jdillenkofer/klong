@@ -131,9 +131,11 @@ namespace klong {
         + getType(stmt->type())+ "\"]");
 
         // visit initializer
-        stmt->initializer()->accept(this);
-        auto initializerExprId = getExprId(stmt->initializer());
-        appendLine(std::to_string(varDeclStmtId) + " -> " + std::to_string(initializerExprId));
+        if (stmt->initializer()) {
+            stmt->initializer()->accept(this);
+            auto initializerExprId = getExprId(stmt->initializer());
+            appendLine(std::to_string(varDeclStmtId) + " -> " + std::to_string(initializerExprId));
+        }
     }
 
     void DotfileVisitor::visitWhileStmt(While* stmt) {

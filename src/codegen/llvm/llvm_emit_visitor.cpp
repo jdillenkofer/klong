@@ -253,13 +253,17 @@ namespace klong {
             if (stmt->isConst()) {
                 global->setConstant(true);
             }
-            global->setInitializer((llvm::Constant*) emitCodeR(stmt->initializer()));
+            if (stmt->initializer()) {
+                global->setInitializer((llvm::Constant*) emitCodeR(stmt->initializer()));
+            }
             _namedValues[stmt] = global;
         } else {
             auto stackPtr = _builder.CreateAlloca(type);
             _namedValues[stmt] = stackPtr;
-            auto value = emitCodeR(stmt->initializer());
-            _builder.CreateStore(value, stackPtr);
+            if (stmt->initializer()) {
+                auto value = emitCodeR(stmt->initializer());
+                _builder.CreateStore(value, stackPtr);
+            }
         }
     }
 
@@ -580,12 +584,12 @@ namespace klong {
     }
 
 	void LLVMEmitVisitor::visitSubscriptExpr(Subscript* expr) {
-        auto savedCodeL = _isCodeL;
+        auto isCodeL = _isCodeL;
 		// implement subscript operator
 		auto target = emitCodeL(expr->target());
 		auto index = emitCodeR(expr->index());
 		auto pointerToElement = _builder.CreateGEP(target, index);
-		if (savedCodeL) {
+		if (isCodeL) {
 			_valueOfLastExpr = pointerToElement;
 		} else {
 			_valueOfLastExpr = _builder.CreateLoad(pointerToElement);
@@ -677,6 +681,20 @@ namespace klong {
                 case StatementKind::PARAMETER:
                 {
                     llvm::Value* value = _namedValues[expr->resolvesTo()];
+                    if (expr->resolvesTo()->kind() == StatementKind::VAR_DECL) {
+                        auto varDecl = dynamic_cast<VariableDeclaration*>(expr->resolvesTo());
+                        if (Type::isPointer(varDecl->type())) {
+                            auto pointerType = dynamic_cast<PointerType*>(varDecl->type());
+                            if (pointerType->isArray()) {
+                                llvm::Value* zero = llvm::ConstantInt::get(_context, llvm::APInt(64, (uint64_t) 0, true));
+                                _valueOfLastExpr = _builder.CreateGEP(value, zero);
+                                auto llvmPointerType = llvm::PointerType::get(
+                                        _typeEmitVisitor.getLLVMType(pointerType->pointsTo()), 0);
+                                _valueOfLastExpr = _builder.CreateBitCast(_valueOfLastExpr, llvmPointerType);
+                                break;
+                            }
+                        }
+                    }
                     _valueOfLastExpr = _builder.CreateLoad(value);
                     break;
                 }

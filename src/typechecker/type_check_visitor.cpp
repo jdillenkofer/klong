@@ -152,11 +152,13 @@ namespace klong {
                     TypeCheckException(stmt->sourceRange(), "Pub keyword not allowed in front of local variable."));
         }
         check(stmt->initializer());
+
         if (stmt->type() == nullptr) {
             auto clonedInitType = std::shared_ptr<Type>(stmt->initializer()->type()->clone());
 
-            // propagate array type meta info
             auto initAsPointerType = dynamic_cast<PointerType*>(stmt->initializer()->type());
+
+            // propagate array type meta info
             if (initAsPointerType && initAsPointerType->isArray()) {
                 auto clonedInitasPointerType = dynamic_cast<PointerType*>(clonedInitType.get());
                 clonedInitasPointerType->isArray(true);
@@ -165,6 +167,12 @@ namespace klong {
 
             stmt->type(clonedInitType);
         } else {
+            auto stmtAsPointerType = dynamic_cast<PointerType*>(stmt->type());
+            if (stmtAsPointerType && stmtAsPointerType->isArray()
+                && stmt->initializer() && stmt->initializer()->kind() != ExprKind::LITERAL) {
+                _result.addError(
+                        TypeCheckException(stmt->sourceRange(), "initializer of arrays can only contain array literals."));
+            }
             if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type())) {
                 _result.addError(
                         TypeCheckException(stmt->sourceRange(), "initializerType doesn't match declaration type."));
