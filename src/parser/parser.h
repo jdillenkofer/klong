@@ -9,6 +9,7 @@
 #include "ast/module.h"
 #include "ast/stmt.h"
 #include "ast/expr.h"
+#include "parser_memento.h"
 
 
 namespace klong {
@@ -20,6 +21,9 @@ namespace klong {
         }
 
         Result<ModulePtr, ParseException> parse() override;
+
+        ParserMemento saveToMemento();
+        void loadFromMemento(ParserMemento& memento);
     private:
         template<typename... T> bool match(T... types) {
             for (auto& type : { types... }) {
@@ -72,6 +76,7 @@ namespace klong {
         ExprPtr callExpr();
         ExprPtr primary();
         ExprPtr literal();
+        ExprPtr groupingOrIdentifier();
     private:
         Token _current;
         Token _previous;

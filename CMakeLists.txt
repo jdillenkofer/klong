@@ -97,7 +97,7 @@ set(HEADER_FILES
 	src/graphviz/dotfile_emitter.h
     src/compiler.h
         src/codegen/llvm/llvm_type_emit_visitor.h
-)
+        src/lexer/lexer_memento.h src/parser/parser_memento.h)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

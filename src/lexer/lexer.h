@@ -16,8 +16,13 @@ namespace klong {
             _sourceLocation = SourceLocation(source);
         }
 
+        Token current();
+        Token previous();
         bool hasNext() const;
         Token next();
+
+        LexerMemento saveToMemento();
+        void loadFromMemento(LexerMemento& memento);
 
     private:
         void updateLocation();
@@ -123,7 +128,7 @@ namespace klong {
 
     private:
         static std::multimap<char, LexerCaseCallable> cases;
-            
+
         SourceFile* _source;
         std::string _code;
         SourceLocation _sourceLocation;

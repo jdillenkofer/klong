@@ -21,6 +21,20 @@ namespace klong {
         return Result<ModulePtr, ParseException>::from(std::move(module));
     }
 
+    ParserMemento Parser::saveToMemento() {
+        return ParserMemento(_current, _previous, std::move(_lexer->saveToMemento()),
+                _isInsideFunction, _isInsideLoop, _errors);
+    }
+
+    void Parser::loadFromMemento(ParserMemento& memento) {
+        _current = memento._current;
+        _previous = memento._previous;
+        _lexer->loadFromMemento(memento._lexerMemento);
+        _isInsideFunction = memento._isInsideFunction;
+        _isInsideLoop = memento._isInsideLoop;
+        _errors = memento._errors;
+    }
+
     Token Parser::consume(TokenType type, std::string errorMessage) {
         if (check(type)) {
             return advance();
@@ -819,30 +833,34 @@ namespace klong {
         if (literalPtr) {
             return literalPtr;
         }
-        
-        if (match(TokenType::IDENTIFIER)) {
-            Token identifier = previous();
-			ExprPtr variableExpr = std::make_shared<Variable>(identifier.sourceRange, identifier.value);
-			while (match(TokenType::LEFT_SQUARED_BRACKET)) {
-				ExprPtr target = variableExpr;
-				ExprPtr index = expression();
-				auto rightSquaredBracket = consume(TokenType::RIGHT_SQUARED_BRACKET, "Expect ']' after index expression.");
-				variableExpr = std::make_shared<Subscript>(
-					SourceRange{ target->sourceRange().start, rightSquaredBracket.sourceRange.end }, target, index);
-			}
-			return variableExpr;
+
+        auto memento = saveToMemento();
+        auto currentToken = _current;
+        auto previousToken = _previous;
+        try {
+            auto target = groupingOrIdentifier();
+
+            bool isSubscriptOp = false;
+
+            while(match(TokenType::LEFT_SQUARED_BRACKET)) {
+                ExprPtr index = expression();
+                auto rightSquaredBracket = consume(TokenType::RIGHT_SQUARED_BRACKET,
+                        "Expect ']' after index expression.");
+                target = std::make_shared<Subscript>(
+                        SourceRange{target->sourceRange().start, rightSquaredBracket.sourceRange.end}, target, index);
+                isSubscriptOp = true;
+            }
+
+            if (!isSubscriptOp) {
+                loadFromMemento(memento);
+            } else {
+                return target;
+            }
+        } catch (...) {
+            loadFromMemento(memento);
         }
 
-        if (match(TokenType::LEFT_PAR)) {
-            Token leftPar = previous();
-            ExprPtr expr = expression();
-            Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after expression.");
-            return std::make_shared<Grouping>(
-                    SourceRange { leftPar.sourceRange.start, rightPar.sourceRange.end },
-                    expr);
-        }
-
-        throw ParseException::from(peek(), "Expect expression.");
+        return groupingOrIdentifier();
     }
 
     ExprPtr Parser::literal() {
@@ -908,5 +926,24 @@ namespace klong {
                     SourceRange { literalToken.sourceRange.start, rightSquaredBracket.sourceRange.end }, std::move(values));
         }
         return nullptr;
+    }
+
+    ExprPtr Parser::groupingOrIdentifier() {
+        if (match(TokenType::IDENTIFIER)) {
+            Token identifier = previous();
+            auto variableExpr= std::make_shared<Variable>(identifier.sourceRange, identifier.value);
+            return variableExpr;
+        }
+
+        if (match(TokenType::LEFT_PAR)) {
+            Token leftPar = previous();
+            ExprPtr expr = expression();
+            Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after expression.");
+            return std::make_shared<Grouping>(
+                    SourceRange { leftPar.sourceRange.start, rightPar.sourceRange.end },
+                    expr);
+        }
+
+        throw ParseException::from(peek(), "Expect expression.");
     }
 }
