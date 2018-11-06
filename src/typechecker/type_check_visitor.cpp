@@ -114,6 +114,13 @@ namespace klong {
             _result.addError(TypeCheckException(stmt->sourceRange(),
                     "Parameters of type functionType are not allowed."));
         }
+        if (stmt->type()->kind() == TypeKind::POINTER) {
+            auto pointerType = dynamic_cast<PointerType*>(stmt->type());
+            if (pointerType->isArray()) {
+                _result.addError(TypeCheckException(stmt->sourceRange(),
+                    "Parameters of type array are not allowed."));
+            }
+        }
     }
 
     void TypeCheckVisitor::visitIfStmt(If* stmt) {
