@@ -9,7 +9,7 @@ namespace klong {
             _token(token), _message(message) {
         }
 
-        const char* what () const throw () {
+        const char* what() const noexcept {
             return _message.c_str();
         }
 

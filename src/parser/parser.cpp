@@ -715,7 +715,7 @@ namespace klong {
                     binaryOperation = BinaryOperation::MODULO;
                     break;
                 default:
-                    throw ParseException(op.sourceRange, "Expect '*' or '/' Token.");
+                    throw ParseException(op.sourceRange, "Expect '*', '/' or '%' Token.");
             }
             ExprPtr right = unaryExpr();
             expr = std::make_shared<Binary>(
