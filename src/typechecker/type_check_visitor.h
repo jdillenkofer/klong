@@ -46,6 +46,7 @@ namespace klong {
         void visitForStmt(For* stmt) override;
         void visitBreakStmt(Break* stmt) override;
         void visitContinueStmt(Continue* stmt) override;
+        void visitDeferStmt(Defer* stmt) override;
         void visitCommentStmt(Comment* stmt) override;
 
         // Expr

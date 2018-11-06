@@ -12,17 +12,15 @@ namespace klong {
     public:
         using LexerCaseCallable = std::function<bool (Lexer*, Token&)>;
 
-        Lexer(SourceFile* source) : _source(source), _code(source->code()) {
+        explicit Lexer(SourceFile* source) : _source(source), _code(source->code()) {
             _sourceLocation = SourceLocation(source);
         }
 
-        Token current();
-        Token previous();
-        bool hasNext() const;
-        Token next();
+        bool hasNext() const override;
+        Token next() override;
 
-        LexerMemento saveToMemento();
-        void loadFromMemento(LexerMemento& memento);
+        LexerMemento saveToMemento() override;
+        void loadFromMemento(LexerMemento& memento) override;
 
     private:
         void updateLocation();
@@ -60,6 +58,7 @@ namespace klong {
         bool doKeyword(Token& token);
         bool breakKeyword(Token& token);
         bool continueKeyword(Token& token);
+        bool deferKeyword(Token& token);
 
         bool letKeyword(Token& token);
         bool constKeyword(Token& token);

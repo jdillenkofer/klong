@@ -23,7 +23,7 @@ namespace klong {
 
     ParserMemento Parser::saveToMemento() {
         return ParserMemento(_current, _previous, std::move(_lexer->saveToMemento()),
-                _isInsideFunction, _isInsideLoop, _errors);
+                _isInsideFunction, _isInsideLoop, _isInsideDefer, _errors);
     }
 
     void Parser::loadFromMemento(ParserMemento& memento) {
@@ -32,6 +32,7 @@ namespace klong {
         _lexer->loadFromMemento(memento._lexerMemento);
         _isInsideFunction = memento._isInsideFunction;
         _isInsideLoop = memento._isInsideLoop;
+        _isInsideDefer = memento._isInsideDefer;
         _errors = memento._errors;
     }
 
@@ -450,8 +451,19 @@ namespace klong {
 
     std::shared_ptr<Continue> Parser::continueStmt() {
         Token continueToken = previous();
-        auto semicolon = consume(TokenType::SEMICOLON, "Expect ';' after break stmt.");
+        auto semicolon = consume(TokenType::SEMICOLON, "Expect ';' after continue stmt.");
         return std::make_shared<Continue>(SourceRange { continueToken.sourceRange.start, semicolon.sourceRange.end });
+    }
+
+    std::shared_ptr<Defer> Parser::deferStmt() {
+        Token deferToken = previous();
+        auto prevIsInsideDefer = _isInsideDefer;
+        _isInsideDefer = true;
+        auto stmtToDefer = statement();
+        _isInsideDefer = prevIsInsideDefer;
+        auto semicolon = consume(TokenType::SEMICOLON, "Expect ';' after defer stmt.");
+        return std::make_shared<Defer>(
+                SourceRange { deferToken.sourceRange.start, semicolon.sourceRange.end }, stmtToDefer);
     }
 
     std::shared_ptr<Expression> Parser::expressionStmt() {
@@ -467,6 +479,9 @@ namespace klong {
             return ifStmt();
         }
         if (match(TokenType::RETURN)) {
+            if (_isInsideDefer) {
+                throw ParseException::from(previous(), "return stmt is not allowed inside defer.");
+            }
             return returnStmt();
         }
         if (match(TokenType::WHILE)) {
@@ -479,13 +494,28 @@ namespace klong {
             if (!_isInsideLoop) {
                 throw ParseException::from(previous(), "break stmt is not allowed outside of loops.");
             }
+            if (_isInsideDefer) {
+                throw ParseException::from(previous(), "break stmt is not allowed inside defer.");
+            }
             return breakStmt();
         }
         if (match(TokenType::CONTINUE)) {
             if (!_isInsideLoop) {
                 throw ParseException::from(previous(), "continue stmt is not allowed outside of loops.");
             }
+            if (_isInsideDefer) {
+                throw ParseException::from(previous(), "continue stmt is not allowed inside defer.");
+            }
             return continueStmt();
+        }
+        if (match(TokenType::DEFER)) {
+            if (!_isInsideFunction) {
+                throw ParseException::from(previous(), "defer stmt is not allowed outside of functions.");
+            }
+            if (_isInsideDefer) {
+                throw ParseException::from(previous(), "nested defer stmt are not allowed.");
+            }
+            return deferStmt();
         }
         if (match(TokenType::LEFT_CURLY_BRACE)) {
             Token leftCurlyBrace = previous();

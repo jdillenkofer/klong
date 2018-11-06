@@ -33,6 +33,7 @@ namespace klong {
         DO,
         BREAK,
         CONTINUE,
+        DEFER,
 
         // Bitshifts
         LSL,

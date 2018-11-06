@@ -53,8 +53,18 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::emitBlock(const std::vector<Stmt*>& statements) {
+        auto oldDefers = _deferStmts;
+        _deferStmts = std::vector<Stmt*>();
         for (auto& stmt : statements) {
             emitCode(stmt);
+        }
+        emitDefers();
+        _deferStmts = oldDefers;
+    }
+
+    void LLVMEmitVisitor::emitDefers() {
+        for (uint64_t i = _deferStmts.size(); i-- > 0; ) {
+            _deferStmts[i]->accept(this);
         }
     }
 
@@ -235,6 +245,8 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
+        emitDefers();
+        _deferStmts.clear();
         if (stmt->value() != nullptr) {
             emitCodeR(stmt->value());
         }
@@ -353,14 +365,20 @@ namespace klong {
 
     void LLVMEmitVisitor::visitBreakStmt(Break* stmt) {
         (void) stmt;
+        emitDefers();
         _builder.CreateBr(_breakJmpTarget);
 		_eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitContinueStmt(Continue* stmt) {
         (void) stmt;
+        emitDefers();
         _builder.CreateBr(_continueJmpTarget);
 		_eliminateDeadCodeInCurrentBlock = true;
+    }
+
+    void LLVMEmitVisitor::visitDeferStmt(Defer* stmt) {
+        _deferStmts.push_back(stmt->stmtToDefer());
     }
 
     void LLVMEmitVisitor::visitCommentStmt(Comment* stmt) {

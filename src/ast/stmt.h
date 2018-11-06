@@ -25,6 +25,7 @@ namespace klong {
         FOR,
         BREAK,
         CONTINUE,
+        DEFER,
         COMMENT
     };
     
@@ -398,6 +399,24 @@ namespace klong {
         void accept(StmtVisitor* visitor) {
             visitor->visitContinueStmt(this);
         }
+    };
+
+    class Defer : public Stmt {
+    public:
+        Defer(SourceRange sourceRange, StmtPtr stmtToDefer):
+                Stmt(StatementKind::DEFER, sourceRange), _stmtToDefer(stmtToDefer) {
+        }
+
+        void accept(StmtVisitor* visitor) {
+            visitor->visitDeferStmt(this);
+        }
+
+        Stmt* stmtToDefer() const {
+            return _stmtToDefer.get();
+        }
+
+    private:
+        StmtPtr _stmtToDefer;
     };
 
     enum class CommentType {

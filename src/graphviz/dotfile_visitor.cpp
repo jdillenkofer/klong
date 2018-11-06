@@ -192,6 +192,15 @@ namespace klong {
         appendLine(std::to_string(continueStmtId) + " [label=\"continue\"]");
     }
 
+    void DotfileVisitor::visitDeferStmt(Defer* stmt) {
+        auto deferStmtId = getStmtId(stmt);
+        appendLine(std::to_string(deferStmtId) + " [label=\"defer\"]");
+
+        stmt->stmtToDefer()->accept(this);
+        auto stmtToDeferId = getStmtId(stmt->stmtToDefer());
+        appendLine(std::to_string(deferStmtId) + " -> " + std::to_string(stmtToDeferId));
+    }
+
     void DotfileVisitor::visitCommentStmt(Comment* stmt) {
         // print Comment stuff here
         auto commentStmtId = getStmtId(stmt);
