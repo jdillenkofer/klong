@@ -255,6 +255,17 @@ namespace klong {
         return token;
     }
 
+    LexerMemento Lexer::saveToMemento() {
+        return LexerMemento(_source, _code, _sourceLocation, _currentPosition);
+    }
+
+    void Lexer::loadFromMemento(LexerMemento& memento) {
+        _source = memento._sourceFile;
+        _code = memento._code;
+        _sourceLocation = memento._sourceLocation;
+        _currentPosition = memento._currentPosition;
+    }
+
     /*
      * updateLocation should only be called, if we are committing to
      * the updatedLocation. There is no easy way to revert the location.
