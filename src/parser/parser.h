@@ -57,6 +57,7 @@ namespace klong {
         std::shared_ptr<For> forStmt();
         std::shared_ptr<Break> breakStmt();
         std::shared_ptr<Continue> continueStmt();
+        std::shared_ptr<Defer> deferStmt();
         std::shared_ptr<Expression> expressionStmt();
         StmtPtr statement();
         ExprPtr expression();
@@ -83,6 +84,7 @@ namespace klong {
         ILexer* _lexer;
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
+        bool _isInsideDefer = false;
         std::vector<ParseException> _errors;
     };
 }

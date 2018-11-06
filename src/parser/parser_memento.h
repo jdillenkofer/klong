@@ -14,9 +14,10 @@ namespace klong {
                 LexerMemento&& lexerMemento,
                 bool isInsideFunction,
                 bool isInsideLoop,
+                bool isInsideDefer,
                 std::vector<ParseException> errors):
                     _current(std::move(current)), _previous(std::move(previous)), _lexerMemento(std::move(lexerMemento)),
-                    _isInsideFunction(isInsideFunction), _isInsideLoop(isInsideLoop), _errors(std::move(errors)) {
+                    _isInsideFunction(isInsideFunction), _isInsideLoop(isInsideLoop), _isInsideDefer(isInsideDefer), _errors(std::move(errors)) {
         }
     private:
         Token _current;
@@ -24,6 +25,7 @@ namespace klong {
         LexerMemento _lexerMemento;
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
+        bool _isInsideDefer = false;
         std::vector<ParseException> _errors;
 
         friend Parser;

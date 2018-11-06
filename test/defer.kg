@@ -1,0 +1,13 @@
+pub fun main() -> i64 {
+    let i = 5;
+    defer {
+        i = 0;
+    };
+    defer {
+        i = 1;
+    };
+    defer {
+        i = 2;
+    };
+    return i;
+}

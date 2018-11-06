@@ -218,6 +218,10 @@ namespace klong {
         (void) stmt;
     }
 
+    void TypeCheckVisitor::visitDeferStmt(Defer* stmt) {
+        check(stmt->stmtToDefer());
+    }
+
     void TypeCheckVisitor::visitCommentStmt(Comment* stmt) {
         // empty on purpose
         (void) stmt;

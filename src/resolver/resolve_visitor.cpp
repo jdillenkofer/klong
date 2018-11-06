@@ -175,6 +175,10 @@ namespace klong {
         (void) stmt;
     }
 
+    void ResolveVisitor::visitDeferStmt(Defer* stmt) {
+        resolve(stmt->stmtToDefer());
+    }
+
     void ResolveVisitor::visitCommentStmt(Comment* expr) {
         // empty on purpose
         (void) expr;

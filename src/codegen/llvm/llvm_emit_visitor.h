@@ -32,6 +32,7 @@ namespace klong {
         void visitForStmt(For* stmt) override;
         void visitBreakStmt(Break* stmt) override;
         void visitContinueStmt(Continue* stmt) override;
+        void visitDeferStmt(Defer* stmt) override;
         void visitCommentStmt(Comment* stmt) override;
 
         // Expr
@@ -58,6 +59,7 @@ namespace klong {
         llvm::Value* emitCodeR(Expr* expr);
         void emitCode(Stmt *stmt);
         void emitBlock(const std::vector<Stmt*>& statements);
+        void emitDefers();
         llvm::Value* getVariableAddress(Expr* expr);
         llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
     private:
@@ -78,5 +80,8 @@ namespace klong {
         // used for dead code elimination after terminating stmt in block
 		llvm::BasicBlock* _previousBlock = nullptr;
 		bool _eliminateDeadCodeInCurrentBlock;
+
+		// used for defer
+		std::vector<Stmt*> _deferStmts;
     };
 }

@@ -17,6 +17,7 @@ namespace klong {
     class For;
     class Break;
     class Continue;
+    class Defer;
     class Comment;
 
     class StmtVisitor {
@@ -37,6 +38,7 @@ namespace klong {
         virtual void visitForStmt(For* stmt) = 0;
         virtual void visitBreakStmt(Break* stmt) = 0;
         virtual void visitContinueStmt(Continue* stmt) = 0;
+        virtual void visitDeferStmt(Defer* stmt) = 0;
         virtual void visitCommentStmt(Comment* expr) = 0;
     };
     
