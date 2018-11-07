@@ -1,5 +1,6 @@
 #pragma once
 
+#include <deque>
 #include "ast/stmt.h"
 #include "ast/visitor.h"
 
@@ -59,7 +60,8 @@ namespace klong {
         llvm::Value* emitCodeR(Expr* expr);
         void emitCode(Stmt *stmt);
         void emitBlock(const std::vector<Stmt*>& statements);
-        void emitDefers();
+        void emitLocalDefers();
+        void emitAllDefers();
         llvm::Value* getVariableAddress(Expr* expr);
         llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
     private:
@@ -82,6 +84,6 @@ namespace klong {
 		bool _eliminateDeadCodeInCurrentBlock;
 
 		// used for defer
-		std::vector<Stmt*> _deferStmts;
+		std::deque<std::vector<Stmt*>> _deferScopes;
     };
 }

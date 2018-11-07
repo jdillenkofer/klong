@@ -6,8 +6,11 @@ pub fun main() -> i64 {
     defer {
         i = 1;
     };
-    defer {
-        i = 2;
-    };
-    return i;
+    if (i == 5) {
+        defer {
+            i = 3;
+        };
+        return i;
+    }
+    return 1;
 }
