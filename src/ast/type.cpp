@@ -32,4 +32,12 @@ namespace klong {
         }
         return false;
     }
+
+    bool Type::isVoid(Type* type) {
+        if (type && type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
+            return primitiveType->isVoid();
+        }
+        return false;
+    }
 }

@@ -29,12 +29,14 @@ namespace klong {
 
     llvm::Value* LLVMEmitVisitor::emitCodeL(Expr* expr) {
         _isCodeL = true;
+        _valueOfLastExpr = nullptr;
         expr->accept(this);
         return _valueOfLastExpr;
     }
 
     llvm::Value* LLVMEmitVisitor::emitCodeR(Expr *expr) {
         _isCodeL = false;
+        _valueOfLastExpr = nullptr;
         expr->accept(this);
         return _valueOfLastExpr;
     }
@@ -53,18 +55,28 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::emitBlock(const std::vector<Stmt*>& statements) {
-        auto oldDefers = _deferStmts;
-        _deferStmts = std::vector<Stmt*>();
+        _deferScopes.emplace_back(std::vector<Stmt*>());
         for (auto& stmt : statements) {
             emitCode(stmt);
         }
-        emitDefers();
-        _deferStmts = oldDefers;
+        emitLocalDefers();
+        assert(!_deferScopes.empty());
+        _deferScopes.pop_back();
     }
 
-    void LLVMEmitVisitor::emitDefers() {
-        for (uint64_t i = _deferStmts.size(); i-- > 0; ) {
-            _deferStmts[i]->accept(this);
+    void LLVMEmitVisitor::emitLocalDefers() {
+        auto& back = _deferScopes.back();
+        for (uint64_t i = back.size(); i-- > 0; ) {
+            back[i]->accept(this);
+        }
+    }
+
+    void LLVMEmitVisitor::emitAllDefers() {
+        for (uint64_t x = _deferScopes.size(); x-- > 0; ) {
+            auto& deferScope = _deferScopes[x];
+            for (uint64_t i = deferScope.size(); i-- > 0; ) {
+                deferScope[i]->accept(this);
+            }
         }
     }
 
@@ -200,6 +212,13 @@ namespace klong {
         }
 
         emitBlock(stmt->body());
+
+        // add a return statement if functionType is void
+        // and the last block has no terminator
+        if (Type::isVoid(stmt->functionType()->returnType())
+            && !_builder.GetInsertBlock()->getTerminator()) {
+            _builder.CreateRet(nullptr);
+        }
         llvm::verifyFunction(*function);
     }
 
@@ -245,8 +264,8 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
-        emitDefers();
-        _deferStmts.clear();
+        emitAllDefers();
+        _valueOfLastExpr = nullptr;
         if (stmt->value() != nullptr) {
             emitCodeR(stmt->value());
         }
@@ -365,20 +384,20 @@ namespace klong {
 
     void LLVMEmitVisitor::visitBreakStmt(Break* stmt) {
         (void) stmt;
-        emitDefers();
+        emitLocalDefers();
         _builder.CreateBr(_breakJmpTarget);
 		_eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitContinueStmt(Continue* stmt) {
         (void) stmt;
-        emitDefers();
+        emitLocalDefers();
         _builder.CreateBr(_continueJmpTarget);
 		_eliminateDeadCodeInCurrentBlock = true;
     }
 
     void LLVMEmitVisitor::visitDeferStmt(Defer* stmt) {
-        _deferStmts.push_back(stmt->stmtToDefer());
+        _deferScopes.back().push_back(stmt->stmtToDefer());
     }
 
     void LLVMEmitVisitor::visitCommentStmt(Comment* stmt) {
