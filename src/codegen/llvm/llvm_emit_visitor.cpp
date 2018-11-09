@@ -623,7 +623,7 @@ namespace klong {
 	void LLVMEmitVisitor::visitSubscriptExpr(Subscript* expr) {
         auto isCodeL = _isCodeL;
 		// implement subscript operator
-		auto target = emitCodeL(expr->target());
+		auto target = emitCodeR(expr->target());
 		auto index = emitCodeR(expr->index());
 		auto pointerToElement = _builder.CreateGEP(target, index);
 		if (isCodeL) {
