@@ -826,71 +826,87 @@ namespace klong {
                     targetType, right);
         }
 
-        return callExpr();
+        return postfixExpr();
     }
 
-    ExprPtr Parser::finishCallExpr(ExprPtr callee) {
-        Token leftPar = previous();
-        std::vector<ExprPtr> args;
-        if (!check(TokenType::RIGHT_PAR)) {
-            do {
-                args.push_back(expression());
-            } while(match(TokenType::COMMA));
+    ExprPtr Parser::postfixExpr() {
+        ExprPtr primaryExpr = primary();
+		
+		auto memento = saveToMemento();
+		ExprPtr prevLoopExpr = primaryExpr;
+		while(true) {
+			auto loopExpr = finishPostfixExpr(prevLoopExpr);
+			if (!loopExpr) {
+				if (!prevLoopExpr) {
+					break;
+				} else {
+					return prevLoopExpr;
+				}
+			}
+			prevLoopExpr = loopExpr;
         }
-        Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after arguments.");
+		loadFromMemento(memento);
 
-        return std::make_shared<Call>(
-                SourceRange { leftPar.sourceRange.start, rightPar.sourceRange.end },
-                callee, std::move(args));
+        return primaryExpr;
     }
 
-    ExprPtr Parser::callExpr() {
-        ExprPtr expr = primary();
+	ExprPtr Parser::finishPostfixExpr(ExprPtr lhs) {
+		if (match(TokenType::LEFT_PAR)) {
+			auto callExpr = finishCallExpr(lhs);
+			return callExpr;
+		}
 
-        while(true) {
-            if (match(TokenType::LEFT_PAR)) {
-                expr = finishCallExpr(expr);
-            } else {
-                break;
-            }
-        }
+		if (match(TokenType::LEFT_SQUARED_BRACKET)) {
+			auto subscriptExpr = finishSubscriptExpr(lhs);
+			return subscriptExpr;
+		}
 
-        return expr;
-    }
+		return nullptr;
+	}
+
+	ExprPtr Parser::finishCallExpr(ExprPtr callee) {
+		Token leftPar = previous();
+		std::vector<ExprPtr> args;
+		if (!check(TokenType::RIGHT_PAR)) {
+			do {
+				args.push_back(expression());
+			} while (match(TokenType::COMMA));
+		}
+		Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after arguments.");
+
+		return std::make_shared<Call>(
+			SourceRange{ leftPar.sourceRange.start, rightPar.sourceRange.end },
+			callee, std::move(args));
+	}
+
+	ExprPtr Parser::finishSubscriptExpr(ExprPtr target)
+	{
+		Token leftPar = previous();
+		auto index = expression();
+		Token rightPar = consume(TokenType::RIGHT_SQUARED_BRACKET, "Expect ']' after subscript operator.");
+
+		return std::make_shared<Subscript>(
+			SourceRange{ leftPar.sourceRange.start, rightPar.sourceRange.end },
+			target, index);
+	}
 
     ExprPtr Parser::primary() {
-        auto literalPtr = literal();
-        if (literalPtr) {
-            return literalPtr;
-        }
+		if (match(TokenType::IDENTIFIER)) {
+			Token identifier = previous();
+			auto variableExpr = std::make_shared<Variable>(identifier.sourceRange, identifier.value);
+			return variableExpr;
+		}
 
-        auto memento = saveToMemento();
-        auto currentToken = _current;
-        auto previousToken = _previous;
-        try {
-            auto target = groupingOrIdentifier();
+		if (match(TokenType::LEFT_PAR)) {
+			Token leftPar = previous();
+			ExprPtr expr = expression();
+			Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after expression.");
+			return std::make_shared<Grouping>(
+				SourceRange{ leftPar.sourceRange.start, rightPar.sourceRange.end },
+				expr);
+		}
 
-            bool isSubscriptOp = false;
-
-            while(match(TokenType::LEFT_SQUARED_BRACKET)) {
-                ExprPtr index = expression();
-                auto rightSquaredBracket = consume(TokenType::RIGHT_SQUARED_BRACKET,
-                        "Expect ']' after index expression.");
-                target = std::make_shared<Subscript>(
-                        SourceRange{target->sourceRange().start, rightSquaredBracket.sourceRange.end}, target, index);
-                isSubscriptOp = true;
-            }
-
-            if (!isSubscriptOp) {
-                loadFromMemento(memento);
-            } else {
-                return target;
-            }
-        } catch (...) {
-            loadFromMemento(memento);
-        }
-
-        return groupingOrIdentifier();
+		return literal();
     }
 
     ExprPtr Parser::literal() {
@@ -955,25 +971,6 @@ namespace klong {
             return std::make_shared<ArrayLiteral>(
                     SourceRange { literalToken.sourceRange.start, rightSquaredBracket.sourceRange.end }, std::move(values));
         }
-        return nullptr;
-    }
-
-    ExprPtr Parser::groupingOrIdentifier() {
-        if (match(TokenType::IDENTIFIER)) {
-            Token identifier = previous();
-            auto variableExpr= std::make_shared<Variable>(identifier.sourceRange, identifier.value);
-            return variableExpr;
-        }
-
-        if (match(TokenType::LEFT_PAR)) {
-            Token leftPar = previous();
-            ExprPtr expr = expression();
-            Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after expression.");
-            return std::make_shared<Grouping>(
-                    SourceRange { leftPar.sourceRange.start, rightPar.sourceRange.end },
-                    expr);
-        }
-
-        throw ParseException::from(peek(), "Expect expression.");
+		throw ParseException(literalToken.sourceRange, "Couldn't parse literal.");
     }
 }

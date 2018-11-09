@@ -73,11 +73,12 @@ namespace klong {
         ExprPtr additionExpr();
         ExprPtr multiplicationExpr();
         ExprPtr unaryExpr();
-        ExprPtr finishCallExpr(ExprPtr callee);
-        ExprPtr callExpr();
+        ExprPtr postfixExpr();
+		ExprPtr finishPostfixExpr(ExprPtr lhs);
+		ExprPtr finishCallExpr(ExprPtr callee);
+		ExprPtr finishSubscriptExpr(ExprPtr target);
         ExprPtr primary();
         ExprPtr literal();
-        ExprPtr groupingOrIdentifier();
     private:
         Token _current;
         Token _previous;
