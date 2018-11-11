@@ -85,6 +85,6 @@ namespace klong {
         _outerType = TypeKind::CUSTOM;
         (void) type;
         _outerType = prevOuterType;
-        // assert(false);
+        assert(false);
     }
 }
