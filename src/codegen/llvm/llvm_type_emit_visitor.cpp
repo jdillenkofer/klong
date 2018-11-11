@@ -79,12 +79,12 @@ namespace klong {
         }
     }
 
-    void LLVMTypeEmitVisitor::visitSimpleType(SimpleType *type) {
+    void LLVMTypeEmitVisitor::visitCustomType(CustomType *type) {
         // TODO: how to handle the other types
         auto prevOuterType = _outerType;
-        _outerType = TypeKind::SIMPLE;
+        _outerType = TypeKind::CUSTOM;
         (void) type;
         _outerType = prevOuterType;
-        assert(false);
+        // assert(false);
     }
 }

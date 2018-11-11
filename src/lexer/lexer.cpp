@@ -101,6 +101,9 @@ namespace klong {
         {'p', std::bind(&Lexer::pubKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'e', std::bind(&Lexer::externKeyword, std::placeholders::_1, std::placeholders::_2)},
 
+		// typedefs
+		{'s', std::bind(&Lexer::structKeyword, std::placeholders::_1, std::placeholders::_2)},
+
         // function
         {'f', std::bind(&Lexer::funKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'s', std::bind(&Lexer::sizeofKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -549,6 +552,10 @@ namespace klong {
     bool Lexer::externKeyword(Token& token) {
         return matchesKeyword(token, "extern", TokenType::EXTERN);
     }
+
+	bool Lexer::structKeyword(Token& token) {
+		return matchesKeyword(token, "struct", TokenType::STRUCT);
+	}
 
     bool Lexer::funKeyword(Token& token) {
         return matchesKeyword(token, "fun", TokenType::FUN);

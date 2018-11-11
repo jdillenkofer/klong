@@ -14,6 +14,7 @@ namespace klong {
 
     enum class StatementKind {
         BLOCK,
+		CUSTOM_MEMBER,
         EXPRESSION,
         EXT_DECL,
         FUNCTION,
@@ -21,6 +22,7 @@ namespace klong {
         IF,
         RETURN,
         VAR_DECL,
+		STRUCT_DECL,
         WHILE,
         FOR,
         BREAK,
@@ -317,6 +319,66 @@ namespace klong {
         bool _isConst;
         bool _isGlobal;
     };
+
+	class CustomMember : public Stmt {
+	public:
+		CustomMember(SourceRange sourceRange, std::string name, TypePtr type) :
+			Stmt(StatementKind::CUSTOM_MEMBER, sourceRange), _name(name), _type(type) {
+		}
+
+		void accept(StmtVisitor* visitor) {
+			visitor->visitCustomMemberStmt(this);
+		}
+
+		std::string name() const {
+			return _name;
+		}
+
+		Type* type() const {
+			return _type.get();
+		}
+	private:
+		std::string _name;
+		TypePtr _type;
+	};
+
+	class StructDeclaration : public Stmt {
+	public:
+		StructDeclaration(SourceRange sourceRange,
+			std::string name,
+			std::vector<std::shared_ptr<CustomMember>>&& members,
+			bool isPublic) :
+			Stmt(StatementKind::STRUCT_DECL, sourceRange),
+			_name(std::move(name)),
+			_members(members),
+			_isPublic(isPublic) {
+		}
+
+		void accept(StmtVisitor* visitor) {
+			visitor->visitStructDeclStmt(this);
+		}
+
+		std::string name() const {
+			return _name;
+		}
+
+		std::vector<CustomMember*> members() const {
+			std::vector<CustomMember*> members;
+			for (auto& member : _members) {
+				members.push_back(member.get());
+			}
+			return members;
+		}
+
+		bool isPublic() const {
+			return _isPublic;
+		}
+
+	private:
+		std::string _name;
+		std::vector<std::shared_ptr<CustomMember>> _members;
+		bool _isPublic;
+	};
 
     class While : public Stmt {
     public:

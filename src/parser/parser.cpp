@@ -161,6 +161,10 @@ namespace klong {
                 return constDeclaration(isPublic);
             }
 
+			if (match(TokenType::STRUCT)) {
+				return structDeclaration(isPublic);
+			}
+
             if (isPublic) {
                 throw ParseException(pubToken.sourceRange, "Illegal pub Keyword.");
             }
@@ -291,6 +295,25 @@ namespace klong {
         return std::make_shared<VariableDeclaration>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
                 name.value, type, initializer, isPublic, true, !_isInsideFunction);
     }
+	
+	std::shared_ptr<StructDeclaration> Parser::structDeclaration(bool isPublic) {
+		Token structToken = previous();
+		Token name = consume(TokenType::IDENTIFIER, "Expect struct name.");
+		consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' after struct name.");
+		std::vector<std::shared_ptr<CustomMember>> members;
+		do {
+			Token literal = consume(TokenType::IDENTIFIER, "Expect struct element name.");
+			Token colon = consume(TokenType::COLON, "Expect colon after element name.");
+			auto type = typeDeclaration();
+			auto customMember = std::make_shared<CustomMember>(
+				SourceRange{ literal.sourceRange.start, type->sourceRange().end },
+				literal.value, type);
+			members.emplace_back(customMember);
+		} while (match(TokenType::COMMA));
+		Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last struct member.");
+		return std::make_shared<StructDeclaration>(SourceRange{ structToken.sourceRange.start, rightCurlyBracket.sourceRange.end },
+			name.value, std::move(members), isPublic);
+	}
 
     TypePtr Parser::typeDeclaration() {
         Token type = peek();
@@ -352,7 +375,7 @@ namespace klong {
             }
             case TokenType::IDENTIFIER:
             {
-                return std::make_shared<SimpleType>(type.sourceRange, type.value);
+                return std::make_shared<CustomType>(type.sourceRange, type.value);
             }
             default:
                 throw ParseException::from(peek(), "Expect type after ':'.");

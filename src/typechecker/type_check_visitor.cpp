@@ -187,6 +187,15 @@ namespace klong {
         }
     }
 
+
+	void TypeCheckVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
+		// TODO: IMPLEMENT THIS
+	}
+
+	void TypeCheckVisitor::visitCustomMemberStmt(CustomMember* stmt) {
+		//TODO: IMPLEMENT THIS
+	}
+
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
         check(stmt->condition());
         if (!Type::isBoolean(stmt->condition()->type())) {

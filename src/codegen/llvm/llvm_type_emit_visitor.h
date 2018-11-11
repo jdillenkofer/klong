@@ -17,7 +17,7 @@ namespace klong {
         void visitFunctionType(FunctionType* type) override;
         void visitPrimitiveType(PrimitiveType* type) override;
         void visitPointerType(PointerType* type) override;
-        void visitSimpleType(SimpleType *type) override;
+        void visitCustomType(CustomType *type) override;
     private:
         llvm::Type* _valueOfLastType = nullptr;
         TypeKind _outerType = TypeKind::PRIMITIVE;

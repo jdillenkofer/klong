@@ -50,6 +50,7 @@ namespace klong {
         std::vector<StmtPtr> blockStmt();
         std::shared_ptr<VariableDeclaration> letDeclaration(bool isPublic = false);
         std::shared_ptr<VariableDeclaration> constDeclaration(bool isPublic = false);
+		std::shared_ptr<StructDeclaration> structDeclaration(bool isPublic = false);
         TypePtr typeDeclaration();
         std::shared_ptr<If> ifStmt();
         std::shared_ptr<Return> returnStmt();

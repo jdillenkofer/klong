@@ -298,6 +298,14 @@ namespace klong {
         }
     }
 
+	void LLVMEmitVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
+		// TODO: IMPLEMENT THIS
+	}
+
+	void LLVMEmitVisitor::visitCustomMemberStmt(CustomMember* stmt) {
+
+	}
+
     void LLVMEmitVisitor::visitWhileStmt(While* stmt) {
         llvm::Function* function = _builder.GetInsertBlock()->getParent();
 

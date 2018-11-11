@@ -12,7 +12,7 @@ namespace klong {
         FUNCTION,
         PRIMITIVE,
         POINTER,
-        SIMPLE
+        CUSTOM
     };
 
     enum class PrimitiveTypeKind {
@@ -277,15 +277,15 @@ namespace klong {
         TypePtr _pointsTo;
     };
 
-    class SimpleType : public Type {
+    class CustomType : public Type {
     public:
-        SimpleType(SourceRange sourceRange, std::string name):
-            Type(TypeKind::SIMPLE, sourceRange),
+        CustomType(SourceRange sourceRange, std::string name):
+            Type(TypeKind::CUSTOM, sourceRange),
             _name(std::move(name)) {
         }
 
         void accept(TypeVisitor* visitor) {
-            visitor->visitSimpleType(this);
+            visitor->visitCustomType(this);
         }
 
         const std::string& name() const {
@@ -296,15 +296,15 @@ namespace klong {
             // TODO: rework this
             // maybe we need a symbol table here!?
             // how to support typedefs?
-            if (other->kind() == TypeKind::SIMPLE) {
-                auto otherSimpleType = dynamic_cast<const SimpleType*>(other);
-                return this->name() == otherSimpleType->name();
+            if (other->kind() == TypeKind::CUSTOM) {
+                auto otherCustomType = dynamic_cast<const CustomType*>(other);
+                return this->name() == otherCustomType->name();
             }
             return false;
         }
 
         Type* clone() const {
-            return new SimpleType(SourceRange(), this->name());
+            return new CustomType(SourceRange(), _name);
         }
 
     private:
