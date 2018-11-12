@@ -1,0 +1,43 @@
+pub fun main() -> i64 {
+    let node_size = sizeof(Node);
+    if (node_size != 16) {
+        return 1;
+    }
+
+    let node: Node;
+    node.value = 0;
+    node.next = cast<ptr<Node>>(0);
+
+    let node2 = testPassByValue(node);
+    if (node2.value != 0) {
+        return 1;
+    }
+    let node3 = testPassByPtr(&node);
+    if (node3.value != 0) {
+        return 1;
+    }
+
+    /*
+    // FIX THIS >>> CANT DIRECTLY ACCESS CALL RESULT <<<
+    if (testPassByPtr(&node).value != 0) {
+        return 1;
+    }
+    */
+    return 0;
+}
+
+fun testPassByValue(t: Node) -> Node {
+    return t;
+}
+
+fun testPassByPtr(t: ptr<Node>) -> ptr<Node> {
+    if (t.value != 0) {
+        return cast<ptr<Node>>(0);
+    }
+    return t;
+}
+
+struct Node {
+    value: i64,
+    next: ptr<Node>
+}

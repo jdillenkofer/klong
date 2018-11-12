@@ -407,10 +407,16 @@ namespace klong {
 	void TypeCheckVisitor::visitMemberAccessExpr(MemberAccess* expr) {
         check(expr->target());
         auto customType = dynamic_cast<CustomType*>(expr->target()->type());
+        auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());
+        if (pointerType) {
+            customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+        }
+
         if (!customType) {
             _result.addError(TypeCheckException(expr->sourceRange(), "MemberAccess target is not a custom type."));
             return;
         }
+
         auto declarationType = customType->resolvesTo();
         switch(declarationType->typeDeclarationKind()) {
             case TypeDeclarationKind::STRUCT: {

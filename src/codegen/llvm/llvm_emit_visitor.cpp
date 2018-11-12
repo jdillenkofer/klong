@@ -645,17 +645,23 @@ namespace klong {
 
 	void LLVMEmitVisitor::visitMemberAccessExpr(MemberAccess* expr) {
         auto isCodeL = _isCodeL;
-        llvm::Value *address = nullptr;
+
+        llvm::Value* address = nullptr;
         auto targetVal = emitCodeL(expr->target());
         {
             auto customType = dynamic_cast<CustomType *>(expr->target()->type());
+            auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());
+            if (pointerType) {
+                customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                targetVal = _builder.CreateLoad(targetVal);
+            }
+
             auto declarationType = customType->resolvesTo();
             switch (declarationType->typeDeclarationKind()) {
                 case TypeDeclarationKind::STRUCT: {
-                    auto structDecl = dynamic_cast<StructDeclaration *>(declarationType);
+                    auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
                     auto memberIndex = structDecl->findMemberIndex(expr->member()).value();
-                    address = _builder.CreateStructGEP(_typeEmitVisitor.getLLVMType(expr->target()->type()),
-                            targetVal, memberIndex);
+                    address = _builder.CreateStructGEP(targetVal, memberIndex);
                     address = _builder.CreateBitCast(address,
                             llvm::PointerType::get(_typeEmitVisitor.getLLVMType(expr->type()), 0));
                     break;

@@ -936,6 +936,10 @@ namespace klong {
 	}
 
 	ExprPtr Parser::finishMemberAccessExpr(ExprPtr target) {
+        // TODO: TEMPORARY FIX | CANT DIRECTLY ACCESS CALL RESULT
+        if (target->kind() != ExprKind::VARIABLE) {
+            throw ParseException(target->sourceRange(), "Expect member target to be a variable.");
+        }
         Token period = previous();
         auto member = consume(TokenType::IDENTIFIER, "Expect member name after member access operator.");
 
