@@ -27,6 +27,10 @@ pub fun main() -> i64 {
 }
 
 fun testPassByValue(t: Node) -> Node {
+    /*
+    // FIX THIS >>> CAN CHANGE VALUES THAT WERE PASSED BY VALUE <<<
+    t.value = 5;
+    */
     return t;
 }
 
