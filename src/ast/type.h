@@ -277,11 +277,18 @@ namespace klong {
         TypePtr _pointsTo;
     };
 
+    class TypeDeclaration;
+
     class CustomType : public Type {
     public:
         CustomType(SourceRange sourceRange, std::string name):
             Type(TypeKind::CUSTOM, sourceRange),
             _name(std::move(name)) {
+        }
+
+        CustomType(SourceRange sourceRange, std::string name, TypeDeclaration* resolvesTo):
+                Type(TypeKind::CUSTOM, sourceRange),
+                _name(std::move(name)), _resolvesTo(resolvesTo) {
         }
 
         void accept(TypeVisitor* visitor) {
@@ -290,6 +297,14 @@ namespace klong {
 
         const std::string& name() const {
             return _name;
+        }
+
+        void resolvesTo(TypeDeclaration* typeDeclaration) {
+            _resolvesTo = typeDeclaration;
+        }
+
+        TypeDeclaration* resolvesTo() {
+            return _resolvesTo;
         }
 
         bool isEqual(const Type* other) const {
@@ -304,10 +319,11 @@ namespace klong {
         }
 
         Type* clone() const {
-            return new CustomType(SourceRange(), _name);
+            return new CustomType(SourceRange(), _name, _resolvesTo);
         }
 
     private:
         std::string _name;
+        TypeDeclaration* _resolvesTo = nullptr;
     };
 }

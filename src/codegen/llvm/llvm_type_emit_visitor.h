@@ -4,6 +4,7 @@
 #include "ast/visitor.h"
 
 #include "llvm/IR/Type.h"
+#include <map>
 
 namespace klong {
     class LLVMTypeEmitVisitor : public TypeVisitor {
@@ -19,6 +20,7 @@ namespace klong {
         void visitPointerType(PointerType* type) override;
         void visitCustomType(CustomType *type) override;
     private:
+        std::map<std::string, llvm::Type*> _customTypeCache;
         llvm::Type* _valueOfLastType = nullptr;
         TypeKind _outerType = TypeKind::PRIMITIVE;
         llvm::LLVMContext& _context;

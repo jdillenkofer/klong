@@ -22,7 +22,7 @@ namespace klong {
         IF,
         RETURN,
         VAR_DECL,
-		STRUCT_DECL,
+        TYPE_DECL,
         WHILE,
         FOR,
         BREAK,
@@ -323,7 +323,9 @@ namespace klong {
 	class CustomMember : public Stmt {
 	public:
 		CustomMember(SourceRange sourceRange, std::string name, TypePtr type) :
-			Stmt(StatementKind::CUSTOM_MEMBER, sourceRange), _name(name), _type(type) {
+			Stmt(StatementKind::CUSTOM_MEMBER, sourceRange),
+			_name(std::move(name)),
+			_type(std::move(type)) {
 		}
 
 		void accept(StmtVisitor* visitor) {
@@ -342,27 +344,52 @@ namespace klong {
 		TypePtr _type;
 	};
 
-	class StructDeclaration : public Stmt {
+	enum class TypeDeclarationKind {
+	    STRUCT
+	};
+
+	class TypeDeclaration : public Stmt {
+    public:
+	    TypeDeclaration(SourceRange sourceRange, TypeDeclarationKind kind,
+	            std::string name, bool isPublic):
+            Stmt(StatementKind::TYPE_DECL, sourceRange),
+	        _name(std::move(name)),
+            _kind(kind),
+            _isPublic(isPublic) {
+	    }
+
+        TypeDeclarationKind typeDeclarationKind() const {
+	        return _kind;
+	    }
+
+        std::string name() const {
+            return _name;
+        }
+
+        bool isPublic() const {
+            return _isPublic;
+        }
+	private:
+        std::string _name;
+        TypeDeclarationKind _kind;
+        bool _isPublic;
+	};
+
+	class StructDeclaration : public TypeDeclaration {
 	public:
 		StructDeclaration(SourceRange sourceRange,
 			std::string name,
 			std::vector<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
-			Stmt(StatementKind::STRUCT_DECL, sourceRange),
-			_name(std::move(name)),
-			_members(members),
-			_isPublic(isPublic) {
+			TypeDeclaration(sourceRange, TypeDeclarationKind::STRUCT, std::move(name), isPublic),
+			_members(members) {
 		}
 
-		void accept(StmtVisitor* visitor) {
-			visitor->visitStructDeclStmt(this);
-		}
+        void accept(StmtVisitor* visitor) {
+            visitor->visitStructDeclStmt(this);
+        }
 
-		std::string name() const {
-			return _name;
-		}
-
-		std::vector<CustomMember*> members() const {
+		std::vector<CustomMember*> members() {
 			std::vector<CustomMember*> members;
 			for (auto& member : _members) {
 				members.push_back(member.get());
@@ -370,14 +397,8 @@ namespace klong {
 			return members;
 		}
 
-		bool isPublic() const {
-			return _isPublic;
-		}
-
 	private:
-		std::string _name;
 		std::vector<std::shared_ptr<CustomMember>> _members;
-		bool _isPublic;
 	};
 
     class While : public Stmt {

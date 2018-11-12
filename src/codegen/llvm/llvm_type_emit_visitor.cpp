@@ -1,9 +1,10 @@
 #include <llvm/IR/DerivedTypes.h>
+#include "ast/stmt.h"
 #include "llvm_type_emit_visitor.h"
 
 namespace klong {
 
-    llvm::Type* LLVMTypeEmitVisitor::getLLVMType(Type *type) {
+    llvm::Type* LLVMTypeEmitVisitor::getLLVMType(Type* type) {
         type->accept(this);
         return _valueOfLastType;
     }
@@ -25,7 +26,7 @@ namespace klong {
         _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
     }
 
-    void LLVMTypeEmitVisitor::visitPrimitiveType(PrimitiveType *type) {
+    void LLVMTypeEmitVisitor::visitPrimitiveType(PrimitiveType* type) {
         switch (type->type()) {
             case PrimitiveTypeKind::VOID:
             {
@@ -67,7 +68,7 @@ namespace klong {
         }
     }
 
-    void LLVMTypeEmitVisitor::visitPointerType(PointerType *type) {
+    void LLVMTypeEmitVisitor::visitPointerType(PointerType* type) {
         auto prevOuterType = _outerType;
         _outerType = TypeKind::POINTER;
         auto innerType = getLLVMType(type->pointsTo());
@@ -79,12 +80,30 @@ namespace klong {
         }
     }
 
-    void LLVMTypeEmitVisitor::visitCustomType(CustomType *type) {
-        // TODO: how to handle the other types
+    void LLVMTypeEmitVisitor::visitCustomType(CustomType* type) {
+        // TODO: how to handle non struct types
+        auto it = _customTypeCache.find(type->name());
+        if (it != _customTypeCache.end()) {
+            _valueOfLastType = (*it).second;
+            return;
+        }
         auto prevOuterType = _outerType;
         _outerType = TypeKind::CUSTOM;
-        (void) type;
+        auto structDeclaration = dynamic_cast<StructDeclaration*>(type->resolvesTo());
+        assert(structDeclaration);
+
+        if (prevOuterType == TypeKind::POINTER) {
+            _valueOfLastType = llvm::StructType::create(_context, type->name());
+            return;
+        }
+
+        std::vector<llvm::Type*> members;
+        for (auto& member : structDeclaration->members()) {
+            members.push_back(getLLVMType(member->type()));
+        }
+
+        _valueOfLastType = llvm::StructType::create(_context, members, type->name());
+        _customTypeCache[type->name()] = _valueOfLastType;
         _outerType = prevOuterType;
-        assert(false);
     }
 }

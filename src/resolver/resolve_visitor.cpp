@@ -15,10 +15,24 @@ namespace klong {
     void ResolveVisitor::resolve(Expr* expr) {
         if (expr) {
             expr->accept(this);
+            resolve(expr->type());
+        }
+    }
+
+    void ResolveVisitor::resolve(Type* type) {
+        if (type) {
+            type->accept(this);
         }
     }
 
     void ResolveVisitor::resolve(const std::vector<Stmt*>& statements) {
+        for (const auto& statement : statements) {
+            if (statement->kind() == StatementKind::TYPE_DECL) {
+                auto stmt = dynamic_cast<TypeDeclaration*>(statement);
+                declareType(stmt);
+            }
+        }
+
         for (const auto& statement : statements) {
             if (statement->kind() == StatementKind::FUNCTION) {
                 auto stmt = dynamic_cast<Function*>(statement);
@@ -52,6 +66,10 @@ namespace klong {
         _scopes.pop_back();
     }
 
+    void ResolveVisitor::declareType(TypeDeclaration* typeDeclarationStmt) {
+        _typeDeclarations.emplace_back(typeDeclarationStmt);
+    }
+
     void ResolveVisitor::declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType) {
         if (_scopes.empty()) {
             return;
@@ -78,7 +96,7 @@ namespace klong {
         for (auto& stmt : module->statements()) {
             if (stmt->kind() != StatementKind::FUNCTION 
 				&& stmt->kind() != StatementKind::VAR_DECL
-				&& stmt->kind() != StatementKind::STRUCT_DECL
+				&& stmt->kind() != StatementKind::TYPE_DECL
                 && stmt->kind() != StatementKind::EXT_DECL
                 && stmt->kind() != StatementKind::COMMENT) {
                 _result.addError(ResolveException(stmt->sourceRange(), "Illegal top level statement."));
@@ -116,7 +134,8 @@ namespace klong {
         define(stmt->name());
     }
 
-    void ResolveVisitor::resolveFunction(klong::Function *stmt, bool insideFunction) {
+    void ResolveVisitor::resolveFunction(Function *stmt, bool insideFunction) {
+        resolve(stmt->functionType());
         bool enclosingFunction = _isInsideFunction;
         _isInsideFunction = insideFunction;
         enterScope();
@@ -127,6 +146,15 @@ namespace klong {
         resolve(stmt->body());
         exitScope();
         _isInsideFunction = enclosingFunction;
+    }
+
+    TypeDeclaration* ResolveVisitor::findTypeDeclaration(klong::CustomType *type) {
+            for (auto& typeDecl : _typeDeclarations) {
+                if (type->name() == typeDecl->name()) {
+                    return typeDecl;
+                }
+            }
+            return nullptr;
     }
 
     void ResolveVisitor::visitIfStmt(If* stmt) {
@@ -143,6 +171,7 @@ namespace klong {
     }
 
     void ResolveVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
+        resolve(stmt->type());
         if (stmt->initializer()) {
             resolve(stmt->initializer());
         }
@@ -154,11 +183,13 @@ namespace klong {
     }
 
 	void ResolveVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
-		// TODO: IMPLEMENT THIS
+        for (auto& member : stmt->members()) {
+            resolve(member);
+        }
 	}
 
 	void ResolveVisitor::visitCustomMemberStmt(CustomMember* stmt) {
-		// TODO: IMPLEMENT THIS
+		resolve(stmt->type());
 	}
 
     void ResolveVisitor::visitWhileStmt(While* stmt) {
@@ -242,8 +273,7 @@ namespace klong {
     }
 
     void ResolveVisitor::visitSizeOfExpr(SizeOf* expr) {
-        // nothing to do here
-        (void) expr;
+        resolve(expr->right());
     }
 
     void ResolveVisitor::visitCastExpr(Cast* expr) {
@@ -285,6 +315,30 @@ namespace klong {
     void ResolveVisitor::visitArrayLiteral(ArrayLiteral* expr) {
         // nothing to do here
         (void) expr;
+    }
+
+    void ResolveVisitor::visitFunctionType(FunctionType* type) {
+        for (auto& param : type->paramTypes()) {
+            resolve(param);
+        }
+
+        resolve(type->returnType());
+    }
+    void ResolveVisitor::visitPrimitiveType(PrimitiveType *type) {
+        // nothing to do here
+        (void) type;
+    }
+
+    void ResolveVisitor::visitPointerType(PointerType *type) {
+        resolve(type->pointsTo());
+    }
+
+    void ResolveVisitor::visitCustomType(CustomType *type) {
+        auto typeDecl = findTypeDeclaration(type);
+        if (!typeDecl) {
+            _result.addError(ResolveException(type->sourceRange(), "Couldn't resolve typename."));
+        }
+        type->resolvesTo(typeDecl);
     }
 
     Result<ModulePtr, ResolveException> ResolveVisitor::getResult() const {

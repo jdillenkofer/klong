@@ -189,11 +189,18 @@ namespace klong {
 
 
 	void TypeCheckVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
-		// TODO: IMPLEMENT THIS
+        for (auto& member : stmt->members()) {
+            check(member);
+            auto memberTypeAsCustomType = dynamic_cast<CustomType*>(member->type());
+            if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
+                _result.addError(
+                        TypeCheckException(member->sourceRange(), "Self referential member definitions are not allowed."));
+            }
+        }
 	}
 
 	void TypeCheckVisitor::visitCustomMemberStmt(CustomMember* stmt) {
-		//TODO: IMPLEMENT THIS
+        // nothing to do here
 	}
 
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
