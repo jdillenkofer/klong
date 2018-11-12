@@ -67,7 +67,12 @@ namespace klong {
     }
 
     void ResolveVisitor::declareType(TypeDeclaration* typeDeclarationStmt) {
-        _typeDeclarations.emplace_back(typeDeclarationStmt);
+        if (_typeDeclarations.find(typeDeclarationStmt->name()) != _typeDeclarations.end()) {
+            _result.addError(
+                    ResolveException(typeDeclarationStmt->sourceRange(),
+                            "Type '" + typeDeclarationStmt->name() + "' already declared."));
+        }
+        _typeDeclarations[typeDeclarationStmt->name()] = typeDeclarationStmt;
     }
 
     void ResolveVisitor::declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType) {
@@ -149,12 +154,11 @@ namespace klong {
     }
 
     TypeDeclaration* ResolveVisitor::findTypeDeclaration(klong::CustomType *type) {
-            for (auto& typeDecl : _typeDeclarations) {
-                if (type->name() == typeDecl->name()) {
-                    return typeDecl;
-                }
-            }
-            return nullptr;
+        auto it = _typeDeclarations.find(type->name());
+        if (it != _typeDeclarations.end()) {
+            return (*it).second;
+        }
+        return nullptr;
     }
 
     void ResolveVisitor::visitIfStmt(If* stmt) {

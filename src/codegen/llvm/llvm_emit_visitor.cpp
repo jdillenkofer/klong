@@ -299,11 +299,13 @@ namespace klong {
     }
 
 	void LLVMEmitVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
-		// TODO: IMPLEMENT THIS
+		// nothing to do here
+        (void) stmt;
 	}
 
 	void LLVMEmitVisitor::visitCustomMemberStmt(CustomMember* stmt) {
-
+        // nothing to do here
+        (void) stmt;
 	}
 
     void LLVMEmitVisitor::visitWhileStmt(While* stmt) {

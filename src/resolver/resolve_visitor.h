@@ -115,7 +115,7 @@ namespace klong {
 
     private:
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
-        std::vector<TypeDeclaration*> _typeDeclarations;
+        std::map<std::string, TypeDeclaration*> _typeDeclarations;
         bool _isInsideFunction = false;
         Result<ModulePtr, ResolveException> _result;
     };
