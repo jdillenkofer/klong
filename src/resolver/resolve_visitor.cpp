@@ -47,7 +47,7 @@ namespace klong {
     }
 
     void ResolveVisitor::resolveLocal(Variable* variable) {
-        for (int64_t i = _scopes.size() - 1; i >= 0; i--) {
+        for (uint64_t i = _scopes.size(); i-- > 0;) {
             std::map<std::string, SymbolInfo> scope = _scopes[i];
             if (scope.find(variable->name()) != scope.end()) {
                 SymbolInfo symbolInfo = scope.at(variable->name());

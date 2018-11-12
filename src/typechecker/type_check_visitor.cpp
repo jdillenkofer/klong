@@ -201,6 +201,7 @@ namespace klong {
 
 	void TypeCheckVisitor::visitCustomMemberStmt(CustomMember* stmt) {
         // nothing to do here
+        (void) stmt;
 	}
 
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
