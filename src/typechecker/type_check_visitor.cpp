@@ -404,6 +404,33 @@ namespace klong {
 		expr->type(innerType);
 	}
 
+	void TypeCheckVisitor::visitMemberAccessExpr(MemberAccess* expr) {
+        check(expr->target());
+        auto customType = dynamic_cast<CustomType*>(expr->target()->type());
+        if (!customType) {
+            _result.addError(TypeCheckException(expr->sourceRange(), "MemberAccess target is not a custom type."));
+            return;
+        }
+        auto declarationType = customType->resolvesTo();
+        switch(declarationType->typeDeclarationKind()) {
+            case TypeDeclarationKind::STRUCT: {
+                auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
+                auto memberPtr = structDecl->findMember(expr->member());
+                if (!memberPtr) {
+                    _result.addError(
+                            TypeCheckException(
+                                    expr->sourceRange(),
+                                    "MemberAccess target does not have such a member element."));
+                } else {
+                    expr->type(std::shared_ptr<Type>(memberPtr->type()->clone()));
+                }
+                break;
+            }
+            default:
+                assert(false);
+        }
+    }
+
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left());
         if (!Type::isBoolean(expr->left()->type())) {

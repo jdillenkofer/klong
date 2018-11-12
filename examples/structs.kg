@@ -1,9 +1,9 @@
 pub fun main() -> i64 {
     let node: Node;
     let i = sizeof(Node);
-    // node.value = 0;
-    // node.next = cast<ptr<Node>>(0);
-    return cast<i64>(i);
+    node.value = 0;
+    node.next = cast<ptr<Node>>(0);
+    return node.value;
 }
 
 struct Node {

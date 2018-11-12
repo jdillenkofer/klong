@@ -57,6 +57,7 @@ namespace klong {
         void visitCallExpr(Call* expr) override;
         void visitGroupingExpr(Grouping* expr) override;
 		void visitSubscriptExpr(Subscript* expr) override;
+		void visitMemberAccessExpr(MemberAccess* expr) override;
         void visitLogicalExpr(Logical* expr) override;
         void visitUnaryExpr(Unary* expr) override;
         void visitSizeOfExpr(SizeOf* expr) override;

@@ -4,6 +4,7 @@
 #include "lexer/token.h"
 #include "type.h"
 
+#include <optional>
 #include <vector>
 #include <memory>
 #include <utility>
@@ -388,6 +389,24 @@ namespace klong {
         void accept(StmtVisitor* visitor) {
             visitor->visitStructDeclStmt(this);
         }
+
+        std::optional<uint32_t> findMemberIndex(const std::string& name) {
+            for (uint32_t i = 0; i < _members.size(); i++) {
+                auto& member = _members[i];
+                if (member->name() == name) {
+                    return i;
+                }
+            }
+            return {};
+        }
+
+        CustomMember* findMember(const std::string& name) {
+		    auto index = findMemberIndex(name);
+		    if (!index.has_value()) {
+                return nullptr;
+		    }
+		    return _members[index.value()].get();
+		}
 
 		std::vector<CustomMember*> members() {
 			std::vector<CustomMember*> members;

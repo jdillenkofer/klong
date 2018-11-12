@@ -184,6 +184,10 @@ namespace klong {
         if (stmt->initializer()) {
             define(stmt->name());
         }
+        if (stmt->type() && stmt->type()->kind() == TypeKind::CUSTOM) {
+            // TODO: should custom types always be resolved?
+            define(stmt->name());
+        }
     }
 
 	void ResolveVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
@@ -266,6 +270,10 @@ namespace klong {
 		resolve(expr->target());
 		resolve(expr->index());
 	}
+
+	void ResolveVisitor::visitMemberAccessExpr(MemberAccess* expr) {
+        resolve(expr->target());
+    }
 
     void ResolveVisitor::visitLogicalExpr(Logical* expr) {
         resolve(expr->left());

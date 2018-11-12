@@ -15,6 +15,7 @@ namespace klong {
         CALL,
         GROUPING,
         SUBSCRIPT,
+        MEMBER_ACCESS,
 		LITERAL,
         LOGICAL,
         UNARY,
@@ -203,7 +204,9 @@ namespace klong {
 	class Subscript : public Expr {
 	public:
 		Subscript(SourceRange sourceRange, ExprPtr target, ExprPtr index): 
-			Expr(ExprKind::SUBSCRIPT, sourceRange), _target(target), _index(index) {
+			Expr(ExprKind::SUBSCRIPT, sourceRange),
+			_target(std::move(target)),
+			_index(std::move(index)) {
 		}
 
 		void accept(ExprVisitor* visitor) {
@@ -221,6 +224,29 @@ namespace klong {
 	private:
 		ExprPtr _target;
 		ExprPtr _index;
+	};
+
+	class MemberAccess : public Expr {
+	public:
+	    MemberAccess(SourceRange sourceRange, ExprPtr target, std::string member):
+	        Expr(ExprKind::MEMBER_ACCESS, sourceRange), _target(std::move(target)), _member(std::move(member)) {
+	    }
+
+	    void accept(ExprVisitor* visitor) {
+	        visitor->visitMemberAccessExpr(this);
+	    }
+
+        Expr* target() const {
+            return _target.get();
+        }
+
+        const std::string& member() const {
+	        return _member;
+        }
+
+	private:
+	    ExprPtr _target;
+	    std::string _member;
 	};
 
     class Literal : public Expr {

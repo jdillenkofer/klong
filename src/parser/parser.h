@@ -78,6 +78,7 @@ namespace klong {
 		ExprPtr finishPostfixExpr(ExprPtr lhs);
 		ExprPtr finishCallExpr(ExprPtr callee);
 		ExprPtr finishSubscriptExpr(ExprPtr target);
+		ExprPtr finishMemberAccessExpr(ExprPtr target);
         ExprPtr primary();
         ExprPtr literal();
     private:

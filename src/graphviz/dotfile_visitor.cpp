@@ -314,6 +314,19 @@ namespace klong {
 		appendLine(std::to_string(subscriptExprId) + " -> " + std::to_string(indexExprId));
 	}
 
+	void DotfileVisitor::visitMemberAccessExpr(MemberAccess *expr) {
+        // print MemberAccess stuff here
+        auto memberAccessExprId = getExprId(expr);
+        appendLine(std::to_string(memberAccessExprId) + " [label=\"MemberAccess\\n"
+        + expr->member() + "\\n"
+        + getType(expr->type()) + "\"]");
+
+        // visit target
+        expr->target()->accept(this);
+        auto targetExprId = getExprId(expr->target());
+        appendLine(std::to_string(memberAccessExprId) + " -> " + std::to_string(targetExprId));
+    }
+
     void DotfileVisitor::visitLogicalExpr(Logical* expr) {
         // print Logical stuff here
         auto logicalExprId = getExprId(expr);

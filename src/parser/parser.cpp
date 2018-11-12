@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <exception>
+#include <algorithm>
 
 namespace klong {
     Result<ModulePtr, ParseException> Parser::parse() {
@@ -308,11 +309,22 @@ namespace klong {
 			auto customMember = std::make_shared<CustomMember>(
 				SourceRange{ literal.sourceRange.start, type->sourceRange().end },
 				literal.value, type);
+			auto it = std::find_if(members.begin(), members.end(),
+			        [&customMember](const std::shared_ptr<CustomMember>& other) {
+			    return customMember->name() == other->name();
+			});
+			if (it != members.end()) {
+			    throw ParseException(
+			            customMember->sourceRange(),
+			            "Member with name '" + customMember->name()
+			            + "' already exists in '" + name.value + "'.");
+			}
 			members.emplace_back(customMember);
 		} while (match(TokenType::COMMA));
 		Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last struct member.");
-		return std::make_shared<StructDeclaration>(SourceRange{ structToken.sourceRange.start, rightCurlyBracket.sourceRange.end },
-			name.value, std::move(members), isPublic);
+		return std::make_shared<StructDeclaration>(
+		        SourceRange{ structToken.sourceRange.start, rightCurlyBracket.sourceRange.end },
+		        name.value, std::move(members), isPublic);
 	}
 
     TypePtr Parser::typeDeclaration() {
@@ -579,6 +591,12 @@ namespace klong {
 				auto subscript = std::dynamic_pointer_cast<Subscript>(expr);
 				return std::make_shared<Assign>(SourceRange{ expr->sourceRange().start, subscript->sourceRange().end },
 					subscript, value);
+			}
+
+			if (expr->kind() == ExprKind::MEMBER_ACCESS) {
+			    auto memberAccess = std::dynamic_pointer_cast<MemberAccess>(expr);
+			    return std::make_shared<Assign>(SourceRange { expr->sourceRange().start, memberAccess->sourceRange().end },
+			            memberAccess, value);
 			}
 
             throw ParseException::from(assign, "Invalid assign target");
@@ -884,6 +902,11 @@ namespace klong {
 			return subscriptExpr;
 		}
 
+		if (match(TokenType::PERIOD)) {
+		    auto memberExpr = finishMemberAccessExpr(lhs);
+		    return memberExpr;
+		}
+
 		return nullptr;
 	}
 
@@ -902,8 +925,7 @@ namespace klong {
 			callee, std::move(args));
 	}
 
-	ExprPtr Parser::finishSubscriptExpr(ExprPtr target)
-	{
+	ExprPtr Parser::finishSubscriptExpr(ExprPtr target) {
 		Token leftPar = previous();
 		auto index = expression();
 		Token rightPar = consume(TokenType::RIGHT_SQUARED_BRACKET, "Expect ']' after subscript operator.");
@@ -912,6 +934,14 @@ namespace klong {
 			SourceRange{ leftPar.sourceRange.start, rightPar.sourceRange.end },
 			target, index);
 	}
+
+	ExprPtr Parser::finishMemberAccessExpr(ExprPtr target) {
+        Token period = previous();
+        auto member = consume(TokenType::IDENTIFIER, "Expect member name after member access operator.");
+
+        return std::make_shared<MemberAccess>(SourceRange { period.sourceRange.start, member.sourceRange.end },
+                target, member.value);
+    }
 
     ExprPtr Parser::primary() {
 		if (match(TokenType::IDENTIFIER)) {
