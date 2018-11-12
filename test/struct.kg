@@ -9,9 +9,13 @@ pub fun main() -> i64 {
     node.next = cast<ptr<Node>>(0);
 
     let node2 = testPassByValue(node);
-    if (node2.value != 0) {
+    if (node2.value != 5) {
         return 1;
     }
+    if (node.value != 0) {
+        return 1;
+    }
+
     let node3 = testPassByPtr(&node);
     if (node3.value != 0) {
         return 1;
@@ -27,10 +31,7 @@ pub fun main() -> i64 {
 }
 
 fun testPassByValue(t: Node) -> Node {
-    /*
-    // FIX THIS >>> CAN CHANGE VALUES THAT WERE PASSED BY VALUE <<<
     t.value = 5;
-    */
     return t;
 }
 
