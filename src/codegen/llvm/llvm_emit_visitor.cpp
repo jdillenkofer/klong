@@ -67,7 +67,7 @@ namespace klong {
     void LLVMEmitVisitor::emitLocalDefers() {
         auto& back = _deferScopes.back();
         for (uint64_t i = back.size(); i-- > 0; ) {
-            back[i]->accept(this);
+            emitCode(back[i]);
         }
     }
 
@@ -75,7 +75,7 @@ namespace klong {
         for (uint64_t x = _deferScopes.size(); x-- > 0; ) {
             auto& deferScope = _deferScopes[x];
             for (uint64_t i = deferScope.size(); i-- > 0; ) {
-                deferScope[i]->accept(this);
+                emitCode(deferScope[i]);
             }
         }
     }
@@ -168,7 +168,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitExpressionStmt(Expression* stmt) {
-        _valueOfLastExpr = emitCodeR(stmt->expression());
+        emitCodeR(stmt->expression());
     }
 
     void LLVMEmitVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {

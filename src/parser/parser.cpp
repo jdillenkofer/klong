@@ -496,9 +496,9 @@ namespace klong {
         _isInsideDefer = true;
         auto stmtToDefer = statement();
         _isInsideDefer = prevIsInsideDefer;
-        auto semicolon = consume(TokenType::SEMICOLON, "Expect ';' after defer stmt.");
         return std::make_shared<Defer>(
-                SourceRange { deferToken.sourceRange.start, semicolon.sourceRange.end }, stmtToDefer);
+                SourceRange { deferToken.sourceRange.start, stmtToDefer->sourceRange().end },
+                stmtToDefer);
     }
 
     std::shared_ptr<Expression> Parser::expressionStmt() {

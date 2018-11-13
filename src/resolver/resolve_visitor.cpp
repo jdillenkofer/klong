@@ -151,19 +151,22 @@ namespace klong {
         if (stmt->initializer()) {
             define(stmt->name());
         }
-        if (stmt->type() && stmt->type()->kind() == TypeKind::CUSTOM) {
+        if (stmt->type()
+        && (stmt->type()->kind() == TypeKind::CUSTOM
+        || (stmt->type()->kind() == TypeKind::POINTER
+            && dynamic_cast<PointerType*>(stmt->type())->isArray()))) {
             // TODO: should custom types always be resolved?
             define(stmt->name());
         }
     }
 
 	void ResolveVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
-        for (auto& member : stmt->members()) {
-            resolve(member);
-        }
+        // nothing to do here
+        (void) stmt;
 	}
 
 	void ResolveVisitor::visitCustomMemberStmt(CustomMember* stmt) {
+        // nothing to do here
         (void) stmt;
 	}
 

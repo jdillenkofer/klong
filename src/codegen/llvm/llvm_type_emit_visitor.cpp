@@ -85,14 +85,19 @@ namespace klong {
             _valueOfLastType = (*it).second;
             return;
         }
-        auto prevOuterType = _outerTypes.back();
+
         _outerTypes.push_back(TypeKind::CUSTOM);
         auto structDeclaration = dynamic_cast<StructDeclaration*>(type->resolvesTo());
         assert(structDeclaration);
 
-        if (prevOuterType == TypeKind::POINTER && type->resolvesTo()->isSelfReferential()) {
-            _valueOfLastType = llvm::StructType::create(_context, type->name());
-            return;
+        if (_outerTypes.size() > 1u) {
+            auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
+            if (previousOuterType == TypeKind::POINTER
+                && type->resolvesTo()->isSelfReferential()) {
+                // this emits opaque struct types
+                _valueOfLastType = llvm::StructType::create(_context, type->name());
+                return;
+            }
         }
 
         std::vector<llvm::Type*> members;

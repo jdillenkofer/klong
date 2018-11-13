@@ -196,8 +196,8 @@ namespace klong {
             }
 
             stmt->type(clonedInitType);
-            resolveType(stmt->type());
         } else {
+            resolveType(stmt->type());
             auto stmtAsPointerType = dynamic_cast<PointerType*>(stmt->type());
             if (stmtAsPointerType && stmtAsPointerType->isArray()
                 && stmt->initializer() && stmt->initializer()->kind() != ExprKind::LITERAL) {
@@ -547,6 +547,12 @@ namespace klong {
 
     void TypeCheckVisitor::visitCastExpr(Cast* expr) {
         check(expr->right());
+        auto sourceType = expr->right()->type();
+        if (Type::isVoid(sourceType)) {
+            _result.addError(
+                    TypeCheckException(sourceType->sourceRange(),
+                            "Can not cast from void type."));
+        }
         auto targetType = std::shared_ptr<Type>(expr->targetType()->clone());
         if (expr->targetType()->kind() == TypeKind::FUNCTION) {
             _result.addError(
