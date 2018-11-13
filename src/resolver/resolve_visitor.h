@@ -42,7 +42,7 @@ namespace klong {
         bool initialized = false;
     };
 
-    class ResolveVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
+    class ResolveVisitor : public StmtVisitor, public ExprVisitor {
     public:
         ResolveVisitor() = default;
 
@@ -87,25 +87,16 @@ namespace klong {
         void visitCharacterLiteral(CharacterLiteral* expr) override;
         void visitArrayLiteral(ArrayLiteral* expr) override;
 
-        // Types
-        void visitFunctionType(FunctionType* type) override;
-        void visitPrimitiveType(PrimitiveType *type) override;
-        void visitPointerType(PointerType *type) override;
-        void visitCustomType(CustomType *type) override;
-
         Result<ModulePtr, ResolveException> getResult() const;
 
     private:
         void resolve(Stmt* stmt);
         void resolve(Expr* expr);
-        void resolve(Type* type);
         void resolve(const std::vector<Stmt*>& statements);
 
         void resolveLocal(Variable* variable);
 
         void resolveFunction(Function* stmt, bool insideFunction);
-
-        TypeDeclaration* findTypeDeclaration(CustomType* type);
 
         void enterScope();
         void exitScope();
@@ -116,7 +107,6 @@ namespace klong {
 
     private:
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
-        std::map<std::string, TypeDeclaration*> _typeDeclarations;
         bool _isInsideFunction = false;
         Result<ModulePtr, ResolveException> _result;
     };

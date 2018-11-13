@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include "common/result.h"
 #include "ast/visitor.h"
 #include "ast/module.h"
@@ -26,7 +27,7 @@ namespace klong {
         std::string _message;
     };
 
-    class TypeCheckVisitor : public StmtVisitor, public ExprVisitor {
+    class TypeCheckVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
         TypeCheckVisitor() = default;
 
@@ -71,17 +72,29 @@ namespace klong {
         void visitCharacterLiteral(CharacterLiteral* expr) override;
         void visitArrayLiteral(ArrayLiteral* expr) override;
 
+        // Types
+        void visitFunctionType(FunctionType* type);
+        void visitPrimitiveType(PrimitiveType* type);
+        void visitPointerType(PointerType* type);
+        void visitCustomType(CustomType *type);
+
         Result<ModulePtr, TypeCheckException> getResult() const;
 
     private:
         void check(const std::vector<Stmt*>& statements);
         void check(Stmt* stmt);
         void check(Expr* expr);
+
+        void resolveType(Type* type);
+        void declareType(TypeDeclaration* typeDeclarationStmt);
+        TypeDeclaration* findTypeDeclaration(CustomType* type);
+
         bool getAndResetReturnsValue();
         TypePtr applyIntegerPromotion(Type* type);
         TypePtr applyArithmeticPromotion(Type* left, Type* right);
     private:
         Function* currentFunction = nullptr;
+        std::map<std::string, TypeDeclaration*> _typeDeclarations;
         Result<ModulePtr, TypeCheckException> _result;
         bool _returnsValue = false;
         std::vector<TypePtr> _arithmeticConversionStack = {

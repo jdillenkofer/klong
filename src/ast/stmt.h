@@ -64,7 +64,7 @@ namespace klong {
             _statements(statements) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitBlockStmt(this);
         }
 
@@ -87,7 +87,7 @@ namespace klong {
             _expression(std::move(expression)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitExpressionStmt(this);
         }
 
@@ -107,7 +107,7 @@ namespace klong {
             _type(std::move(type)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitExtDeclStmt(this);
         }
 
@@ -129,10 +129,10 @@ namespace klong {
         Parameter(SourceRange sourceRange, std::string name, TypePtr type):
             Stmt(StatementKind::PARAMETER, sourceRange),
             _name(std::move(name)),
-            _type(type) {
+            _type(std::move(type)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitParameterStmt(this);
         }
 
@@ -163,7 +163,7 @@ namespace klong {
             _isPublic(isPublic) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitFunctionStmt(this);
         }
 
@@ -213,7 +213,7 @@ namespace klong {
 			_isMergeUnreachable(false) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitIfStmt(this);
         }
 
@@ -250,7 +250,7 @@ namespace klong {
             Stmt(StatementKind::RETURN, sourceRange), _value(std::move(value)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitReturnStmt(this);
         }
 
@@ -280,7 +280,7 @@ namespace klong {
                 _isGlobal(isGlobal) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitVarDeclStmt(this);
         }
 
@@ -329,7 +329,7 @@ namespace klong {
 			_type(std::move(type)) {
 		}
 
-		void accept(StmtVisitor* visitor) {
+		void accept(StmtVisitor* visitor) override {
 			visitor->visitCustomMemberStmt(this);
 		}
 
@@ -363,6 +363,8 @@ namespace klong {
 	        return _kind;
 	    }
 
+	    virtual bool isSelfReferential() const = 0;
+
         std::string name() const {
             return _name;
         }
@@ -384,10 +386,30 @@ namespace klong {
 			bool isPublic) :
 			TypeDeclaration(sourceRange, TypeDeclarationKind::STRUCT, std::move(name), isPublic),
 			_members(members) {
+
+		    // check if this type is self referential
+            for (auto& member : _members) {
+                auto pointerType = dynamic_cast<PointerType*>(member->type());
+                _isSelfReferential = false;
+                while (pointerType) {
+                    if (pointerType->pointsTo()->kind() == TypeKind::CUSTOM) {
+                        auto customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                        if (customType && this->name() == customType->name()) {
+                            _isSelfReferential = true;
+                            break;
+                        }
+                    }
+                    pointerType = dynamic_cast<PointerType*>(pointerType->pointsTo());
+                }
+            }
 		}
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitStructDeclStmt(this);
+        }
+
+        bool isSelfReferential() const override {
+		    return _isSelfReferential;
         }
 
         std::optional<uint32_t> findMemberIndex(const std::string& name) {
@@ -418,6 +440,7 @@ namespace klong {
 
 	private:
 		std::vector<std::shared_ptr<CustomMember>> _members;
+        bool _isSelfReferential = false;
 	};
 
     class While : public Stmt {
@@ -427,7 +450,7 @@ namespace klong {
             _condition(std::move(condition)), _body(std::move(body)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitWhileStmt(this);
         }
 
@@ -454,7 +477,7 @@ namespace klong {
             _body(std::move(body)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitForStmt(this);
         }
 
@@ -483,22 +506,22 @@ namespace klong {
 
     class Break : public Stmt {
     public:
-        Break(SourceRange sourceRange):
+        explicit Break(SourceRange sourceRange):
                 Stmt(StatementKind::BREAK, sourceRange) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitBreakStmt(this);
         }
     };
 
     class Continue : public Stmt {
     public:
-        Continue(SourceRange sourceRange):
+        explicit Continue(SourceRange sourceRange):
             Stmt(StatementKind::CONTINUE, sourceRange) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitContinueStmt(this);
         }
     };
@@ -506,10 +529,11 @@ namespace klong {
     class Defer : public Stmt {
     public:
         Defer(SourceRange sourceRange, StmtPtr stmtToDefer):
-                Stmt(StatementKind::DEFER, sourceRange), _stmtToDefer(stmtToDefer) {
+                Stmt(StatementKind::DEFER, sourceRange),
+                _stmtToDefer(std::move(stmtToDefer)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitDeferStmt(this);
         }
 
@@ -528,14 +552,18 @@ namespace klong {
 
     class Comment : public Stmt {
     public:
-        Comment(SourceRange sourceRange, std::string text, CommentType type):
+        Comment(SourceRange sourceRange, std::string text, CommentType commentType):
             Stmt(StatementKind::COMMENT, sourceRange),
             _text(std::move(text)),
-            _type(type){
+            _commentType(commentType){
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitCommentStmt(this);
+        }
+
+        CommentType commentType() const {
+            return _commentType;
         }
 
         const std::string& text() const {
@@ -544,6 +572,6 @@ namespace klong {
 
     private:
         std::string _text;
-        CommentType _type;
+        CommentType _commentType;
     };
 }

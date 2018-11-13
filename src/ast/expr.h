@@ -79,7 +79,7 @@ namespace klong {
                 _targetExpr(std::move(target)), _value(std::move(value)) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitAssignExpr(this);
         }
 
@@ -132,7 +132,7 @@ namespace klong {
             _left(std::move(left)), _op(op), _right(std::move(right)) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitBinaryExpr(this);
         }
 
@@ -161,7 +161,7 @@ namespace klong {
             _callee(std::move(callee)), _args(args) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitCallExpr(this);
         }
 
@@ -189,7 +189,7 @@ namespace klong {
             _expr(std::move(expr)) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitGroupingExpr(this);
         }
 
@@ -209,7 +209,7 @@ namespace klong {
 			_index(std::move(index)) {
 		}
 
-		void accept(ExprVisitor* visitor) {
+		void accept(ExprVisitor* visitor) override {
 			visitor->visitSubscriptExpr(this);
 		}
 
@@ -232,7 +232,7 @@ namespace klong {
 	        Expr(ExprKind::MEMBER_ACCESS, sourceRange), _target(std::move(target)), _member(std::move(member)) {
 	    }
 
-	    void accept(ExprVisitor* visitor) {
+	    void accept(ExprVisitor* visitor) override {
 	        visitor->visitMemberAccessExpr(this);
 	    }
 
@@ -318,7 +318,7 @@ namespace klong {
             return _value.u;
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitNumberLiteral(this);
         };
     private:
@@ -338,7 +338,7 @@ namespace klong {
                     _value(value) {
         }
 
-        BoolLiteral(bool value):
+        explicit BoolLiteral(bool value):
             Literal(SourceRange(),
                     std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL)),
                     _value(value) {
@@ -348,7 +348,7 @@ namespace klong {
             return _value;
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitBoolLiteral(this);
         };
     private:
@@ -367,7 +367,7 @@ namespace klong {
             return _value;
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitStringLiteral(this);
         };
     private:
@@ -386,7 +386,7 @@ namespace klong {
             return _value;
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitCharacterLiteral(this);
         };
     private:
@@ -408,7 +408,7 @@ namespace klong {
             return values;
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitArrayLiteral(this);
         }
 
@@ -428,7 +428,7 @@ namespace klong {
             _left(std::move(left)), _op(op), _right(std::move(right)) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitLogicalExpr(this);
         }
 
@@ -464,7 +464,7 @@ namespace klong {
             _op(op), _right(std::move(right)) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitUnaryExpr(this);
         }
 
@@ -488,7 +488,7 @@ namespace klong {
         _right(std::move(right)) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitSizeOfExpr(this);
         }
 
@@ -503,12 +503,12 @@ namespace klong {
     class Cast : public Expr {
     public:
         Cast(SourceRange sourceRange, TypePtr targetType, ExprPtr right):
-        Expr(ExprKind::CAST, sourceRange),
-        _targetType(std::move(targetType)),
-        _right(std::move(right)){
+            Expr(ExprKind::CAST, sourceRange),
+            _targetType(std::move(targetType)),
+            _right(std::move(right)){
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitCastExpr(this);
         }
 
@@ -534,7 +534,7 @@ namespace klong {
             _name(std::move(name)) {
         }
 
-        void accept(ExprVisitor* visitor) {
+        void accept(ExprVisitor* visitor) override {
             visitor->visitVariableExpr(this);
         }
 

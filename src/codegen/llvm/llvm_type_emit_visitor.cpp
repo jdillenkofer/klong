@@ -13,15 +13,14 @@ namespace klong {
 
         std::vector<llvm::Type*> paramTypes;
 
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::FUNCTION;
+        _outerTypes.push_back(TypeKind::FUNCTION);
 
         for (auto& paramType : type->paramTypes()) {
             paramTypes.push_back(getLLVMType(paramType));
         }
         llvm::Type* returnType = getLLVMType(type->returnType());
 
-        _outerType = prevOuterType;
+        _outerTypes.pop_back();
 
         _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
     }
@@ -30,7 +29,7 @@ namespace klong {
         switch (type->type()) {
             case PrimitiveTypeKind::VOID:
             {
-                if (_outerType == TypeKind::POINTER) {
+                if (!_outerTypes.empty() && _outerTypes.back() == TypeKind::POINTER) {
                     _valueOfLastType = llvm::Type::getInt8Ty(_context);
                     break;
                 }
@@ -69,10 +68,9 @@ namespace klong {
     }
 
     void LLVMTypeEmitVisitor::visitPointerType(PointerType* type) {
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::POINTER;
+        _outerTypes.push_back(TypeKind::POINTER);
         auto innerType = getLLVMType(type->pointsTo());
-        _outerType = prevOuterType;
+        _outerTypes.pop_back();
         if (type->isArray()) {
             _valueOfLastType = llvm::ArrayType::get(innerType, type->size());
         } else {
@@ -87,12 +85,12 @@ namespace klong {
             _valueOfLastType = (*it).second;
             return;
         }
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::CUSTOM;
+        auto prevOuterType = _outerTypes.back();
+        _outerTypes.push_back(TypeKind::CUSTOM);
         auto structDeclaration = dynamic_cast<StructDeclaration*>(type->resolvesTo());
         assert(structDeclaration);
 
-        if (prevOuterType == TypeKind::POINTER) {
+        if (prevOuterType == TypeKind::POINTER && type->resolvesTo()->isSelfReferential()) {
             _valueOfLastType = llvm::StructType::create(_context, type->name());
             return;
         }
@@ -104,6 +102,6 @@ namespace klong {
 
         _valueOfLastType = llvm::StructType::create(_context, members, type->name());
         _customTypeCache[type->name()] = _valueOfLastType;
-        _outerType = prevOuterType;
+        _outerTypes.pop_back();
     }
 }
