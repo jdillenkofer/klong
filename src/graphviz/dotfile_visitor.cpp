@@ -137,6 +137,25 @@ namespace klong {
             appendLine(std::to_string(varDeclStmtId) + " -> " + std::to_string(initializerExprId));
         }
     }
+	
+	void DotfileVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
+		// print StructDeclaration stuff here
+		auto structDeclStmtId = getStmtId(stmt);
+		appendLine(std::to_string(structDeclStmtId) + " [label=\"StructDeclaration\\n" + stmt->name() + "\\n"
+			+ "isPublic: " + to_string(stmt->isPublic()) + "\"]");
+
+		for (auto& member : stmt->members()) {
+			member->accept(this);
+			auto memberId = getStmtId(member);
+			appendLine(std::to_string(structDeclStmtId) + " -> " + std::to_string(memberId));
+		}
+	}
+
+	void DotfileVisitor::visitCustomMemberStmt(CustomMember* stmt) {
+		auto memberStmtId = getStmtId(stmt);
+		appendLine(std::to_string(memberStmtId) + " [label=\"CustomMember\\n" + stmt->name() + "\\n"
+			+ "Type: " + getType(stmt->type()) + "\"]");
+	}
 
     void DotfileVisitor::visitWhileStmt(While* stmt) {
         // print While stuff here
@@ -294,6 +313,19 @@ namespace klong {
 		auto indexExprId = getExprId(expr->index());
 		appendLine(std::to_string(subscriptExprId) + " -> " + std::to_string(indexExprId));
 	}
+
+	void DotfileVisitor::visitMemberAccessExpr(MemberAccess *expr) {
+        // print MemberAccess stuff here
+        auto memberAccessExprId = getExprId(expr);
+        appendLine(std::to_string(memberAccessExprId) + " [label=\"MemberAccess\\n"
+        + expr->member() + "\\n"
+        + getType(expr->type()) + "\"]");
+
+        // visit target
+        expr->target()->accept(this);
+        auto targetExprId = getExprId(expr->target());
+        appendLine(std::to_string(memberAccessExprId) + " -> " + std::to_string(targetExprId));
+    }
 
     void DotfileVisitor::visitLogicalExpr(Logical* expr) {
         // print Logical stuff here
@@ -486,7 +518,7 @@ namespace klong {
         _typeOfLastExpr = str;
     }
 
-    void DotfileVisitor::visitSimpleType(SimpleType *type) {
+    void DotfileVisitor::visitCustomType(CustomType *type) {
         // TODO: implement this
         _typeOfLastExpr = type->name();
     }

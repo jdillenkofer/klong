@@ -19,6 +19,9 @@ namespace klong {
         PUB,
         EXTERN,
 
+		// Typedefs
+		STRUCT,
+
         // Functions
         FUN,
         SIZEOF,

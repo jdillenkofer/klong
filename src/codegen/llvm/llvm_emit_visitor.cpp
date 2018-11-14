@@ -67,7 +67,7 @@ namespace klong {
     void LLVMEmitVisitor::emitLocalDefers() {
         auto& back = _deferScopes.back();
         for (uint64_t i = back.size(); i-- > 0; ) {
-            back[i]->accept(this);
+            emitCode(back[i]);
         }
     }
 
@@ -75,7 +75,7 @@ namespace klong {
         for (uint64_t x = _deferScopes.size(); x-- > 0; ) {
             auto& deferScope = _deferScopes[x];
             for (uint64_t i = deferScope.size(); i-- > 0; ) {
-                deferScope[i]->accept(this);
+                emitCode(deferScope[i]);
             }
         }
     }
@@ -168,7 +168,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitExpressionStmt(Expression* stmt) {
-        _valueOfLastExpr = emitCodeR(stmt->expression());
+        emitCodeR(stmt->expression());
     }
 
     void LLVMEmitVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
@@ -297,6 +297,16 @@ namespace klong {
             }
         }
     }
+
+	void LLVMEmitVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
+		// nothing to do here
+        (void) stmt;
+	}
+
+	void LLVMEmitVisitor::visitCustomMemberStmt(CustomMember* stmt) {
+        // nothing to do here
+        (void) stmt;
+	}
 
     void LLVMEmitVisitor::visitWhileStmt(While* stmt) {
         llvm::Function* function = _builder.GetInsertBlock()->getParent();
@@ -632,6 +642,41 @@ namespace klong {
 			_valueOfLastExpr = _builder.CreateLoad(pointerToElement);
 		}
 	}
+
+	void LLVMEmitVisitor::visitMemberAccessExpr(MemberAccess* expr) {
+        auto isCodeL = _isCodeL;
+
+        llvm::Value* address = nullptr;
+        auto targetVal = emitCodeL(expr->target());
+        {
+            auto customType = dynamic_cast<CustomType *>(expr->target()->type());
+            auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());
+            if (pointerType) {
+                customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                targetVal = _builder.CreateLoad(targetVal);
+            }
+
+            auto declarationType = customType->resolvesTo();
+            switch (declarationType->typeDeclarationKind()) {
+                case TypeDeclarationKind::STRUCT: {
+                    auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
+                    auto memberIndex = structDecl->findMemberIndex(expr->member()).value();
+                    address = _builder.CreateStructGEP(targetVal, memberIndex);
+                    address = _builder.CreateBitCast(address,
+                            llvm::PointerType::get(_typeEmitVisitor.getLLVMType(expr->type()), 0));
+                    break;
+                }
+                default:
+                    assert(false);
+            }
+        }
+
+        if (isCodeL) {
+            _valueOfLastExpr = address;
+        } else {
+            _valueOfLastExpr = _builder.CreateLoad(address);
+        }
+    }
 
     void LLVMEmitVisitor::visitLogicalExpr(Logical* expr) {
         auto left = emitCodeR(expr->left());

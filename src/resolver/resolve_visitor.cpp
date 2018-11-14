@@ -33,7 +33,7 @@ namespace klong {
     }
 
     void ResolveVisitor::resolveLocal(Variable* variable) {
-        for (int64_t i = _scopes.size() - 1; i >= 0; i--) {
+        for (uint64_t i = _scopes.size(); i-- > 0;) {
             std::map<std::string, SymbolInfo> scope = _scopes[i];
             if (scope.find(variable->name()) != scope.end()) {
                 SymbolInfo symbolInfo = scope.at(variable->name());
@@ -76,7 +76,9 @@ namespace klong {
     // Module
     void ResolveVisitor::visitModule(Module* module) {
         for (auto& stmt : module->statements()) {
-            if (stmt->kind() != StatementKind::FUNCTION && stmt->kind() != StatementKind::VAR_DECL
+            if (stmt->kind() != StatementKind::FUNCTION 
+				&& stmt->kind() != StatementKind::VAR_DECL
+				&& stmt->kind() != StatementKind::TYPE_DECL
                 && stmt->kind() != StatementKind::EXT_DECL
                 && stmt->kind() != StatementKind::COMMENT) {
                 _result.addError(ResolveException(stmt->sourceRange(), "Illegal top level statement."));
@@ -114,7 +116,7 @@ namespace klong {
         define(stmt->name());
     }
 
-    void ResolveVisitor::resolveFunction(klong::Function *stmt, bool insideFunction) {
+    void ResolveVisitor::resolveFunction(Function *stmt, bool insideFunction) {
         bool enclosingFunction = _isInsideFunction;
         _isInsideFunction = insideFunction;
         enterScope();
@@ -149,7 +151,24 @@ namespace klong {
         if (stmt->initializer()) {
             define(stmt->name());
         }
+        if (stmt->type()
+        && (stmt->type()->kind() == TypeKind::CUSTOM
+        || (stmt->type()->kind() == TypeKind::POINTER
+            && dynamic_cast<PointerType*>(stmt->type())->isArray()))) {
+            // TODO: should custom types always be resolved?
+            define(stmt->name());
+        }
     }
+
+	void ResolveVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
+        // nothing to do here
+        (void) stmt;
+	}
+
+	void ResolveVisitor::visitCustomMemberStmt(CustomMember* stmt) {
+        // nothing to do here
+        (void) stmt;
+	}
 
     void ResolveVisitor::visitWhileStmt(While* stmt) {
         resolve(stmt->condition());
@@ -222,6 +241,10 @@ namespace klong {
 		resolve(expr->index());
 	}
 
+	void ResolveVisitor::visitMemberAccessExpr(MemberAccess* expr) {
+        resolve(expr->target());
+    }
+
     void ResolveVisitor::visitLogicalExpr(Logical* expr) {
         resolve(expr->left());
         resolve(expr->right());
@@ -232,7 +255,6 @@ namespace klong {
     }
 
     void ResolveVisitor::visitSizeOfExpr(SizeOf* expr) {
-        // nothing to do here
         (void) expr;
     }
 

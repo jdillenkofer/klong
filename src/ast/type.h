@@ -6,13 +6,14 @@
 
 #include <vector>
 #include <memory>
+#include <cassert>
 
 namespace klong {
     enum class TypeKind {
         FUNCTION,
         PRIMITIVE,
         POINTER,
-        SIMPLE
+        CUSTOM
     };
 
     enum class PrimitiveTypeKind {
@@ -82,7 +83,7 @@ namespace klong {
             }
         }
 
-        void accept(TypeVisitor* visitor) {
+        void accept(TypeVisitor* visitor) override {
             visitor->visitFunctionType(this);
         }
 
@@ -98,7 +99,7 @@ namespace klong {
             return _returnType.get();
         }
 
-        bool isEqual(const Type* other) const {
+        bool isEqual(const Type* other) const override {
             if (other->kind() == TypeKind::FUNCTION) {
                 auto otherFunctionType = dynamic_cast<const FunctionType*>(other);
                 if (this->_paramTypes.size() != otherFunctionType->_paramTypes.size()) {
@@ -138,7 +139,7 @@ namespace klong {
 
     class PrimitiveType : public Type {
     public:
-        PrimitiveType(PrimitiveTypeKind type):
+        explicit PrimitiveType(PrimitiveTypeKind type):
             Type(TypeKind::PRIMITIVE, SourceRange()), _type(type) {
         }
 
@@ -146,7 +147,7 @@ namespace klong {
             Type(TypeKind::PRIMITIVE, sourceRange), _type(type) {
         }
 
-        void accept(TypeVisitor* visitor) {
+        void accept(TypeVisitor* visitor) override {
             visitor->visitPrimitiveType(this);
         }
 
@@ -154,7 +155,7 @@ namespace klong {
             return _type;
         }
 
-        bool isEqual(const Type* other) const {
+        bool isEqual(const Type* other) const override {
             if (other && other->kind() == TypeKind::PRIMITIVE) {
                 auto otherPrimitiveType = dynamic_cast<const PrimitiveType*>(other);
                 return this->type() == otherPrimitiveType->type();
@@ -226,12 +227,12 @@ namespace klong {
                 Type(TypeKind::POINTER, sourceRange), _pointsTo(std::move(type)) {
         }
 
-        PointerType(TypePtr type):
+        explicit PointerType(TypePtr type):
             Type(TypeKind::POINTER, SourceRange()), _pointsTo(std::move(type)) {
 
         }
 
-        void accept(TypeVisitor* visitor) {
+        void accept(TypeVisitor* visitor) override {
             visitor->visitPointerType(this);
         }
 
@@ -277,37 +278,53 @@ namespace klong {
         TypePtr _pointsTo;
     };
 
-    class SimpleType : public Type {
+    class TypeDeclaration;
+
+    class CustomType : public Type {
     public:
-        SimpleType(SourceRange sourceRange, std::string name):
-            Type(TypeKind::SIMPLE, sourceRange),
+        CustomType(SourceRange sourceRange, std::string name):
+            Type(TypeKind::CUSTOM, sourceRange),
             _name(std::move(name)) {
         }
 
-        void accept(TypeVisitor* visitor) {
-            visitor->visitSimpleType(this);
+        CustomType(SourceRange sourceRange, std::string name, TypeDeclaration* resolvesTo):
+                Type(TypeKind::CUSTOM, sourceRange),
+                _name(std::move(name)), _resolvesTo(resolvesTo) {
+        }
+
+        void accept(TypeVisitor* visitor) override {
+            visitor->visitCustomType(this);
         }
 
         const std::string& name() const {
             return _name;
         }
 
-        bool isEqual(const Type* other) const {
+        void resolvesTo(TypeDeclaration* typeDeclaration) {
+            _resolvesTo = typeDeclaration;
+        }
+
+        TypeDeclaration* resolvesTo() {
+            return _resolvesTo;
+        }
+
+        bool isEqual(const Type* other) const override {
             // TODO: rework this
             // maybe we need a symbol table here!?
             // how to support typedefs?
-            if (other->kind() == TypeKind::SIMPLE) {
-                auto otherSimpleType = dynamic_cast<const SimpleType*>(other);
-                return this->name() == otherSimpleType->name();
+            if (other->kind() == TypeKind::CUSTOM) {
+                auto otherCustomType = dynamic_cast<const CustomType*>(other);
+                return this->name() == otherCustomType->name();
             }
             return false;
         }
 
         Type* clone() const {
-            return new SimpleType(SourceRange(), this->name());
+            return new CustomType(SourceRange(), _name, _resolvesTo);
         }
 
     private:
         std::string _name;
+        TypeDeclaration* _resolvesTo = nullptr;
     };
 }

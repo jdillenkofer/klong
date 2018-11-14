@@ -4,6 +4,7 @@
 #include "lexer/token.h"
 #include "type.h"
 
+#include <optional>
 #include <vector>
 #include <memory>
 #include <utility>
@@ -14,6 +15,7 @@ namespace klong {
 
     enum class StatementKind {
         BLOCK,
+		CUSTOM_MEMBER,
         EXPRESSION,
         EXT_DECL,
         FUNCTION,
@@ -21,6 +23,7 @@ namespace klong {
         IF,
         RETURN,
         VAR_DECL,
+        TYPE_DECL,
         WHILE,
         FOR,
         BREAK,
@@ -61,7 +64,7 @@ namespace klong {
             _statements(statements) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitBlockStmt(this);
         }
 
@@ -84,7 +87,7 @@ namespace klong {
             _expression(std::move(expression)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitExpressionStmt(this);
         }
 
@@ -104,7 +107,7 @@ namespace klong {
             _type(std::move(type)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitExtDeclStmt(this);
         }
 
@@ -126,10 +129,10 @@ namespace klong {
         Parameter(SourceRange sourceRange, std::string name, TypePtr type):
             Stmt(StatementKind::PARAMETER, sourceRange),
             _name(std::move(name)),
-            _type(type) {
+            _type(std::move(type)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitParameterStmt(this);
         }
 
@@ -160,7 +163,7 @@ namespace klong {
             _isPublic(isPublic) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitFunctionStmt(this);
         }
 
@@ -210,7 +213,7 @@ namespace klong {
 			_isMergeUnreachable(false) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitIfStmt(this);
         }
 
@@ -247,7 +250,7 @@ namespace klong {
             Stmt(StatementKind::RETURN, sourceRange), _value(std::move(value)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitReturnStmt(this);
         }
 
@@ -277,7 +280,7 @@ namespace klong {
                 _isGlobal(isGlobal) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitVarDeclStmt(this);
         }
 
@@ -318,6 +321,128 @@ namespace klong {
         bool _isGlobal;
     };
 
+	class CustomMember : public Stmt {
+	public:
+		CustomMember(SourceRange sourceRange, std::string name, TypePtr type) :
+			Stmt(StatementKind::CUSTOM_MEMBER, sourceRange),
+			_name(std::move(name)),
+			_type(std::move(type)) {
+		}
+
+		void accept(StmtVisitor* visitor) override {
+			visitor->visitCustomMemberStmt(this);
+		}
+
+		std::string name() const {
+			return _name;
+		}
+
+		Type* type() const {
+			return _type.get();
+		}
+	private:
+		std::string _name;
+		TypePtr _type;
+	};
+
+	enum class TypeDeclarationKind {
+	    STRUCT
+	};
+
+	class TypeDeclaration : public Stmt {
+    public:
+	    TypeDeclaration(SourceRange sourceRange, TypeDeclarationKind kind,
+	            std::string name, bool isPublic):
+            Stmt(StatementKind::TYPE_DECL, sourceRange),
+	        _name(std::move(name)),
+            _kind(kind),
+            _isPublic(isPublic) {
+	    }
+
+        TypeDeclarationKind typeDeclarationKind() const {
+	        return _kind;
+	    }
+
+	    virtual bool isSelfReferential() const = 0;
+
+        std::string name() const {
+            return _name;
+        }
+
+        bool isPublic() const {
+            return _isPublic;
+        }
+	private:
+        std::string _name;
+        TypeDeclarationKind _kind;
+        bool _isPublic;
+	};
+
+	class StructDeclaration : public TypeDeclaration {
+	public:
+		StructDeclaration(SourceRange sourceRange,
+			std::string name,
+			std::vector<std::shared_ptr<CustomMember>>&& members,
+			bool isPublic) :
+			TypeDeclaration(sourceRange, TypeDeclarationKind::STRUCT, std::move(name), isPublic),
+			_members(members) {
+
+		    // check if this type is self referential
+            for (auto& member : _members) {
+                auto pointerType = dynamic_cast<PointerType*>(member->type());
+                _isSelfReferential = false;
+                while (pointerType) {
+                    if (pointerType->pointsTo()->kind() == TypeKind::CUSTOM) {
+                        auto customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                        if (customType && this->name() == customType->name()) {
+                            _isSelfReferential = true;
+                            break;
+                        }
+                    }
+                    pointerType = dynamic_cast<PointerType*>(pointerType->pointsTo());
+                }
+            }
+		}
+
+        void accept(StmtVisitor* visitor) override {
+            visitor->visitStructDeclStmt(this);
+        }
+
+        bool isSelfReferential() const override {
+		    return _isSelfReferential;
+        }
+
+        std::optional<uint32_t> findMemberIndex(const std::string& name) {
+            for (uint32_t i = 0; i < _members.size(); i++) {
+                auto& member = _members[i];
+                if (member->name() == name) {
+                    return i;
+                }
+            }
+            return {};
+        }
+
+        CustomMember* findMember(const std::string& name) {
+		    auto index = findMemberIndex(name);
+		    if (!index.has_value()) {
+                return nullptr;
+		    }
+		    return _members[index.value()].get();
+		}
+
+		std::vector<CustomMember*> members() {
+			std::vector<CustomMember*> members;
+			for (auto& member : _members) {
+				members.push_back(member.get());
+			}
+			return members;
+		}
+
+	private:
+		std::vector<std::shared_ptr<CustomMember>> _members;
+        bool _isSelfReferential = false;
+	};
+
     class While : public Stmt {
     public:
         While(SourceRange sourceRange, ExprPtr condition, StmtPtr body):
@@ -325,7 +450,7 @@ namespace klong {
             _condition(std::move(condition)), _body(std::move(body)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitWhileStmt(this);
         }
 
@@ -352,7 +477,7 @@ namespace klong {
             _body(std::move(body)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitForStmt(this);
         }
 
@@ -381,22 +506,22 @@ namespace klong {
 
     class Break : public Stmt {
     public:
-        Break(SourceRange sourceRange):
+        explicit Break(SourceRange sourceRange):
                 Stmt(StatementKind::BREAK, sourceRange) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitBreakStmt(this);
         }
     };
 
     class Continue : public Stmt {
     public:
-        Continue(SourceRange sourceRange):
+        explicit Continue(SourceRange sourceRange):
             Stmt(StatementKind::CONTINUE, sourceRange) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitContinueStmt(this);
         }
     };
@@ -404,10 +529,11 @@ namespace klong {
     class Defer : public Stmt {
     public:
         Defer(SourceRange sourceRange, StmtPtr stmtToDefer):
-                Stmt(StatementKind::DEFER, sourceRange), _stmtToDefer(stmtToDefer) {
+                Stmt(StatementKind::DEFER, sourceRange),
+                _stmtToDefer(std::move(stmtToDefer)) {
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitDeferStmt(this);
         }
 
@@ -426,14 +552,18 @@ namespace klong {
 
     class Comment : public Stmt {
     public:
-        Comment(SourceRange sourceRange, std::string text, CommentType type):
+        Comment(SourceRange sourceRange, std::string text, CommentType commentType):
             Stmt(StatementKind::COMMENT, sourceRange),
             _text(std::move(text)),
-            _type(type){
+            _commentType(commentType){
         }
 
-        void accept(StmtVisitor* visitor) {
+        void accept(StmtVisitor* visitor) override {
             visitor->visitCommentStmt(this);
+        }
+
+        CommentType commentType() const {
+            return _commentType;
         }
 
         const std::string& text() const {
@@ -442,6 +572,6 @@ namespace klong {
 
     private:
         std::string _text;
-        CommentType _type;
+        CommentType _commentType;
     };
 }

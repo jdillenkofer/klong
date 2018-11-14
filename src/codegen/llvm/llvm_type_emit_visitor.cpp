@@ -1,9 +1,10 @@
 #include <llvm/IR/DerivedTypes.h>
+#include "ast/stmt.h"
 #include "llvm_type_emit_visitor.h"
 
 namespace klong {
 
-    llvm::Type* LLVMTypeEmitVisitor::getLLVMType(Type *type) {
+    llvm::Type* LLVMTypeEmitVisitor::getLLVMType(Type* type) {
         type->accept(this);
         return _valueOfLastType;
     }
@@ -12,24 +13,23 @@ namespace klong {
 
         std::vector<llvm::Type*> paramTypes;
 
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::FUNCTION;
+        _outerTypes.push_back(TypeKind::FUNCTION);
 
         for (auto& paramType : type->paramTypes()) {
             paramTypes.push_back(getLLVMType(paramType));
         }
         llvm::Type* returnType = getLLVMType(type->returnType());
 
-        _outerType = prevOuterType;
+        _outerTypes.pop_back();
 
         _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
     }
 
-    void LLVMTypeEmitVisitor::visitPrimitiveType(PrimitiveType *type) {
+    void LLVMTypeEmitVisitor::visitPrimitiveType(PrimitiveType* type) {
         switch (type->type()) {
             case PrimitiveTypeKind::VOID:
             {
-                if (_outerType == TypeKind::POINTER) {
+                if (!_outerTypes.empty() && _outerTypes.back() == TypeKind::POINTER) {
                     _valueOfLastType = llvm::Type::getInt8Ty(_context);
                     break;
                 }
@@ -67,11 +67,10 @@ namespace klong {
         }
     }
 
-    void LLVMTypeEmitVisitor::visitPointerType(PointerType *type) {
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::POINTER;
+    void LLVMTypeEmitVisitor::visitPointerType(PointerType* type) {
+        _outerTypes.push_back(TypeKind::POINTER);
         auto innerType = getLLVMType(type->pointsTo());
-        _outerType = prevOuterType;
+        _outerTypes.pop_back();
         if (type->isArray()) {
             _valueOfLastType = llvm::ArrayType::get(innerType, type->size());
         } else {
@@ -79,12 +78,35 @@ namespace klong {
         }
     }
 
-    void LLVMTypeEmitVisitor::visitSimpleType(SimpleType *type) {
-        // TODO: how to handle the other types
-        auto prevOuterType = _outerType;
-        _outerType = TypeKind::SIMPLE;
-        (void) type;
-        _outerType = prevOuterType;
-        assert(false);
+    void LLVMTypeEmitVisitor::visitCustomType(CustomType* type) {
+        // TODO: how to handle non struct types
+        auto it = _customTypeCache.find(type->name());
+        if (it != _customTypeCache.end()) {
+            _valueOfLastType = (*it).second;
+            return;
+        }
+
+        _outerTypes.push_back(TypeKind::CUSTOM);
+        auto structDeclaration = dynamic_cast<StructDeclaration*>(type->resolvesTo());
+        assert(structDeclaration);
+
+        if (_outerTypes.size() > 1u) {
+            auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
+            if (previousOuterType == TypeKind::POINTER
+                && type->resolvesTo()->isSelfReferential()) {
+                // this emits opaque struct types
+                _valueOfLastType = llvm::StructType::create(_context, type->name());
+                return;
+            }
+        }
+
+        std::vector<llvm::Type*> members;
+        for (auto& member : structDeclaration->members()) {
+            members.push_back(getLLVMType(member->type()));
+        }
+
+        _valueOfLastType = llvm::StructType::create(_context, members, type->name());
+        _customTypeCache[type->name()] = _valueOfLastType;
+        _outerTypes.pop_back();
     }
 }

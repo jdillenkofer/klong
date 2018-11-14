@@ -13,6 +13,8 @@ namespace klong {
     class If;
     class Return;
     class VariableDeclaration;
+	class StructDeclaration;
+	class CustomMember;
     class While;
     class For;
     class Break;
@@ -34,6 +36,8 @@ namespace klong {
         virtual void visitIfStmt(If* stmt) = 0;
         virtual void visitReturnStmt(Return* stmt) = 0;
         virtual void visitVarDeclStmt(VariableDeclaration* stmt) = 0;
+		virtual void visitStructDeclStmt(StructDeclaration* stmt) = 0;
+		virtual void visitCustomMemberStmt(CustomMember* stmt) = 0;
         virtual void visitWhileStmt(While* stmt) = 0;
         virtual void visitForStmt(For* stmt) = 0;
         virtual void visitBreakStmt(Break* stmt) = 0;
@@ -48,6 +52,7 @@ namespace klong {
     class Call;
     class Grouping;
 	class Subscript;
+	class MemberAccess;
     class Logical;
     class Unary;
     class SizeOf;
@@ -70,6 +75,7 @@ namespace klong {
         virtual void visitCallExpr(Call* expr) = 0;
         virtual void visitGroupingExpr(Grouping* expr) = 0;
 		virtual void visitSubscriptExpr(Subscript* expr) = 0;
+		virtual void visitMemberAccessExpr(MemberAccess* expr) = 0;
         virtual void visitLogicalExpr(Logical* expr) = 0;
         virtual void visitUnaryExpr(Unary* expr) = 0;
         virtual void visitSizeOfExpr(SizeOf* expr) = 0;
@@ -88,7 +94,7 @@ namespace klong {
     class FunctionType;
     class PrimitiveType;
     class PointerType;
-    class SimpleType;
+    class CustomType;
 
     class TypeVisitor {
     public:
@@ -96,6 +102,6 @@ namespace klong {
         virtual void visitFunctionType(FunctionType* type) = 0;
         virtual void visitPrimitiveType(PrimitiveType* type) = 0;
         virtual void visitPointerType(PointerType* type) = 0;
-        virtual void visitSimpleType(SimpleType* type) = 0;
+        virtual void visitCustomType(CustomType* type) = 0;
     };
 }

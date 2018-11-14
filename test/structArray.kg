@@ -1,0 +1,27 @@
+struct Test {
+    value: i64
+}
+
+extern printf: (ptr<i8>) -> void;
+
+pub fun main() -> i64 {
+    let test1: Test;
+    let test2: Test;
+
+    let a:[ptr<Test>, 2];
+    a[0] = &test1;
+    a[1] = &test2;
+    defer printf("Test\n");
+    printf("After test\n");
+    let b = a[0];
+    let c = a[1];
+    b.value = 0;
+    c.value = 0;
+    if (b.value != 0) {
+        return 1;
+    }
+    let d:[Test, 2];
+    let e = d[0];
+    e.value = 0;
+    return e.value;
+}

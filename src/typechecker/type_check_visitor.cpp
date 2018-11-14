@@ -26,7 +26,23 @@ namespace klong {
     void TypeCheckVisitor::check(Expr* expr) {
         if (expr != nullptr) {
             expr->accept(this);
+            resolveType(expr->type());
         }
+    }
+
+    void TypeCheckVisitor::resolveType(Type* type) {
+        if (type) {
+            type->accept(this);
+        }
+    }
+
+    void TypeCheckVisitor::declareType(TypeDeclaration* typeDeclarationStmt) {
+        if (_typeDeclarations.find(typeDeclarationStmt->name()) != _typeDeclarations.end()) {
+            _result.addError(
+                    TypeCheckException(typeDeclarationStmt->sourceRange(),
+                                       "Type '" + typeDeclarationStmt->name() + "' already declared."));
+        }
+        _typeDeclarations[typeDeclarationStmt->name()] = typeDeclarationStmt;
     }
 
     bool TypeCheckVisitor::getAndResetReturnsValue() {
@@ -75,6 +91,12 @@ namespace klong {
 
     // Module
     void TypeCheckVisitor::visitModule(Module* module) {
+        for (const auto& statement : module->statements()) {
+            if (statement->kind() == StatementKind::TYPE_DECL) {
+                auto stmt = dynamic_cast<TypeDeclaration*>(statement);
+                declareType(stmt);
+            }
+        }
         check(module->statements());
     }
 
@@ -93,6 +115,7 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitFunctionStmt(Function* stmt) {
+        resolveType(stmt->functionType());
         auto previousFunction = currentFunction;
         currentFunction = stmt;
         for (auto& param : stmt->params()) {
@@ -174,6 +197,7 @@ namespace klong {
 
             stmt->type(clonedInitType);
         } else {
+            resolveType(stmt->type());
             auto stmtAsPointerType = dynamic_cast<PointerType*>(stmt->type());
             if (stmtAsPointerType && stmtAsPointerType->isArray()
                 && stmt->initializer() && stmt->initializer()->kind() != ExprKind::LITERAL) {
@@ -186,6 +210,23 @@ namespace klong {
             }
         }
     }
+
+
+	void TypeCheckVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
+        for (auto& member : stmt->members()) {
+            check(member);
+            auto memberTypeAsCustomType = dynamic_cast<CustomType*>(member->type());
+            if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
+                _result.addError(
+                        TypeCheckException(member->sourceRange(), "Self referential member definitions are not allowed."));
+            }
+        }
+	}
+
+	void TypeCheckVisitor::visitCustomMemberStmt(CustomMember* stmt) {
+        // nothing to do here
+        resolveType(stmt->type());
+	}
 
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
         check(stmt->condition());
@@ -387,6 +428,39 @@ namespace klong {
 		expr->type(innerType);
 	}
 
+	void TypeCheckVisitor::visitMemberAccessExpr(MemberAccess* expr) {
+        check(expr->target());
+        auto customType = dynamic_cast<CustomType*>(expr->target()->type());
+        auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());
+        if (pointerType) {
+            customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+        }
+
+        if (!customType) {
+            _result.addError(TypeCheckException(expr->sourceRange(), "MemberAccess target is not a custom type."));
+            return;
+        }
+
+        auto declarationType = customType->resolvesTo();
+        switch(declarationType->typeDeclarationKind()) {
+            case TypeDeclarationKind::STRUCT: {
+                auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
+                auto memberPtr = structDecl->findMember(expr->member());
+                if (!memberPtr) {
+                    _result.addError(
+                            TypeCheckException(
+                                    expr->sourceRange(),
+                                    "MemberAccess target does not have such a member element."));
+                } else {
+                    expr->type(std::shared_ptr<Type>(memberPtr->type()->clone()));
+                }
+                break;
+            }
+            default:
+                assert(false);
+        }
+    }
+
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left());
         if (!Type::isBoolean(expr->left()->type())) {
@@ -462,6 +536,7 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitSizeOfExpr(SizeOf *expr) {
+        resolveType(expr->right());
         if (expr->right()->kind() == TypeKind::FUNCTION) {
             _result.addError(
                     TypeCheckException(expr->right()->sourceRange(),
@@ -472,6 +547,12 @@ namespace klong {
 
     void TypeCheckVisitor::visitCastExpr(Cast* expr) {
         check(expr->right());
+        auto sourceType = expr->right()->type();
+        if (Type::isVoid(sourceType)) {
+            _result.addError(
+                    TypeCheckException(sourceType->sourceRange(),
+                            "Can not cast from void type."));
+        }
         auto targetType = std::shared_ptr<Type>(expr->targetType()->clone());
         if (expr->targetType()->kind() == TypeKind::FUNCTION) {
             _result.addError(
@@ -567,6 +648,39 @@ namespace klong {
         type->isArray(true);
         type->size(expr->values().size());
         expr->type(type);
+    }
+
+    void TypeCheckVisitor::visitFunctionType(FunctionType* type) {
+        for (auto& param : type->paramTypes()) {
+            resolveType(param);
+        }
+
+        resolveType(type->returnType());
+    }
+
+    void TypeCheckVisitor::visitPrimitiveType(PrimitiveType *type) {
+        // nothing to do here
+        (void) type;
+    }
+
+    void TypeCheckVisitor::visitPointerType(PointerType *type) {
+        resolveType(type->pointsTo());
+    }
+
+    void TypeCheckVisitor::visitCustomType(CustomType *type) {
+        auto typeDecl = findTypeDeclaration(type);
+        if (!typeDecl) {
+            _result.addError(TypeCheckException(type->sourceRange(), "Couldn't resolve typename."));
+        }
+        type->resolvesTo(typeDecl);
+    }
+
+    TypeDeclaration* TypeCheckVisitor::findTypeDeclaration(klong::CustomType *type) {
+        auto it = _typeDeclarations.find(type->name());
+        if (it != _typeDeclarations.end()) {
+            return (*it).second;
+        }
+        return nullptr;
     }
 
     Result<ModulePtr, TypeCheckException> TypeCheckVisitor::getResult() const {

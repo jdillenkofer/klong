@@ -58,6 +58,8 @@ namespace klong {
         void visitIfStmt(If* stmt) override;
         void visitReturnStmt(Return* stmt) override;
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
+		void visitStructDeclStmt(StructDeclaration* stmt) override;
+		void visitCustomMemberStmt(CustomMember* stmt) override;
         void visitWhileStmt(While* stmt) override;
         void visitForStmt(For* stmt) override;
         void visitBreakStmt(Break* stmt) override;
@@ -71,6 +73,7 @@ namespace klong {
         void visitCallExpr(Call* expr) override;
         void visitGroupingExpr(Grouping* expr) override;
 		void visitSubscriptExpr(Subscript* expr) override;
+		void visitMemberAccessExpr(MemberAccess* expr) override;
         void visitLogicalExpr(Logical* expr) override;
         void visitUnaryExpr(Unary* expr) override;
         void visitSizeOfExpr(SizeOf* expr) override;
@@ -98,6 +101,7 @@ namespace klong {
         void enterScope();
         void exitScope();
 
+        void declareType(TypeDeclaration* typeDeclarationStmt);
         void declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType);
         void define(std::string name);
 
