@@ -10,7 +10,7 @@ void printHelp();
 int main(int argc, char* argv[]) {
     auto optionResult = parseOptions(argc, argv);
     if (optionResult.hasErrors()) {
-        std::cerr << optionResult.getFirstError().value() << std::endl;
+        std::cout << optionResult.getFirstError().value() << std::endl;
         return 1;
     }
     auto option = optionResult.success();

@@ -234,7 +234,8 @@ namespace klong {
         }
 
         auto ch = read(false);
-        Token token {{ _source, _source }, TokenType::NONE, std::string(1, ch)};
+        auto invalidSourceLocation = SourceLocation { _source };
+        Token token {{invalidSourceLocation, invalidSourceLocation}, TokenType::NONE, std::string(1, ch)};
 
         auto case_range = cases.equal_range(ch);
         bool hasFoundMatchingCase = false;

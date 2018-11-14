@@ -9,49 +9,25 @@ namespace klong {
         SourceLocation(): _source(nullptr), _valid(false) {
         }
             
-        SourceLocation(SourceFile* source): _source(source), _valid(true) {
+        explicit SourceLocation(SourceFile* source): _source(source), _valid(true) {
         }
 
-        void incLine() {
-            _line++;
-            _column = 1;
-            _charPos++;
-        }
+        void incLine();
+        void incCol();
 
-        void incCol() {
-            _column++;
-            _charPos++;
-        }
-
-        std::string path() const {
-            return _source->path();
-        }
-
-        std::string filename() const {
-            return _source->filename();
-        }
-
-        size_t column() const {
-            return _column;
-        }
-
-        size_t line() const {
-            return _line;
-        }
-
-        size_t charPos() const {
-            return _charPos;
-        }
-
-        bool valid() const {
-            return _valid;
-        }
+        std::string path() const;
+        std::string filename() const;
+        std::string code() const;
+        uint64_t column() const;
+        uint64_t line() const;
+        uint64_t charPos() const;
+        bool valid() const;
 
     private:
         SourceFile* _source;
-        size_t _line = 1;
-        size_t _column = 1;
-        size_t _charPos = 0;
+        uint64_t _line = 1;
+        uint64_t _column = 1;
+        uint64_t _charPos = 0;
         bool _valid;
     };
 }

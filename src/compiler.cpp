@@ -18,9 +18,8 @@ namespace klong {
         auto parser = Parser(&lexer);
         auto parseResult = parser.parse();
         if (parseResult.hasErrors()) {
-            for (auto& parseError : parseResult.getErrors()) {
-                std::cerr << parseError.what() << std::endl;
-            }
+            auto errors = parseResult.getErrors();
+            printErrors(errors);
             return false;
         }
         module = parseResult.success();
@@ -31,9 +30,8 @@ namespace klong {
         Resolver resolver;
         auto resolveResult = resolver.resolve(module);
         if (resolveResult.hasErrors()) {
-            for (auto& resolveError : resolveResult.getErrors()) {
-                std::cerr << resolveError.what() << std::endl;
-            }
+            auto errors = resolveResult.getErrors();
+            printErrors(errors);
             return false;
         }
         return true;
@@ -43,9 +41,8 @@ namespace klong {
         TypeChecker typeChecker;
         auto typeCheckResult = typeChecker.check(module);
         if (typeCheckResult.hasErrors()) {
-            for (auto& typeCheckError: typeCheckResult.getErrors()) {
-                std::cerr << typeCheckError.what() << std::endl;
-            }
+            auto errors = typeCheckResult.getErrors();
+            printErrors(errors);
             return false;
         }
         return true;
@@ -72,7 +69,7 @@ namespace klong {
         auto sourceFile = SourceFile(std::move(filepath));
         auto result = sourceFile.loadFromFile();
         if (!result) {
-            std::cerr << "Cannot load source file " << sourceFile.path() << std::endl;
+            std::cout << "Cannot load source file " << sourceFile.path() << std::endl;
             return false;
         }
 

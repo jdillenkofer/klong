@@ -3,7 +3,8 @@
 #include "source_location.h"
 
 namespace klong {
-    struct SourceRange {
+    class SourceRange {
+    public:
         SourceRange(SourceLocation startLocation, SourceLocation endLocation):
             start(startLocation), end(endLocation) {
         }
@@ -12,10 +13,13 @@ namespace klong {
 
         }
 
-        bool valid() const {
-            return start.valid() && end.valid();
-        }
+        bool valid() const;
+        std::string getRelevantSourceText() const;
 
+    private:
+        uint64_t getStartIndexOfLine(uint64_t currentIndex) const;
+
+    public:
         SourceLocation start;
         SourceLocation end;
     };

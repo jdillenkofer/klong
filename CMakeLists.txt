@@ -53,20 +53,22 @@ set(SOURCE_FILES
     src/main.cpp
     src/common/getopt.c
     src/common/option.cpp
+    src/common/source_range.cpp
+    src/common/source_location.cpp
     src/lexer/lexer.cpp
     src/parser/parser.cpp
 	src/resolver/resolve_visitor.cpp
 	src/typechecker/type_check_visitor.cpp
-        src/codegen/llvm/llvm_emit_visitor.cpp
+    src/codegen/llvm/llvm_emit_visitor.cpp
 	src/graphviz/dotfile_visitor.cpp
     src/ast/string_helper.cpp
     src/compiler.cpp
     src/typechecker/typechecker.cpp
     src/resolver/resolver.cpp
-        src/codegen/llvm/llvm_emitter.cpp
+    src/codegen/llvm/llvm_emitter.cpp
     src/graphviz/dotfile_emitter.cpp
     src/ast/type.cpp
-        src/codegen/llvm/llvm_type_emit_visitor.cpp
+    src/codegen/llvm/llvm_type_emit_visitor.cpp
 )
 
 set(HEADER_FILES
@@ -91,13 +93,15 @@ set(HEADER_FILES
 	src/resolver/resolve_visitor.h
 	src/typechecker/typechecker.h
     src/typechecker/type_check_visitor.h
-        src/codegen/llvm/llvm_emit_visitor.h
-        src/codegen/llvm/llvm_emitter.h
+    src/codegen/llvm/llvm_emit_visitor.h
+    src/codegen/llvm/llvm_emitter.h
 	src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
     src/compiler.h
-        src/codegen/llvm/llvm_type_emit_visitor.h
-        src/lexer/lexer_memento.h src/parser/parser_memento.h)
+    src/codegen/llvm/llvm_type_emit_visitor.h
+    src/lexer/lexer_memento.h
+    src/parser/parser_memento.h
+)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
