@@ -8,8 +8,8 @@ pub fun main() -> i64 {
     // allow shadowing
     let sum = sum(from, to, funVariable);
     let fl = 1;
-    let a = cast<f32>(fl);
-    let b = cast<i64>(a);
+    let a = cast<f32> fl;
+    let b = cast<i64> a;
     return b;
 }
 

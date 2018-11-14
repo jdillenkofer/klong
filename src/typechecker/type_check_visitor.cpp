@@ -370,7 +370,8 @@ namespace klong {
             case BinaryOperation::XOR:
             case BinaryOperation::OR:
             {
-                if (Type::isInteger(leftType) || Type::isInteger(rightType)) {
+                if (Type::isInteger(leftType) && Type::isInteger(rightType)
+                    && leftType->isEqual(rightType)) {
                     expr->type(resultType);
                     break;
                 }

@@ -2,7 +2,7 @@ extern malloc: (u64) -> ptr<void>;
 extern free: (ptr<void>) -> void;
 
 pub fun main() -> i64 {
-    let i = cast<ptr<i64>>(malloc(sizeof(i64) * 4));
+    let i = cast<ptr<i64>> malloc(sizeof(i64) * 4);
     const malloc_addr = i;
     let num = 0;
     for (let x = 0; x < 5; x = x + 1) {
@@ -13,6 +13,6 @@ pub fun main() -> i64 {
         i = i - 5;
     }
     num = *i;
-    free(cast<ptr<void>>(i));
+    free(cast<ptr<void>> i);
     return num;
 }

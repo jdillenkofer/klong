@@ -2,10 +2,10 @@ extern malloc: (u64) -> ptr<void>;
 extern free: (ptr<void>) -> void;
 
 pub fun main() -> i64 {
-    let i = cast<ptr<i64>>(malloc(sizeof(i64)));
+    let i = cast<ptr<i64>> malloc(sizeof(i64));
     let num = 0;
     *i = num;
     num = *i;
-    free(cast<ptr<void>>(i));
+    free(cast<ptr<void>> i);
     return num;
 }

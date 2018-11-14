@@ -3,5 +3,5 @@ extern strcmp: (ptr<i8>, ptr<i8>) -> bool;
 pub fun main() -> i64 {
     const str: ptr<i8> = "test";
     const str2 = "test";
-    return cast<i64>(strcmp(str, str2));
+    return cast<i64> strcmp(str, str2);
 }

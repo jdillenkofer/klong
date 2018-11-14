@@ -859,11 +859,9 @@ namespace klong {
             consume(TokenType::LT_OP, "Expect '<' after cast operator.");
             TypePtr targetType = typeDeclaration();
             consume(TokenType::GT_OP, "Expect '>' after target type.");
-            consume(TokenType::LEFT_PAR, "Expect '(' after target type.");
-            ExprPtr right = assignmentExpr();
-            Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after cast target.");
+            ExprPtr right = unaryExpr();
             return std::make_shared<Cast>(
-                    SourceRange { cast.sourceRange.start, rightPar.sourceRange.end },
+                    SourceRange { cast.sourceRange.start, right->sourceRange().end },
                     targetType, right);
         }
 
@@ -1028,6 +1026,6 @@ namespace klong {
             return std::make_shared<ArrayLiteral>(
                     SourceRange { literalToken.sourceRange.start, rightSquaredBracket.sourceRange.end }, std::move(values));
         }
-		throw ParseException(literalToken.sourceRange, "Couldn't parse literal.");
+        throw ParseException(literalToken.sourceRange, "Couldn't parse literal.");
     }
 }

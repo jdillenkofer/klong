@@ -6,7 +6,7 @@ pub fun main() -> i64 {
 
     let node: Node;
     node.value = 0;
-    node.next = cast<ptr<Node>>(0);
+    node.next = cast<ptr<Node>> 0;
 
     let node2 = testPassByValue(node);
     if (node2.value != 5) {
@@ -37,7 +37,7 @@ fun testPassByValue(t: Node) -> Node {
 
 fun testPassByPtr(t: ptr<Node>) -> ptr<Node> {
     if (t.value != 0) {
-        return cast<ptr<Node>>(0);
+        return cast<ptr<Node>> 0;
     }
     return t;
 }
