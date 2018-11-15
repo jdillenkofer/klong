@@ -48,12 +48,12 @@ namespace klong {
         return true;
     }
 
-    bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter) {
+    bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType) {
         llvmEmitter.emit(module);
 
-        auto objOutputPath = module->filenameWithoutExtension() + ".o";
+        auto filename = module->filenameWithoutExtension();
         if (_option.disableLinking && _option.useCustomOutputPath) {
-            objOutputPath = _option.customOutputPath;
+            filename = _option.customOutputPath;
         }
 
         auto targetTriple = llvmEmitter.getDefaultTargetTriple();
@@ -61,7 +61,7 @@ namespace klong {
             targetTriple = _option.customTarget;
         }
 
-        llvmEmitter.generateObjectFile(objOutputPath, targetTriple);
+        llvmEmitter.writeToFile(filename, targetTriple, outputFileType);
         return true;
     }
 
@@ -146,8 +146,8 @@ namespace klong {
                 }
             );
 
-
-            if (!codegen(module, llvmEmitter)) {
+            auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
+            if (!codegen(module, llvmEmitter, outputFileType)) {
                 return false;
             }
         }

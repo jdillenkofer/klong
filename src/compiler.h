@@ -17,7 +17,7 @@ namespace klong {
         bool parse(ModulePtr& module, SourceFile &sourceFile);
         bool resolve(ModulePtr& module);
         bool typecheck(ModulePtr& module);
-        bool codegen(ModulePtr& module, LLVMEmitter& llvmEmitter);
+        bool codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType);
         bool compile(std::string filepath);
     private:
         Option _option;

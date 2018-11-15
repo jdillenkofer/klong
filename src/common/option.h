@@ -17,6 +17,7 @@ namespace klong {
         bool isCustomTarget = false;
         std::string customTarget;
         bool emitDotFile = false;
+        bool emitAssemblyFile = false;
         std::string filepath;
     };
 

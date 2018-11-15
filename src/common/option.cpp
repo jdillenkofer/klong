@@ -5,7 +5,7 @@ namespace klong {
         Result<Option, std::string> optionResult;
         Option option;
         int c;
-        while ((c = getopt(argc, argv, "hvco:b:d")) != -1)
+        while ((c = getopt(argc, argv, "hvcso:b:d")) != -1)
         {
             switch (c) {
                 case 'v':
@@ -13,6 +13,9 @@ namespace klong {
                     break;
                 case 'c':
                     option.disableLinking = true;
+                    break;
+                case 's':
+                    option.emitAssemblyFile = true;
                     break;
                 case 'o':
                     option.useCustomOutputPath = true;

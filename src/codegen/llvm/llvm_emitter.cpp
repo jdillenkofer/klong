@@ -39,8 +39,9 @@ namespace klong {
         return llvm::sys::getDefaultTargetTriple();
     }
 
-    bool LLVMEmitter::generateObjectFile(const std::string& outputFilename,
+    bool LLVMEmitter::writeToFile(const std::string& filename,
                                          const std::string& targetTriple,
+                                         OutputFileType outputType,
                                          const std::string& cpu,
                                          const std::string& features) {
         auto module = llvmEmitVisitor.getModule();
@@ -62,11 +63,20 @@ namespace klong {
         module->setTargetTriple(targetTriple);
         module->setDataLayout(targetMachine->createDataLayout());
 
+        std::string filenameWithExt = filename;
+        llvm::TargetMachine::CodeGenFileType fileType;
+        if (outputType == OutputFileType::OBJECT) {
+            fileType = llvm::TargetMachine::CGFT_ObjectFile;
+            filenameWithExt += ".o";
+        } else {
+            fileType = llvm::TargetMachine::CGFT_AssemblyFile;
+            filenameWithExt += ".S";
+        }
+
         std::error_code error_code;
-        llvm::raw_fd_ostream destination(outputFilename, error_code, llvm::sys::fs::F_None);
+        llvm::raw_fd_ostream destination(filenameWithExt, error_code, llvm::sys::fs::F_None);
 
         llvm::legacy::PassManager pass;
-        auto fileType = llvm::TargetMachine::CGFT_ObjectFile;
 
         if (targetMachine->addPassesToEmitFile(pass, destination, nullptr, fileType)) {
             llvm::errs() << "TheTargetMachine can't emit a file of this type";

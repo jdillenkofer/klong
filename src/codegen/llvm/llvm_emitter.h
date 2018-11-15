@@ -4,6 +4,12 @@
 #include "ast/module.h"
 
 namespace klong {
+
+    enum class OutputFileType {
+        OBJECT,
+        ASM
+    };
+
     class LLVMEmitter {
     public:
         static void init();
@@ -13,8 +19,9 @@ namespace klong {
 
         std::string getDefaultTargetTriple() const ;
 
-        bool generateObjectFile(const std::string& outputFilename,
+        bool writeToFile(const std::string& filename,
                                 const std::string& targetTriple,
+                                OutputFileType outputType = OutputFileType::OBJECT,
                                 const std::string& cpu = "generic",
                                 const std::string& features = "");
 
