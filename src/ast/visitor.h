@@ -14,6 +14,7 @@ namespace klong {
     class Return;
     class VariableDeclaration;
 	class StructDeclaration;
+    class UnionDeclaration;
 	class CustomMember;
     class While;
     class For;
@@ -37,6 +38,7 @@ namespace klong {
         virtual void visitReturnStmt(Return* stmt) = 0;
         virtual void visitVarDeclStmt(VariableDeclaration* stmt) = 0;
 		virtual void visitStructDeclStmt(StructDeclaration* stmt) = 0;
+        virtual void visitUnionDeclStmt(UnionDeclaration* stmt) = 0;
 		virtual void visitCustomMemberStmt(CustomMember* stmt) = 0;
         virtual void visitWhileStmt(While* stmt) = 0;
         virtual void visitForStmt(For* stmt) = 0;

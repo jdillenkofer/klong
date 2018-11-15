@@ -165,6 +165,11 @@ namespace klong {
         (void) stmt;
 	}
 
+    void ResolveVisitor::visitUnionDeclStmt(UnionDeclaration* stmt) {
+        // nothing to do here
+        (void) stmt;
+    }
+
 	void ResolveVisitor::visitCustomMemberStmt(CustomMember* stmt) {
         // nothing to do here
         (void) stmt;

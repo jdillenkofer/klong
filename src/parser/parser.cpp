@@ -166,6 +166,10 @@ namespace klong {
 				return structDeclaration(isPublic);
 			}
 
+			if (match(TokenType::UNION)) {
+			    return unionDeclaration(isPublic);
+			}
+
             if (isPublic) {
                 throw ParseException(pubToken.sourceRange, "Illegal pub Keyword.");
             }
@@ -326,6 +330,36 @@ namespace klong {
 		        SourceRange{ structToken.sourceRange.start, rightCurlyBracket.sourceRange.end },
 		        name.value, std::move(members), isPublic);
 	}
+
+    std::shared_ptr<UnionDeclaration> Parser::unionDeclaration(bool isPublic) {
+        Token unionToken = previous();
+        Token name = consume(TokenType::IDENTIFIER, "Expect union name.");
+        consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' after union name.");
+        std::vector<std::shared_ptr<CustomMember>> members;
+        do {
+            Token literal = consume(TokenType::IDENTIFIER, "Expect union element name.");
+            Token colon = consume(TokenType::COLON, "Expect colon after element name.");
+            auto type = typeDeclaration();
+            auto customMember = std::make_shared<CustomMember>(
+                    SourceRange{ literal.sourceRange.start, type->sourceRange().end },
+                    literal.value, type);
+            auto it = std::find_if(members.begin(), members.end(),
+                                   [&customMember](const std::shared_ptr<CustomMember>& other) {
+                                       return customMember->name() == other->name();
+                                   });
+            if (it != members.end()) {
+                throw ParseException(
+                        customMember->sourceRange(),
+                        "Member with name '" + customMember->name()
+                        + "' already exists in '" + name.value + "'.");
+            }
+            members.emplace_back(customMember);
+        } while (match(TokenType::COMMA));
+        Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last union member.");
+        return std::make_shared<UnionDeclaration>(
+                SourceRange{ unionToken.sourceRange.start, rightCurlyBracket.sourceRange.end },
+                name.value, std::move(members), isPublic);
+    }
 
     TypePtr Parser::typeDeclaration() {
         Token type = peek();

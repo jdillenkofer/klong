@@ -6,11 +6,14 @@
 #include "llvm/IR/Type.h"
 #include <map>
 #include <deque>
+#include <llvm/IR/DataLayout.h>
 
 namespace klong {
     class LLVMTypeEmitVisitor : public TypeVisitor {
     public:
-        LLVMTypeEmitVisitor(llvm::LLVMContext& context) : _context(context) {
+        LLVMTypeEmitVisitor(llvm::LLVMContext& context, const llvm::DataLayout dataLayout) :
+            _context(context),
+            _dataLayout(dataLayout) {
 
         }
 
@@ -25,5 +28,6 @@ namespace klong {
         llvm::Type* _valueOfLastType = nullptr;
         std::deque<TypeKind> _outerTypes;
         llvm::LLVMContext& _context;
+        llvm::DataLayout _dataLayout;
     };
 }

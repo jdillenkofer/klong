@@ -59,6 +59,7 @@ namespace klong {
         void visitReturnStmt(Return* stmt) override;
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
 		void visitStructDeclStmt(StructDeclaration* stmt) override;
+        void visitUnionDeclStmt(UnionDeclaration* stmt) override;
 		void visitCustomMemberStmt(CustomMember* stmt) override;
         void visitWhileStmt(While* stmt) override;
         void visitForStmt(For* stmt) override;

@@ -346,7 +346,8 @@ namespace klong {
 	};
 
 	enum class TypeDeclarationKind {
-	    STRUCT
+	    STRUCT,
+	    UNION
 	};
 
 	class TypeDeclaration : public Stmt {
@@ -442,6 +443,71 @@ namespace klong {
 		std::vector<std::shared_ptr<CustomMember>> _members;
         bool _isSelfReferential = false;
 	};
+
+    class UnionDeclaration : public TypeDeclaration {
+    public:
+        UnionDeclaration(SourceRange sourceRange,
+                          std::string name,
+                          std::vector<std::shared_ptr<CustomMember>>&& members,
+                          bool isPublic) :
+                TypeDeclaration(sourceRange, TypeDeclarationKind::UNION, std::move(name), isPublic),
+                _members(members) {
+
+            // check if this type is self referential
+            for (auto& member : _members) {
+                auto pointerType = dynamic_cast<PointerType*>(member->type());
+                _isSelfReferential = false;
+                while (pointerType) {
+                    if (pointerType->pointsTo()->kind() == TypeKind::CUSTOM) {
+                        auto customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                        if (customType && this->name() == customType->name()) {
+                            _isSelfReferential = true;
+                            break;
+                        }
+                    }
+                    pointerType = dynamic_cast<PointerType*>(pointerType->pointsTo());
+                }
+            }
+        }
+
+        void accept(StmtVisitor* visitor) override {
+            visitor->visitUnionDeclStmt(this);
+        }
+
+        bool isSelfReferential() const override {
+            return _isSelfReferential;
+        }
+
+        std::optional<uint32_t> findMemberIndex(const std::string& name) {
+            for (uint32_t i = 0; i < _members.size(); i++) {
+                auto& member = _members[i];
+                if (member->name() == name) {
+                    return i;
+                }
+            }
+            return {};
+        }
+
+        CustomMember* findMember(const std::string& name) {
+            auto index = findMemberIndex(name);
+            if (!index.has_value()) {
+                return nullptr;
+            }
+            return _members[index.value()].get();
+        }
+
+        std::vector<CustomMember*> members() {
+            std::vector<CustomMember*> members;
+            for (auto& member : _members) {
+                members.push_back(member.get());
+            }
+            return members;
+        }
+
+    private:
+        std::vector<std::shared_ptr<CustomMember>> _members;
+        bool _isSelfReferential = false;
+    };
 
     class While : public Stmt {
     public:

@@ -56,12 +56,7 @@ namespace klong {
             filename = _option.customOutputPath;
         }
 
-        auto targetTriple = llvmEmitter.getDefaultTargetTriple();
-        if (_option.isCustomTarget) {
-            targetTriple = _option.customTarget;
-        }
-
-        llvmEmitter.writeToFile(filename, targetTriple, outputFileType);
+        llvmEmitter.writeToFile(filename, outputFileType);
         return true;
     }
 
@@ -130,7 +125,13 @@ namespace klong {
         /* CODEGEN */
         LLVMEmitter::init();
         defer(LLVMEmitter::destroy());
-        LLVMEmitter llvmEmitter;
+
+        auto targetTriple = LLVMEmitter::getDefaultTargetTriple();
+        if (_option.isCustomTarget) {
+            targetTriple = _option.customTarget;
+        }
+
+        LLVMEmitter llvmEmitter(targetTriple);
         {
             auto llvmEmissionStart = std::chrono::high_resolution_clock::now();
             defer(
