@@ -16,10 +16,10 @@
 
 namespace klong {
 
-    LLVMEmitVisitor::LLVMEmitVisitor() :
+    LLVMEmitVisitor::LLVMEmitVisitor(const llvm::DataLayout dataLayout) :
         _context(),
         _builder(_context),
-        _typeEmitVisitor(_context) {
+        _typeEmitVisitor(_context, dataLayout) {
 
     }
 
@@ -302,6 +302,11 @@ namespace klong {
 		// nothing to do here
         (void) stmt;
 	}
+
+    void LLVMEmitVisitor::visitUnionDeclStmt(UnionDeclaration* stmt) {
+        // nothing to do here
+        (void) stmt;
+    }
 
 	void LLVMEmitVisitor::visitCustomMemberStmt(CustomMember* stmt) {
         // nothing to do here
@@ -662,6 +667,12 @@ namespace klong {
                     auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
                     auto memberIndex = structDecl->findMemberIndex(expr->member()).value();
                     address = _builder.CreateStructGEP(targetVal, memberIndex);
+                    address = _builder.CreateBitCast(address,
+                            llvm::PointerType::get(_typeEmitVisitor.getLLVMType(expr->type()), 0));
+                    break;
+                }
+                case TypeDeclarationKind::UNION: {
+                    address = targetVal;
                     address = _builder.CreateBitCast(address,
                             llvm::PointerType::get(_typeEmitVisitor.getLLVMType(expr->type()), 0));
                     break;

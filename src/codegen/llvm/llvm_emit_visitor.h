@@ -13,7 +13,7 @@ namespace klong {
 
     class LLVMEmitVisitor : public StmtVisitor, public ExprVisitor {
     public:
-        LLVMEmitVisitor();
+        LLVMEmitVisitor(const llvm::DataLayout dataLayout);
 
         llvm::Module* getModule();
 
@@ -30,6 +30,7 @@ namespace klong {
         void visitReturnStmt(Return* stmt) override;
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
 		void visitStructDeclStmt(StructDeclaration* stmt) override;
+        void visitUnionDeclStmt(UnionDeclaration* stmt) override;
 		void visitCustomMemberStmt(CustomMember* stmt) override;
         void visitWhileStmt(While* stmt) override;
         void visitForStmt(For* stmt) override;

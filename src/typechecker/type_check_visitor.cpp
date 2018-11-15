@@ -223,6 +223,17 @@ namespace klong {
         }
 	}
 
+    void TypeCheckVisitor::visitUnionDeclStmt(UnionDeclaration* stmt) {
+        for (auto& member : stmt->members()) {
+            check(member);
+            auto memberTypeAsCustomType = dynamic_cast<CustomType*>(member->type());
+            if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
+                _result.addError(
+                        TypeCheckException(member->sourceRange(), "Self referential member definitions are not allowed."));
+            }
+        }
+    }
+
 	void TypeCheckVisitor::visitCustomMemberStmt(CustomMember* stmt) {
         // nothing to do here
         resolveType(stmt->type());
@@ -447,6 +458,19 @@ namespace klong {
             case TypeDeclarationKind::STRUCT: {
                 auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
                 auto memberPtr = structDecl->findMember(expr->member());
+                if (!memberPtr) {
+                    _result.addError(
+                            TypeCheckException(
+                                    expr->sourceRange(),
+                                    "MemberAccess target does not have such a member element."));
+                } else {
+                    expr->type(std::shared_ptr<Type>(memberPtr->type()->clone()));
+                }
+                break;
+            }
+            case TypeDeclarationKind::UNION: {
+                auto unionDecl = dynamic_cast<UnionDeclaration*>(declarationType);
+                auto memberPtr = unionDecl->findMember(expr->member());
                 if (!memberPtr) {
                     _result.addError(
                             TypeCheckException(

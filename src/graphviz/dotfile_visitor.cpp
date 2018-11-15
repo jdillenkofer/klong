@@ -151,6 +151,19 @@ namespace klong {
 		}
 	}
 
+    void DotfileVisitor::visitUnionDeclStmt(UnionDeclaration* stmt) {
+        // print UnionDeclaration stuff here
+        auto unionDeclStmtId = getStmtId(stmt);
+        appendLine(std::to_string(unionDeclStmtId) + " [label=\"UnionDeclaration\\n" + stmt->name() + "\\n"
+                   + "isPublic: " + to_string(stmt->isPublic()) + "\"]");
+
+        for (auto& member : stmt->members()) {
+            member->accept(this);
+            auto memberId = getStmtId(member);
+            appendLine(std::to_string(unionDeclStmtId) + " -> " + std::to_string(memberId));
+        }
+    }
+
 	void DotfileVisitor::visitCustomMemberStmt(CustomMember* stmt) {
 		auto memberStmtId = getStmtId(stmt);
 		appendLine(std::to_string(memberStmtId) + " [label=\"CustomMember\\n" + stmt->name() + "\\n"

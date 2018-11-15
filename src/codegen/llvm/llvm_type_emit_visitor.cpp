@@ -87,26 +87,69 @@ namespace klong {
         }
 
         _outerTypes.push_back(TypeKind::CUSTOM);
-        auto structDeclaration = dynamic_cast<StructDeclaration*>(type->resolvesTo());
-        assert(structDeclaration);
+        auto typeDeclaration = dynamic_cast<TypeDeclaration*>(type->resolvesTo());
+        switch(typeDeclaration->typeDeclarationKind()) {
+            case TypeDeclarationKind::STRUCT:
+            {
+                auto structDeclaration = dynamic_cast<StructDeclaration*>(type->resolvesTo());
+                assert(structDeclaration);
 
-        if (_outerTypes.size() > 1u) {
-            auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
-            if (previousOuterType == TypeKind::POINTER
-                && type->resolvesTo()->isSelfReferential()) {
-                // this emits opaque struct types
-                _valueOfLastType = llvm::StructType::create(_context, type->name());
-                return;
+                if (_outerTypes.size() > 1u) {
+                    auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
+                    if (previousOuterType == TypeKind::POINTER
+                        && type->resolvesTo()->isSelfReferential()) {
+                        // this emits opaque struct types
+                        _valueOfLastType = llvm::StructType::create(_context, type->name());
+                        return;
+                    }
+                }
+
+                std::vector<llvm::Type*> members;
+                for (auto& member : structDeclaration->members()) {
+                    members.push_back(getLLVMType(member->type()));
+                }
+
+                _valueOfLastType = llvm::StructType::create(_context, members, type->name());
+                _customTypeCache[type->name()] = _valueOfLastType;
+                break;
             }
-        }
+            case TypeDeclarationKind::UNION:
+            {
+                auto unionDeclaration = dynamic_cast<UnionDeclaration*>(type->resolvesTo());
+                assert(unionDeclaration);
 
-        std::vector<llvm::Type*> members;
-        for (auto& member : structDeclaration->members()) {
-            members.push_back(getLLVMType(member->type()));
-        }
+                if (_outerTypes.size() > 1u) {
+                    auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
+                    if (previousOuterType == TypeKind::POINTER
+                        && type->resolvesTo()->isSelfReferential()) {
+                        // this emits opaque struct types
+                        _valueOfLastType = llvm::StructType::create(_context, type->name());
+                        return;
+                    }
+                }
 
-        _valueOfLastType = llvm::StructType::create(_context, members, type->name());
-        _customTypeCache[type->name()] = _valueOfLastType;
+                llvm::Type* biggestLLVMType = nullptr;
+                uint64_t biggestSizeInBits = 0;
+                for (auto& member : unionDeclaration->members()) {
+                    auto currentLLVMType = getLLVMType(member->type());
+                    auto currentTypeSize = _dataLayout.getTypeSizeInBits(currentLLVMType);
+                    if (currentTypeSize > biggestSizeInBits) {
+                        biggestSizeInBits = currentTypeSize;
+                        biggestLLVMType = currentLLVMType;
+                    }
+                }
+
+                std::vector<llvm::Type*> members;
+                members.push_back(biggestLLVMType);
+
+                _valueOfLastType = llvm::StructType::create(_context, members, type->name());
+                _customTypeCache[type->name()] = _valueOfLastType;
+                break;
+            }
+            default:
+                assert(false);
+                break;
+        }
         _outerTypes.pop_back();
     }
 }
