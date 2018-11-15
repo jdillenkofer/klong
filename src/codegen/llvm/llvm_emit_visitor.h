@@ -15,7 +15,7 @@ namespace klong {
     public:
         LLVMEmitVisitor();
 
-        llvm::Module* getModule();
+        std::unique_ptr<llvm::Module>&& getModule();
 
         // Module
         void visitModule(Module* module) override;

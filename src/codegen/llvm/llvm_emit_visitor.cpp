@@ -23,8 +23,8 @@ namespace klong {
 
     }
 
-    llvm::Module* LLVMEmitVisitor::getModule() {
-        return _module.get();
+    std::unique_ptr<llvm::Module>&& LLVMEmitVisitor::getModule() {
+        return std::move(_module);
     }
 
     llvm::Value* LLVMEmitVisitor::emitCodeL(Expr* expr) {

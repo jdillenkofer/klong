@@ -25,11 +25,11 @@ namespace klong {
     }
 
     void LLVMEmitter::emit(ModulePtr module) {
-        module->accept(&llvmEmitVisitor);
+        module->accept(&_llvmEmitVisitor);
     }
 
     void LLVMEmitter::printIR() {
-        auto module = llvmEmitVisitor.getModule();
+        auto module = _llvmEmitVisitor.getModule();
         if (module != nullptr) {
             module->print(llvm::outs(), nullptr);
         }
@@ -43,7 +43,7 @@ namespace klong {
                                          const std::string& targetTriple,
                                          const std::string& cpu,
                                          const std::string& features) {
-        auto module = llvmEmitVisitor.getModule();
+        auto module = _llvmEmitVisitor.getModule();
 
         if (module == nullptr) {
             return false;

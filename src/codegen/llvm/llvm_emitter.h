@@ -21,6 +21,6 @@ namespace klong {
         static void destroy();
     private:
         static bool _initialized;
-        LLVMEmitVisitor llvmEmitVisitor;
+        LLVMEmitVisitor _llvmEmitVisitor;
     };
 }

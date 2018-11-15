@@ -37,7 +37,7 @@ namespace klong {
         return true;
     }
 
-    bool Compiler::typecheck(ModulePtr &module) {
+    bool Compiler::typecheck(ModulePtr& module) {
         TypeChecker typeChecker;
         auto typeCheckResult = typeChecker.check(module);
         if (typeCheckResult.hasErrors()) {
@@ -46,6 +46,14 @@ namespace klong {
             return false;
         }
         return true;
+    }
+
+    bool Compiler::run(ModulePtr& module) {
+        KlongJIT klongJIT;
+        klongJIT.addModule(module);
+        auto mainFunction = klongJIT.findSymbol("main");
+        int64_t (*mainFunc)() = (int64_t (*)())(intptr_t)cantFail(mainFunction.getAddress());
+        return mainFunc() != 0;
     }
 
     bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter) {

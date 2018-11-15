@@ -101,11 +101,11 @@ set(HEADER_FILES
     src/codegen/llvm/llvm_type_emit_visitor.h
     src/lexer/lexer_memento.h
     src/parser/parser_memento.h
-)
+        src/codegen/llvm/llvm_klong_jit.h)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use
-llvm_map_components_to_libnames(llvm_libs 
+llvm_map_components_to_libnames(llvm_libs
 	FuzzMutate
 	XCoreDisassembler
 	XCoreCodeGen
@@ -238,6 +238,7 @@ llvm_map_components_to_libnames(llvm_libs
 	BinaryFormat
 	Support
 	Demangle
+    native
 )
 
 add_executable(${EXECUTABLE_NAME} ${SOURCE_FILES} ${HEADER_FILES})
