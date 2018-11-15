@@ -1,0 +1,45 @@
+union oneBytes {
+    a: i8,
+    b: u8
+}
+
+union twoBytes {
+    a: i8,
+    b: u16
+}
+
+union fourBytes {
+    a: i16,
+    b: u32
+}
+
+union eightBytes {
+    a: i32,
+    b: u64
+}
+
+union ptrUnion {
+    a: u8,
+    b: ptr<i8>
+}
+
+pub fun main() -> i64 {
+    if (sizeof(oneBytes) != cast<u64> 1) {
+        return 1;
+    }
+    if (sizeof(twoBytes) != cast<u64> 2) {
+        return 1;
+    }
+    if (sizeof(fourBytes) != cast<u64> 4) {
+        return 1;
+    }
+    if (sizeof(eightBytes) != cast<u64> 8) {
+        return 1;
+    }
+    if (sizeof(ptrUnion) != cast<u64> 8) {
+        return 1;
+    }
+    let i: oneBytes;
+    i.a = cast<i8> 0;
+    return cast<i64> i.b;
+}
