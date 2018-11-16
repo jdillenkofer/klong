@@ -1,3 +1,5 @@
+union zeroBytes {}
+
 union oneBytes {
     a: i8,
     b: u8
@@ -24,6 +26,9 @@ union ptrUnion {
 }
 
 pub fun main() -> i64 {
+    if (sizeof(zeroBytes) != cast<u64> 0) {
+        return 1;
+    }
     if (sizeof(oneBytes) != cast<u64> 1) {
         return 1;
     }

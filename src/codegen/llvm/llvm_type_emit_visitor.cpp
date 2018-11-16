@@ -141,7 +141,9 @@ namespace klong {
 
                 // only add the biggest llvm type to the union
                 std::vector<llvm::Type*> members;
-                members.push_back(biggestLLVMType);
+				if (biggestLLVMType != nullptr) {
+					members.push_back(biggestLLVMType);
+				}
 
                 _valueOfLastType = llvm::StructType::create(_context, members, type->name());
                 _customTypeCache[type->name()] = _valueOfLastType;

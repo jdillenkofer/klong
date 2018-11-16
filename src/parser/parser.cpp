@@ -306,25 +306,27 @@ namespace klong {
 		Token name = consume(TokenType::IDENTIFIER, "Expect struct name.");
 		consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' after struct name.");
 		std::vector<std::shared_ptr<CustomMember>> members;
-		do {
-			Token literal = consume(TokenType::IDENTIFIER, "Expect struct element name.");
-			Token colon = consume(TokenType::COLON, "Expect colon after element name.");
-			auto type = typeDeclaration();
-			auto customMember = std::make_shared<CustomMember>(
-				SourceRange{ literal.sourceRange.start, type->sourceRange().end },
-				literal.value, type);
-			auto it = std::find_if(members.begin(), members.end(),
-			        [&customMember](const std::shared_ptr<CustomMember>& other) {
-			    return customMember->name() == other->name();
-			});
-			if (it != members.end()) {
-			    throw ParseException(
-			            customMember->sourceRange(),
-			            "Member with name '" + customMember->name()
-			            + "' already exists in '" + name.value + "'.");
-			}
-			members.emplace_back(customMember);
-		} while (match(TokenType::COMMA));
+		if (check(TokenType::IDENTIFIER)) {
+			do {
+				Token literal = consume(TokenType::IDENTIFIER, "Expect struct element name.");
+				Token colon = consume(TokenType::COLON, "Expect colon after element name.");
+				auto type = typeDeclaration();
+				auto customMember = std::make_shared<CustomMember>(
+					SourceRange{ literal.sourceRange.start, type->sourceRange().end },
+					literal.value, type);
+				auto it = std::find_if(members.begin(), members.end(),
+					[&customMember](const std::shared_ptr<CustomMember>& other) {
+					return customMember->name() == other->name();
+				});
+				if (it != members.end()) {
+					throw ParseException(
+						customMember->sourceRange(),
+						"Member with name '" + customMember->name()
+						+ "' already exists in '" + name.value + "'.");
+				}
+				members.emplace_back(customMember);
+			} while (match(TokenType::COMMA));
+		}
 		Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last struct member.");
 		return std::make_shared<StructDeclaration>(
 		        SourceRange{ structToken.sourceRange.start, rightCurlyBracket.sourceRange.end },
@@ -336,25 +338,27 @@ namespace klong {
         Token name = consume(TokenType::IDENTIFIER, "Expect union name.");
         consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' after union name.");
         std::vector<std::shared_ptr<CustomMember>> members;
-        do {
-            Token literal = consume(TokenType::IDENTIFIER, "Expect union element name.");
-            Token colon = consume(TokenType::COLON, "Expect colon after element name.");
-            auto type = typeDeclaration();
-            auto customMember = std::make_shared<CustomMember>(
-                    SourceRange{ literal.sourceRange.start, type->sourceRange().end },
-                    literal.value, type);
-            auto it = std::find_if(members.begin(), members.end(),
-                                   [&customMember](const std::shared_ptr<CustomMember>& other) {
-                                       return customMember->name() == other->name();
-                                   });
-            if (it != members.end()) {
-                throw ParseException(
-                        customMember->sourceRange(),
-                        "Member with name '" + customMember->name()
-                        + "' already exists in '" + name.value + "'.");
-            }
-            members.emplace_back(customMember);
-        } while (match(TokenType::COMMA));
+		if (check(TokenType::IDENTIFIER)) {
+			do {
+				Token literal = consume(TokenType::IDENTIFIER, "Expect union element name.");
+				Token colon = consume(TokenType::COLON, "Expect colon after element name.");
+				auto type = typeDeclaration();
+				auto customMember = std::make_shared<CustomMember>(
+					SourceRange{ literal.sourceRange.start, type->sourceRange().end },
+					literal.value, type);
+				auto it = std::find_if(members.begin(), members.end(),
+					[&customMember](const std::shared_ptr<CustomMember>& other) {
+					return customMember->name() == other->name();
+				});
+				if (it != members.end()) {
+					throw ParseException(
+						customMember->sourceRange(),
+						"Member with name '" + customMember->name()
+						+ "' already exists in '" + name.value + "'.");
+				}
+				members.emplace_back(customMember);
+			} while (match(TokenType::COMMA));
+		}
         Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last union member.");
         return std::make_shared<UnionDeclaration>(
                 SourceRange{ unionToken.sourceRange.start, rightCurlyBracket.sourceRange.end },

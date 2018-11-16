@@ -4,6 +4,11 @@ pub fun main() -> i64 {
         return 1;
     }
 
+    let zeroByteStruct: ZeroByteStruct;
+    if (sizeof(ZeroByteStruct) != cast<u64> 0) {
+        return 1;
+    }
+
     let node: Node;
     node.value = 0;
     node.next = cast<ptr<Node>> 0;
@@ -46,3 +51,5 @@ struct Node {
     value: i64,
     next: ptr<Node>
 }
+
+struct ZeroByteStruct {}
