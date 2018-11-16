@@ -115,7 +115,7 @@ namespace klong {
             return false;
         }
 
-        Type* clone() const {
+        Type* clone() const override {
             return new FunctionType(SourceRange(), std::vector<TypePtr>(this->_paramTypes),
                     std::shared_ptr<Type>(this->_returnType->clone()));
         }
@@ -213,7 +213,7 @@ namespace klong {
             }
         }
 
-        Type* clone() const {
+        Type* clone() const override {
             return new PrimitiveType(SourceRange(), this->type());
         }
 
@@ -256,11 +256,13 @@ namespace klong {
             _size = val;
         }
 
-        bool isEqual(const Type* other) const {
+        bool isEqual(const Type* other) const override {
             if (other->kind() == TypeKind::POINTER) {
                 auto otherPointerType = dynamic_cast<const PointerType*>(other);
                 auto innerTypesEqual = this->pointsTo()->isEqual(otherPointerType->pointsTo());
-                if (this->isArray() && otherPointerType->isArray() && this->size() != otherPointerType->size()) {
+                if (this->isArray()
+                    && otherPointerType->isArray()
+                    && this->size() != otherPointerType->size()) {
                     return false;
                 }
                 return innerTypesEqual;
@@ -268,7 +270,7 @@ namespace klong {
             return false;
         }
 
-        Type* clone() const {
+        Type* clone() const override {
             return new PointerType(SourceRange(), this->_pointsTo);
         }
 
@@ -319,7 +321,7 @@ namespace klong {
             return false;
         }
 
-        Type* clone() const {
+        Type* clone() const override {
             return new CustomType(SourceRange(), _name, _resolvesTo);
         }
 

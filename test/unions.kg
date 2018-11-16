@@ -40,6 +40,19 @@ pub fun main() -> i64 {
         return 1;
     }
     let i: oneBytes;
-    i.a = cast<i8> 0;
+    i = passByValue(i);
+    if (i.a != cast<i8> 5) {
+        return 1;
+    }
+    passByPtr(&i);
     return cast<i64> i.b;
+}
+
+fun passByValue(i: oneBytes) -> oneBytes {
+    i.a = cast<i8> 5;
+    return i;
+}
+
+fun passByPtr(i: ptr<oneBytes>) -> void {
+    i.a = cast<i8> 0;
 }
