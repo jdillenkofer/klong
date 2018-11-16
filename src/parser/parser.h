@@ -46,7 +46,7 @@ namespace klong {
 
         StmtPtr declarationStmt();
         std::shared_ptr<ExternalDeclaration> externDeclStmt();
-        std::shared_ptr<Function> function(const std::string& kind, bool isPublic = false);
+        std::shared_ptr<Function> function(bool isPublic = false);
         std::vector<StmtPtr> blockStmt();
         std::shared_ptr<VariableDeclaration> letDeclaration(bool isPublic = false);
         std::shared_ptr<VariableDeclaration> constDeclaration(bool isPublic = false);

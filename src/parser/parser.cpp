@@ -151,7 +151,7 @@ namespace klong {
             }
 
             if (match(TokenType::FUN)) {
-                return function("function", isPublic);
+                return function(isPublic);
             }
 
             if (match(TokenType::LET)) {
@@ -203,12 +203,12 @@ namespace klong {
                 SourceRange { ext.sourceRange.start, semicolon.sourceRange.end }, name.value, type);
     }
     
-    std::shared_ptr<Function> Parser::function(const std::string& kind, bool isPublic) {
+    std::shared_ptr<Function> Parser::function(bool isPublic) {
         auto previousIsInsideFunction = _isInsideFunction;
         _isInsideFunction = true;
         Token fun = previous();
-        Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
-        Token leftPar = consume(TokenType::LEFT_PAR, "Expected '(' after " + kind + " name.");
+        Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
+        Token leftPar = consume(TokenType::LEFT_PAR, "Expected '(' after function name.");
         std::vector<ParameterPtr> params;
         std::vector<TypePtr> paramTypes;
         if (!check(TokenType::RIGHT_PAR)) {
@@ -237,9 +237,9 @@ namespace klong {
 		if (match(TokenType::ARROW)) {
             returnType = typeDeclaration();   
         }
-        consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' before " + kind + " body.");
+        consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' before function body.");
         std::vector<StmtPtr> body = blockStmt();
-        Token rightCurlyBrace = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after " + kind + " body.");
+        Token rightCurlyBrace = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after function body.");
         auto functionType = std::make_shared<FunctionType>(SourceRange {
             leftPar.sourceRange.start,
             returnType ? returnType->sourceRange().end : rightPar.sourceRange.end
