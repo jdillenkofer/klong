@@ -260,7 +260,7 @@ namespace klong {
     }
 
     std::shared_ptr<VariableDeclaration> Parser::letDeclaration(bool isPublic) {
-        Token let = previous();
+        Token letToken = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
         TypePtr type = nullptr;
@@ -268,16 +268,16 @@ namespace klong {
             type = typeDeclaration();
         }
         ExprPtr initializer = nullptr;
-        if (match(TokenType::ASSIGN_OP)) {
-            initializer = expression();
-        }
+		if (match(TokenType::ASSIGN_OP)) {
+			if (_isInsideFunction) {
+				initializer = expression();
+			} else {
+				initializer = literal();
+			}
+		}
 
-        if (!_isInsideFunction && dynamic_cast<Literal*>(initializer.get()) == nullptr) {
-            throw ParseException(initializer->sourceRange(), "Expect a literal as global let initializer.");
-        }
-        
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after let declaration.");
-        return std::make_shared<VariableDeclaration>(SourceRange { let.sourceRange.start, semicolon.sourceRange.end },
+        return std::make_shared<VariableDeclaration>(SourceRange { letToken.sourceRange.start, semicolon.sourceRange.end },
                 name.value, type, initializer, isPublic, false, !_isInsideFunction);
     }
 
@@ -290,11 +290,12 @@ namespace klong {
             type = typeDeclaration();
         }
         consume(TokenType::ASSIGN_OP, "'const' declarations must be initialized.");
-        ExprPtr initializer = expression();
-
-        if (!_isInsideFunction && dynamic_cast<Literal*>(initializer.get()) == nullptr) {
-            throw ParseException(initializer->sourceRange(), "Expect a literal as global const initializer.");
-        }
+		ExprPtr initializer = nullptr;
+		if (_isInsideFunction) {
+			initializer = expression();
+		} else {
+			initializer = literal();
+		}
 
         Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after const declaration.");
         return std::make_shared<VariableDeclaration>(SourceRange { constToken.sourceRange.start, semicolon.sourceRange.end },
