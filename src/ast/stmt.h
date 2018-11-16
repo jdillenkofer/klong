@@ -441,7 +441,7 @@ namespace klong {
 
 	private:
 		std::vector<std::shared_ptr<CustomMember>> _members;
-        bool _isSelfReferential = false;
+        bool _isSelfReferential;
 	};
 
     class UnionDeclaration : public TypeDeclaration {
@@ -506,7 +506,7 @@ namespace klong {
 
     private:
         std::vector<std::shared_ptr<CustomMember>> _members;
-        bool _isSelfReferential = false;
+        bool _isSelfReferential;
     };
 
     class While : public Stmt {

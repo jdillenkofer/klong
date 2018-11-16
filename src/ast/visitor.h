@@ -13,9 +13,9 @@ namespace klong {
     class If;
     class Return;
     class VariableDeclaration;
-	class StructDeclaration;
+    class StructDeclaration;
     class UnionDeclaration;
-	class CustomMember;
+    class CustomMember;
     class While;
     class For;
     class Break;
@@ -53,8 +53,8 @@ namespace klong {
     class Binary;
     class Call;
     class Grouping;
-	class Subscript;
-	class MemberAccess;
+    class Subscript;
+    class MemberAccess;
     class Logical;
     class Unary;
     class SizeOf;

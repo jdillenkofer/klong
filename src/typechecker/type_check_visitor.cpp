@@ -449,7 +449,9 @@ namespace klong {
         }
 
         if (!customType) {
-            _result.addError(TypeCheckException(expr->sourceRange(), "MemberAccess target is not a custom type."));
+            _result.addError(
+                    TypeCheckException(expr->sourceRange(),
+                            "MemberAccess target is not a custom type."));
             return;
         }
 
@@ -522,7 +524,8 @@ namespace klong {
             auto pointerType = dynamic_cast<PointerType*>(expr->right()->type());
             if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
                 _result.addError(
-                        TypeCheckException(expr->sourceRange(), "Deref expects non function pointer type."));
+                        TypeCheckException(expr->sourceRange(),
+                                "Deref expects non function pointer type."));
             }
             expr->type(std::shared_ptr<Type>(pointerType->pointsTo()->clone()));
             return;
@@ -532,7 +535,8 @@ namespace klong {
             auto variable = dynamic_cast<Variable*>(expr->right());
             if (variable == nullptr) {
                 _result.addError(
-                        TypeCheckException(expr->sourceRange(), "Can only get address of variable expressions."));
+                        TypeCheckException(expr->sourceRange(),
+                                "Can only get address of variable expressions."));
             } else {
                 auto isFunction = false;
                 if (variable->type()->kind() == TypeKind::FUNCTION) {

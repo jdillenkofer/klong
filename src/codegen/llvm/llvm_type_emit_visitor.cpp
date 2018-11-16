@@ -87,18 +87,18 @@ namespace klong {
         }
 
         _outerTypes.push_back(TypeKind::CUSTOM);
-        auto typeDeclaration = dynamic_cast<TypeDeclaration*>(type->resolvesTo());
+        auto typeDeclaration = type->resolvesTo();
         switch(typeDeclaration->typeDeclarationKind()) {
             case TypeDeclarationKind::STRUCT:
             {
-                auto structDeclaration = dynamic_cast<StructDeclaration*>(type->resolvesTo());
+                auto structDeclaration = dynamic_cast<StructDeclaration*>(typeDeclaration);
                 assert(structDeclaration);
 
                 if (_outerTypes.size() > 1u) {
                     auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
                     if (previousOuterType == TypeKind::POINTER
                         && type->resolvesTo()->isSelfReferential()) {
-                        // this emits opaque struct types
+                        // this emits an opaque struct type
                         _valueOfLastType = llvm::StructType::create(_context, type->name());
                         return;
                     }
@@ -115,14 +115,14 @@ namespace klong {
             }
             case TypeDeclarationKind::UNION:
             {
-                auto unionDeclaration = dynamic_cast<UnionDeclaration*>(type->resolvesTo());
+                auto unionDeclaration = dynamic_cast<UnionDeclaration*>(typeDeclaration);
                 assert(unionDeclaration);
 
                 if (_outerTypes.size() > 1u) {
                     auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
                     if (previousOuterType == TypeKind::POINTER
                         && type->resolvesTo()->isSelfReferential()) {
-                        // this emits opaque struct types
+                        // this emits an opaque union type
                         _valueOfLastType = llvm::StructType::create(_context, type->name());
                         return;
                     }
@@ -139,6 +139,7 @@ namespace klong {
                     }
                 }
 
+                // only add the biggest llvm type to the union
                 std::vector<llvm::Type*> members;
                 members.push_back(biggestLLVMType);
 
