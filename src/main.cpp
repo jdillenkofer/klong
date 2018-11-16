@@ -32,7 +32,8 @@ void printHelp() {
     std::cout << "usage klong [options] [@entryfile]" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "\t-c disable linking" << std::endl;
-    std::cout << "\t-o file Place output in file \"file\"." << std::endl;
+    std::cout << "\t-o file Emits the output in file \"file\"." << std::endl;
+    std::cout << "\t-s Emit the assembly source instead of a binary objectfile." << std::endl;
     std::cout << "\t-b targetTriple" << std::endl;
     std::cout << "\t-d emit graphviz dot files" << std::endl;
     std::cout << "\t-v (verbose) shows compile times" << std::endl;
