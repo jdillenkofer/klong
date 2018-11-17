@@ -386,8 +386,22 @@ namespace klong {
 			std::vector<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
 				TypeDeclaration(sourceRange, kind, std::move(name), isPublic),
-				_values(members) {
-
+				_members(members) {
+            // check if this type is self referential
+            for (auto& member : _members) {
+                auto pointerType = dynamic_cast<PointerType*>(member->type());
+                _isSelfReferential = false;
+                while (pointerType) {
+                    if (pointerType->pointsTo()->kind() == TypeKind::CUSTOM) {
+                        auto customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                        if (customType && this->name() == customType->name()) {
+                            _isSelfReferential = true;
+                            break;
+                        }
+                    }
+                    pointerType = dynamic_cast<PointerType*>(pointerType->pointsTo());
+                }
+            }
 		}
 
 		bool isSelfReferential() const {
@@ -395,8 +409,8 @@ namespace klong {
 		}
 
 		std::optional<uint32_t> findMemberIndex(const std::string& name) {
-			for (uint32_t i = 0; i < _values.size(); i++) {
-				auto& value = _values[i];
+			for (uint32_t i = 0; i < _members.size(); i++) {
+				auto& value = _members[i];
 				if (value->name() == name) {
 					return i;
 				}
@@ -409,19 +423,19 @@ namespace klong {
 			if (!index.has_value()) {
 				return nullptr;
 			}
-			return _values[index.value()].get();
+			return _members[index.value()].get();
 		}
 
 		std::vector<CustomMember*> members() {
 			std::vector<CustomMember*> members;
-			for (auto& value : _values) {
-				members.push_back(value.get());
+			for (auto& member : _members) {
+				members.push_back(member.get());
 			}
 			return members;
 		}
 
 	private:
-		std::vector<std::shared_ptr<CustomMember>> _values;
+		std::vector<std::shared_ptr<CustomMember>> _members;
 		bool _isSelfReferential;
 	};
 
