@@ -388,7 +388,21 @@ namespace klong {
 			bool isPublic) :
 				TypeDeclaration(sourceRange, kind, std::move(name), isPublic),
 				_members(members) {
-
+            // check if this type is self referential
+            for (auto& member : _members) {
+                auto pointerType = dynamic_cast<PointerType*>(member->type());
+                _isSelfReferential = false;
+                while (pointerType) {
+                    if (pointerType->pointsTo()->kind() == TypeKind::CUSTOM) {
+                        auto customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                        if (customType && this->name() == customType->name()) {
+                            _isSelfReferential = true;
+                            break;
+                        }
+                    }
+                    pointerType = dynamic_cast<PointerType*>(pointerType->pointsTo());
+                }
+            }
 		}
 
 		bool isSelfReferential() const override {
