@@ -211,27 +211,26 @@ namespace klong {
         }
     }
 
+	/**
+	 * this is the shared typecheck implementation for structs and unions
+	 */
+	void TypeCheckVisitor::checkMemberTypeDeclStmt(MemberTypeDeclaration* stmt) {
+		for (auto& member : stmt->members()) {
+			check(member);
+			auto memberTypeAsCustomType = dynamic_cast<CustomType*>(member->type());
+			if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
+				_result.addError(
+					TypeCheckException(member->sourceRange(), "Self referential member definitions are not allowed."));
+			}
+		}
+	}
 
 	void TypeCheckVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
-        for (auto& member : stmt->members()) {
-            check(member);
-            auto memberTypeAsCustomType = dynamic_cast<CustomType*>(member->type());
-            if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
-                _result.addError(
-                        TypeCheckException(member->sourceRange(), "Self referential member definitions are not allowed."));
-            }
-        }
+		checkMemberTypeDeclStmt(stmt);
 	}
 
     void TypeCheckVisitor::visitUnionDeclStmt(UnionDeclaration* stmt) {
-        for (auto& member : stmt->members()) {
-            check(member);
-            auto memberTypeAsCustomType = dynamic_cast<CustomType*>(member->type());
-            if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
-                _result.addError(
-                        TypeCheckException(member->sourceRange(), "Self referential member definitions are not allowed."));
-            }
-        }
+		checkMemberTypeDeclStmt(stmt);
     }
 
 	void TypeCheckVisitor::visitCustomMemberStmt(CustomMember* stmt) {
@@ -457,22 +456,10 @@ namespace klong {
 
         auto declarationType = customType->resolvesTo();
         switch(declarationType->typeDeclarationKind()) {
-            case TypeDeclarationKind::STRUCT: {
-                auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
-                auto memberPtr = structDecl->findMember(expr->member());
-                if (!memberPtr) {
-                    _result.addError(
-                            TypeCheckException(
-                                    expr->sourceRange(),
-                                    "MemberAccess target does not have such a member element."));
-                } else {
-                    expr->type(std::shared_ptr<Type>(memberPtr->type()->clone()));
-                }
-                break;
-            }
-            case TypeDeclarationKind::UNION: {
-                auto unionDecl = dynamic_cast<UnionDeclaration*>(declarationType);
-                auto memberPtr = unionDecl->findMember(expr->member());
+            case TypeDeclarationKind::STRUCT: 
+			case TypeDeclarationKind::UNION: {
+                auto memberTypeDecl = dynamic_cast<MemberTypeDeclaration*>(declarationType);
+                auto memberPtr = memberTypeDecl->findMember(expr->member());
                 if (!memberPtr) {
                     _result.addError(
                             TypeCheckException(

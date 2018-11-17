@@ -90,6 +90,7 @@ namespace klong {
         void declareType(TypeDeclaration* typeDeclarationStmt);
         TypeDeclaration* findTypeDeclaration(CustomType* type);
 
+		void checkMemberTypeDeclStmt(MemberTypeDeclaration* stmt);
         bool getAndResetReturnsValue();
         TypePtr applyIntegerPromotion(Type* type);
         TypePtr applyArithmeticPromotion(Type* left, Type* right);
