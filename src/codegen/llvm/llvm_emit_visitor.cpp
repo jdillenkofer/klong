@@ -1,5 +1,7 @@
 #include "llvm_emit_visitor.h"
 
+#include <iterator>
+
 #include "ast/module.h"
 #include "ast/stmt.h"
 #include "ast/expr.h"
@@ -307,6 +309,11 @@ namespace klong {
         // nothing to do here
         (void) stmt;
     }
+
+	void LLVMEmitVisitor::visitEnumDeclStmt(EnumDeclaration* stmt) {
+		// nothing to do here
+		(void) stmt;
+	}
 
 	void LLVMEmitVisitor::visitCustomMemberStmt(CustomMember* stmt) {
         // nothing to do here
@@ -620,6 +627,23 @@ namespace klong {
                     break;
             }
         }
+
+		// ONLY ENUMS
+		// (this is already checked by the typechecker)
+		auto leftCustomType = dynamic_cast<CustomType*>(expr->left()->type());
+		auto rightCustomType = dynamic_cast<CustomType*>(expr->right()->type());
+		if (leftCustomType && rightCustomType) {
+			switch (expr->op()) {
+			case BinaryOperation::EQUALITY:
+				_valueOfLastExpr = _builder.CreateICmpEQ(left, right);
+				break;
+			case BinaryOperation::INEQUALITY:
+				_valueOfLastExpr = _builder.CreateICmpNE(left, right);
+				break;
+			default:
+				assert(false);
+			}
+		}
     }
 
     void LLVMEmitVisitor::visitCallExpr(Call* expr) {
@@ -665,7 +689,7 @@ namespace klong {
             switch (declarationType->typeDeclarationKind()) {
                 case TypeDeclarationKind::STRUCT: {
                     auto structDecl = dynamic_cast<StructDeclaration*>(declarationType);
-                    auto memberIndex = structDecl->findMemberIndex(expr->member()).value();
+                    auto memberIndex = structDecl->findMemberIndex(expr->value()).value();
                     address = _builder.CreateStructGEP(targetVal, memberIndex);
                     address = _builder.CreateBitCast(address,
                             llvm::PointerType::get(_typeEmitVisitor.getLLVMType(expr->type()), 0));
@@ -688,6 +712,23 @@ namespace klong {
             _valueOfLastExpr = _builder.CreateLoad(address);
         }
     }
+
+	void LLVMEmitVisitor::visitEnumAccessExpr(EnumAccess* expr) {
+		auto value = expr->value();
+		auto enumType = dynamic_cast<EnumDeclaration*>(expr->target()->resolvesTo());
+		auto enumValues = enumType->values();
+		auto it = std::find(enumValues.begin(), enumValues.end(), value);
+		if (it == enumValues.end())
+		{
+			// no such value in enum
+			assert(false);
+		}
+		else
+		{
+			auto index = std::distance(enumValues.begin(), it);
+			_valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(32, (uint32_t)index, true));
+		}
+	}
 
     void LLVMEmitVisitor::visitLogicalExpr(Logical* expr) {
         auto left = emitCodeR(expr->left());

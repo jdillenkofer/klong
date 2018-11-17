@@ -40,4 +40,11 @@ namespace klong {
         }
         return false;
     }
+
+	bool Type::isCustom(Type* type) {
+		if (type&& type->kind() == TypeKind::CUSTOM) {
+			return true;
+		}
+		return false;
+	}
 }

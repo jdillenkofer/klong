@@ -1,0 +1,24 @@
+pub enum Result {
+    SUCCESS,
+    ERROR
+}
+
+fun negateResult(res: Result) -> Result {
+    if (res != Result::SUCCESS) {
+        return Result::SUCCESS;
+    }
+    return Result::ERROR;
+}
+
+pub fun main() -> i64 {
+    let result: Result = negateResult(Result::ERROR);
+    if (result == Result::ERROR) {
+        return 1;
+    }
+    
+    // expect u32 size
+    if (sizeof(Result) != 4) {
+        return 1;
+    }
+    return 0;
+}

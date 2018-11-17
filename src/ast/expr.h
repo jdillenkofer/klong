@@ -16,6 +16,7 @@ namespace klong {
         GROUPING,
         SUBSCRIPT,
         MEMBER_ACCESS,
+		ENUM_ACCESS,
 		LITERAL,
         LOGICAL,
         UNARY,
@@ -228,8 +229,8 @@ namespace klong {
 
 	class MemberAccess : public Expr {
 	public:
-	    MemberAccess(SourceRange sourceRange, ExprPtr target, std::string member):
-	        Expr(ExprKind::MEMBER_ACCESS, sourceRange), _target(std::move(target)), _member(std::move(member)) {
+	    MemberAccess(SourceRange sourceRange, ExprPtr target, std::string value):
+	        Expr(ExprKind::MEMBER_ACCESS, sourceRange), _target(std::move(target)), _value(std::move(value)) {
 	    }
 
 	    void accept(ExprVisitor* visitor) override {
@@ -240,13 +241,37 @@ namespace klong {
             return _target.get();
         }
 
-        const std::string& member() const {
-	        return _member;
+        const std::string& value() const {
+	        return _value;
         }
 
 	private:
 	    ExprPtr _target;
-	    std::string _member;
+	    std::string _value;
+	};
+
+	class EnumAccess : public Expr {
+	public:
+		EnumAccess(SourceRange sourceRange, std::shared_ptr<CustomType> target, std::string value) :
+			Expr(ExprKind::ENUM_ACCESS, sourceRange), 
+			_target(std::move(target)), 
+			_value(std::move(value)) {
+		}
+
+		void accept(ExprVisitor* visitor) override {
+			visitor->visitEnumAccessExpr(this);
+		}
+
+		CustomType* target() const {
+			return _target.get();
+		}
+
+		const std::string& value() const {
+			return _value;
+		}
+	private:
+		std::shared_ptr<CustomType> _target;
+		std::string _value;
 	};
 
     class Literal : public Expr {

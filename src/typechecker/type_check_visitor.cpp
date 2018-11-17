@@ -215,12 +215,12 @@ namespace klong {
 	 * this is the shared typecheck implementation for structs and unions
 	 */
 	void TypeCheckVisitor::checkMemberTypeDeclStmt(MemberTypeDeclaration* stmt) {
-		for (auto& member : stmt->members()) {
-			check(member);
-			auto memberTypeAsCustomType = dynamic_cast<CustomType*>(member->type());
+		for (auto& value : stmt->members()) {
+			check(value);
+			auto memberTypeAsCustomType = dynamic_cast<CustomType*>(value->type());
 			if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
 				_result.addError(
-					TypeCheckException(member->sourceRange(), "Self referential member definitions are not allowed."));
+					TypeCheckException(value->sourceRange(), "Self referential member definitions are not allowed."));
 			}
 		}
 	}
@@ -232,6 +232,10 @@ namespace klong {
     void TypeCheckVisitor::visitUnionDeclStmt(UnionDeclaration* stmt) {
 		checkMemberTypeDeclStmt(stmt);
     }
+
+	void TypeCheckVisitor::visitEnumDeclStmt(EnumDeclaration* stmt) {
+		(void) stmt;
+	}
 
 	void TypeCheckVisitor::visitCustomMemberStmt(CustomMember* stmt) {
         // nothing to do here
@@ -350,12 +354,21 @@ namespace klong {
 				_result.addError(TypeCheckException(expr->sourceRange(), "Illegal type in arithmetic operation."));
 				break;
             }
+			case BinaryOperation::EQUALITY:
+			case BinaryOperation::INEQUALITY:
+			{
+				if (Type::isCustom(leftType) && Type::isCustom(rightType)
+					&& dynamic_cast<CustomType*>(leftType)->resolvesTo()->typeDeclarationKind() == TypeDeclarationKind::ENUM
+					&& leftType->isEqual(rightType)) {
+					expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
+					break;
+				}
+			}
+			[[fallthrough]];
             case BinaryOperation::GREATER_THAN:
             case BinaryOperation::GREATER_EQUAL:
             case BinaryOperation::LESS_THAN:
             case BinaryOperation::LESS_EQUAL:
-            case BinaryOperation::EQUALITY:
-            case BinaryOperation::INEQUALITY:
             {
                 if ((Type::isInteger(leftType) || Type::isFloat(leftType)) 
 					&& (Type::isInteger(rightType) || Type::isFloat(rightType))) {
@@ -364,10 +377,11 @@ namespace klong {
                     expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
                     break;
                 }
-                if (Type::isPointer(leftType) && Type::isPointer(rightType)) {
+                if (Type::isPointer(leftType) && Type::isPointer(rightType) && leftType->isEqual(rightType)) {
                     expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
                     break;
                 }
+
                 _result.addError(TypeCheckException(expr->sourceRange(),
                         "Comparisons must be of the same type."));
                 break;
@@ -459,7 +473,7 @@ namespace klong {
             case TypeDeclarationKind::STRUCT: 
 			case TypeDeclarationKind::UNION: {
                 auto memberTypeDecl = dynamic_cast<MemberTypeDeclaration*>(declarationType);
-                auto memberPtr = memberTypeDecl->findMember(expr->member());
+                auto memberPtr = memberTypeDecl->findMember(expr->value());
                 if (!memberPtr) {
                     _result.addError(
                             TypeCheckException(
@@ -470,10 +484,31 @@ namespace klong {
                 }
                 break;
             }
+			case TypeDeclarationKind::ENUM: {
+				_result.addError(TypeCheckException(expr->sourceRange(), 
+					"MemberAccess target does not allow enum types. Try to use the '::' operator instead."));
+				break;
+			}
             default:
                 assert(false);
         }
     }
+
+	void TypeCheckVisitor::visitEnumAccessExpr(EnumAccess* expr) {
+		resolveType(expr->target());
+		auto resolvedTypeDecl = expr->target()->resolvesTo();
+		if (resolvedTypeDecl && resolvedTypeDecl->typeDeclarationKind() != TypeDeclarationKind::ENUM) {
+			_result.addError(TypeCheckException(expr->target()->sourceRange(), "Expect enum type."));
+		} else {
+			auto enumValues = dynamic_cast<EnumDeclaration*>(resolvedTypeDecl)->values();
+			auto it = std::find(enumValues.begin(), enumValues.end(), expr->value());
+			if (it == enumValues.end()) {
+				_result.addError(TypeCheckException(expr->sourceRange(), 
+					"No such value " + expr->value() + " in enum type " + expr->target()->name() + "."));
+			}
+			expr->type(std::shared_ptr<Type>(expr->target()->clone()));
+		}
+	}
 
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left());
@@ -691,7 +726,7 @@ namespace klong {
         type->resolvesTo(typeDecl);
     }
 
-    TypeDeclaration* TypeCheckVisitor::findTypeDeclaration(klong::CustomType *type) {
+    TypeDeclaration* TypeCheckVisitor::findTypeDeclaration(CustomType *type) {
         auto it = _typeDeclarations.find(type->name());
         if (it != _typeDeclarations.end()) {
             return (*it).second;

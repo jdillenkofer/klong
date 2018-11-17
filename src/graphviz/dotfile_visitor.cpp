@@ -144,9 +144,9 @@ namespace klong {
 		appendLine(std::to_string(structDeclStmtId) + " [label=\"StructDeclaration\\n" + stmt->name() + "\\n"
 			+ "isPublic: " + to_string(stmt->isPublic()) + "\"]");
 
-		for (auto& member : stmt->members()) {
-			member->accept(this);
-			auto memberId = getStmtId(member);
+		for (auto& value : stmt->members()) {
+			value->accept(this);
+			auto memberId = getStmtId(value);
 			appendLine(std::to_string(structDeclStmtId) + " -> " + std::to_string(memberId));
 		}
 	}
@@ -157,12 +157,21 @@ namespace klong {
         appendLine(std::to_string(unionDeclStmtId) + " [label=\"UnionDeclaration\\n" + stmt->name() + "\\n"
                    + "isPublic: " + to_string(stmt->isPublic()) + "\"]");
 
-        for (auto& member : stmt->members()) {
-            member->accept(this);
-            auto memberId = getStmtId(member);
+        for (auto& value : stmt->members()) {
+            value->accept(this);
+            auto memberId = getStmtId(value);
             appendLine(std::to_string(unionDeclStmtId) + " -> " + std::to_string(memberId));
         }
     }
+
+	void DotfileVisitor::visitEnumDeclStmt(EnumDeclaration* stmt) {
+		// print EnumDeclaration stuff here
+		auto enumDeclStmtId = getStmtId(stmt);
+		appendLine(std::to_string(enumDeclStmtId) + " [label=\"EnumDeclaration\\n" + stmt->name() + "\\n"
+			+ "isPublic: " + to_string(stmt->isPublic()) + "\"]");
+
+		// TODO: maybe print the enum values here
+	}
 
 	void DotfileVisitor::visitCustomMemberStmt(CustomMember* stmt) {
 		auto memberStmtId = getStmtId(stmt);
@@ -331,7 +340,7 @@ namespace klong {
         // print MemberAccess stuff here
         auto memberAccessExprId = getExprId(expr);
         appendLine(std::to_string(memberAccessExprId) + " [label=\"MemberAccess\\n"
-        + expr->member() + "\\n"
+        + expr->value() + "\\n"
         + getType(expr->type()) + "\"]");
 
         // visit target
@@ -339,6 +348,14 @@ namespace klong {
         auto targetExprId = getExprId(expr->target());
         appendLine(std::to_string(memberAccessExprId) + " -> " + std::to_string(targetExprId));
     }
+	
+	void DotfileVisitor::visitEnumAccessExpr(EnumAccess* expr) {
+		// print ScopeAccess stuff here
+		auto scopeAccessExprId = getExprId(expr);
+		appendLine(std::to_string(scopeAccessExprId) + " [label=\"EnumAccess\\n"
+			+ expr->value() + "\\n"
+			+ getType(expr->type()) + "\"]");
+	}
 
     void DotfileVisitor::visitLogicalExpr(Logical* expr) {
         // print Logical stuff here

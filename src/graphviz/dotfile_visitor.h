@@ -22,6 +22,7 @@ namespace klong {
         void visitVarDeclStmt(VariableDeclaration* stmt) override;
 		void visitStructDeclStmt(StructDeclaration* stmt) override;
         void visitUnionDeclStmt(UnionDeclaration* stmt) override;
+		void visitEnumDeclStmt(EnumDeclaration* stmt) override;
 		void visitCustomMemberStmt(CustomMember* stmt) override;
         void visitWhileStmt(While* stmt) override;
         void visitForStmt(For* stmt) override;
@@ -37,6 +38,7 @@ namespace klong {
         void visitGroupingExpr(Grouping* expr) override;
 		void visitSubscriptExpr(Subscript* expr) override;
 		void visitMemberAccessExpr(MemberAccess* expr) override;
+		void visitEnumAccessExpr(EnumAccess* expr) override;
         void visitLogicalExpr(Logical* expr) override;
         void visitUnaryExpr(Unary* expr) override;
         void visitSizeOfExpr(SizeOf* expr) override;

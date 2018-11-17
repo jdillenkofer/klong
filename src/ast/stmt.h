@@ -347,7 +347,8 @@ namespace klong {
 
 	enum class TypeDeclarationKind {
 	    STRUCT,
-	    UNION
+	    UNION,
+		ENUM
 	};
 
 	class TypeDeclaration : public Stmt {
@@ -363,8 +364,6 @@ namespace klong {
         TypeDeclarationKind typeDeclarationKind() const {
 	        return _kind;
 	    }
-
-	    virtual bool isSelfReferential() const = 0;
 
         std::string name() const {
             return _name;
@@ -387,18 +386,18 @@ namespace klong {
 			std::vector<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
 				TypeDeclaration(sourceRange, kind, std::move(name), isPublic),
-				_members(members) {
+				_values(members) {
 
 		}
 
-		bool isSelfReferential() const override {
+		bool isSelfReferential() const {
 			return _isSelfReferential;
 		}
 
 		std::optional<uint32_t> findMemberIndex(const std::string& name) {
-			for (uint32_t i = 0; i < _members.size(); i++) {
-				auto& member = _members[i];
-				if (member->name() == name) {
+			for (uint32_t i = 0; i < _values.size(); i++) {
+				auto& value = _values[i];
+				if (value->name() == name) {
 					return i;
 				}
 			}
@@ -410,19 +409,19 @@ namespace klong {
 			if (!index.has_value()) {
 				return nullptr;
 			}
-			return _members[index.value()].get();
+			return _values[index.value()].get();
 		}
 
 		std::vector<CustomMember*> members() {
 			std::vector<CustomMember*> members;
-			for (auto& member : _members) {
-				members.push_back(member.get());
+			for (auto& value : _values) {
+				members.push_back(value.get());
 			}
 			return members;
 		}
 
 	private:
-		std::vector<std::shared_ptr<CustomMember>> _members;
+		std::vector<std::shared_ptr<CustomMember>> _values;
 		bool _isSelfReferential;
 	};
 
@@ -446,13 +445,33 @@ namespace klong {
 			std::string name,
 			std::vector<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
-			MemberTypeDeclaration(sourceRange, TypeDeclarationKind::UNION, std::move(name), std::move(members), isPublic) {
+				MemberTypeDeclaration(sourceRange, TypeDeclarationKind::UNION, std::move(name), std::move(members), isPublic) {
 		}
 
 		void accept(StmtVisitor* visitor) override {
 			visitor->visitUnionDeclStmt(this);
 		}
     };
+
+	class EnumDeclaration : public TypeDeclaration {
+	public:
+		EnumDeclaration(SourceRange sourceRange,
+			std::string name,
+			std::vector<std::string>&& values,
+			bool isPublic):
+				TypeDeclaration(sourceRange, TypeDeclarationKind::ENUM, name, isPublic), _values(std::move(values)) {
+		}
+
+		std::vector<std::string> values() const {
+			return _values;
+		}
+
+		void accept(StmtVisitor* visitor) override {
+			visitor->visitEnumDeclStmt(this);
+		}
+	private:
+		std::vector<std::string> _values;
+	};
 
     class While : public Stmt {
     public:
