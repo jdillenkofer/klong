@@ -533,7 +533,7 @@ namespace klong {
     }
 
     void DotfileVisitor::visitPointerType(PointerType *type) {
-        std::string str = "";
+        std::string str;
         if (type->isArray()) {
             str += "[";
             type->pointsTo()->accept(this);

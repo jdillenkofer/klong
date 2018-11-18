@@ -1,5 +1,7 @@
 #include "lexer.h"
 
+#include "common/compilation_error.h"
+
 namespace klong {
     std::multimap<char, Lexer::LexerCaseCallable> Lexer::cases = {
         // plus
@@ -219,12 +221,6 @@ namespace klong {
         // string literal
         {'"', std::bind(&Lexer::stringLiteral, std::placeholders::_1, std::placeholders::_2)},
     };
-
-    bool Lexer::hasNext() const {
-        auto position = _currentPosition;
-        skipWhitespace(position);
-        return position <= _code.length();
-    }
     
     Token Lexer::next() {
         skipWhitespace(_currentPosition);
@@ -256,7 +252,7 @@ namespace klong {
             token.sourceRange = { startLocation, endLocation };
             token.type = TokenType::ERROR;
             token.value = std::string(1, c);
-            throw LexerException(token, "Illegal char sequence encountered.");
+            throw CompilationError(token.sourceRange, "Illegal char sequence encountered.");
         }
 
         return token;

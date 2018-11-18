@@ -3,7 +3,7 @@
 #include <stack>
 #include <map>
 
-#include "common/result.h"
+#include "common/compilation_result.h"
 #include "ast/module.h"
 #include "ast/visitor.h"
 #include "ast/stmt.h"
@@ -44,7 +44,10 @@ namespace klong {
 
     class ResolveVisitor : public StmtVisitor, public ExprVisitor {
     public:
-        ResolveVisitor() = default;
+        ResolveVisitor(CompilationResult* compilationResult):
+            _compilationResult(compilationResult) {
+
+        }
 
         // Module
         void visitModule(Module* module) override;
@@ -90,27 +93,24 @@ namespace klong {
         void visitCharacterLiteral(CharacterLiteral* expr) override;
         void visitArrayLiteral(ArrayLiteral* expr) override;
 
-        Result<ModulePtr, ResolveException> getResult() const;
-
     private:
         void resolve(Stmt* stmt);
         void resolve(Expr* expr);
         void resolve(const std::vector<Stmt*>& statements);
 
-        void resolveLocal(Variable* variable);
+        bool resolveLocal(Variable* variable);
 
         void resolveFunction(Function* stmt, bool insideFunction);
 
         void enterScope();
         void exitScope();
 
-        void declareType(TypeDeclaration* typeDeclarationStmt);
         void declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType);
         void define(std::string name);
 
     private:
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
         bool _isInsideFunction = false;
-        Result<ModulePtr, ResolveException> _result;
+        CompilationResult* _compilationResult;
     };
 }

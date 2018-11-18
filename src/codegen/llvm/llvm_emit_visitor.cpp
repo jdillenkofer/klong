@@ -854,7 +854,6 @@ namespace klong {
                 _valueOfLastExpr = llvm::ConstantFP::get(_context, llvm::APFloat(expr->f64()));
                 break;
             default:
-                // TODO: Error handling
                 assert(false);
                 break;
         }

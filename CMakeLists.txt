@@ -51,27 +51,29 @@ add_definitions(${LLVM_DEFINITIONS})
 
 set(SOURCE_FILES
     src/main.cpp
+    src/compiler.cpp
     src/common/getopt.c
     src/common/option.cpp
     src/common/source_range.cpp
     src/common/source_location.cpp
+    src/common/compilation_result.cpp
+    src/ast/type.cpp
+    src/ast/string_helper.cpp
     src/lexer/lexer.cpp
     src/parser/parser.cpp
-	src/resolver/resolve_visitor.cpp
-	src/typechecker/type_check_visitor.cpp
-    src/codegen/llvm/llvm_emit_visitor.cpp
-	src/graphviz/dotfile_visitor.cpp
-    src/ast/string_helper.cpp
-    src/compiler.cpp
-    src/typechecker/typechecker.cpp
     src/resolver/resolver.cpp
+    src/resolver/resolve_visitor.cpp
+    src/typechecker/typechecker.cpp
+    src/typechecker/type_check_visitor.cpp
     src/codegen/llvm/llvm_emitter.cpp
-    src/graphviz/dotfile_emitter.cpp
-    src/ast/type.cpp
+    src/codegen/llvm/llvm_emit_visitor.cpp
     src/codegen/llvm/llvm_type_emit_visitor.cpp
+    src/graphviz/dotfile_visitor.cpp
+    src/graphviz/dotfile_emitter.cpp
 )
 
 set(HEADER_FILES
+    src/compiler.h
     src/common/defer.h
     src/common/option.h
     src/common/getopt.h
@@ -79,28 +81,28 @@ set(HEADER_FILES
     src/common/source_range.h
 	src/common/source_file.h
     src/common/source_location.h
+    src/common/compilation_result.h
+    src/common/compilation_error.h
+    src/common/compilation_warning.h
+    src/ast/expr.h
+    src/ast/stmt.h
+    src/ast/visitor.h
+    src/ast/type.h
+    src/ast/string_helper.h
     src/lexer/token.h
     src/lexer/lexer.h
-    src/lexer/ilexer.h
-	src/ast/expr.h
-	src/ast/stmt.h
-	src/ast/visitor.h
-	src/ast/type.h
-    src/ast/string_helper.h
-    src/parser/parser.h
-    src/parser/iparser.h
+    src/lexer/lexer_memento.h
+    src/parser/parser_memento.h
+	src/parser/parser.h
     src/resolver/resolver.h
 	src/resolver/resolve_visitor.h
 	src/typechecker/typechecker.h
     src/typechecker/type_check_visitor.h
     src/codegen/llvm/llvm_emit_visitor.h
     src/codegen/llvm/llvm_emitter.h
-	src/graphviz/dotfile_visitor.h
-	src/graphviz/dotfile_emitter.h
-    src/compiler.h
     src/codegen/llvm/llvm_type_emit_visitor.h
-    src/lexer/lexer_memento.h
-    src/parser/parser_memento.h
+    src/graphviz/dotfile_visitor.h
+	src/graphviz/dotfile_emitter.h
 )
 
 # Find the libraries that correspond to the LLVM components

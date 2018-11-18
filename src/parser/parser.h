@@ -3,8 +3,8 @@
 #include <string>
 #include <memory>
 
-#include "iparser.h"
-#include "../lexer/ilexer.h"
+#include "common/compilation_result.h"
+#include "lexer/lexer.h"
 #include "ast/type.h"
 #include "ast/module.h"
 #include "ast/stmt.h"
@@ -13,14 +13,15 @@
 
 
 namespace klong {
-    class Parser : public IParser {
+    class Parser {
     public:
-        explicit Parser(ILexer* lexer):
-            _lexer(lexer) {
+        explicit Parser(Lexer* lexer, CompilationResult* compilationResult):
+            _lexer(lexer),
+            _compilationResult(compilationResult) {
             advance();
         }
 
-        Result<ModulePtr, ParseException> parse() override;
+        void parse();
 
         ParserMemento saveToMemento();
         void loadFromMemento(ParserMemento& memento);
@@ -85,10 +86,10 @@ namespace klong {
     private:
         Token _current;
         Token _previous;
-        ILexer* _lexer;
+        Lexer* _lexer;
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
         bool _isInsideDefer = false;
-        std::vector<ParseException> _errors;
+        CompilationResult* _compilationResult;
     };
 }

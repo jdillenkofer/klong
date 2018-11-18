@@ -1,9 +1,8 @@
 #include "resolver.h"
 
 namespace klong {
-    Result<ModulePtr, ResolveException> Resolver::resolve(ModulePtr module) {
-        auto resolveVisitor = ResolveVisitor();
+    void Resolver::resolve(ModulePtr module, CompilationResult* result) {
+        auto resolveVisitor = ResolveVisitor(result);
         module->accept(&resolveVisitor);
-        return resolveVisitor.getResult();
     }
 }

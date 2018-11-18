@@ -1,12 +1,12 @@
 #pragma once
 
-#include "common/result.h"
+#include "common/compilation_result.h"
 #include "resolver/resolve_visitor.h"
 #include "ast/module.h"
 
 namespace klong {
     class Resolver {
     public:
-        Result<ModulePtr, ResolveException> resolve(ModulePtr module);
+        void resolve(ModulePtr module, CompilationResult* result);
     };
 }

@@ -1,13 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <optional>
+#include <memory>
 
 namespace klong {
     template <typename successType, typename errorType> class Result {
     public:
-        static Result<successType, errorType> fromErrors(std::vector<errorType>&& errors) {
-            return Result(std::move(errors));
+        static Result<successType, errorType> fromError(errorType&& error) {
+            return Result(std::move(error));
         }
 
         static Result<successType, errorType> from(successType&& val) {
@@ -24,37 +23,27 @@ namespace klong {
             _val = val;
         }
 
-        bool hasErrors() const {
-            return _errors.size() > 0;
+        bool isError() const {
+            return _isError;
         }
 
-        std::vector<errorType> getErrors() const {
-            return _errors;
+        errorType error() const {
+            return _error;
         }
 
-        std::optional<errorType> getFirstError() const {
-            if (hasErrors()) {
-                return std::make_optional(_errors[0]);
-            }
-            return {};
-        }
-
-        void addError(errorType&& error) {
-            _errors.push_back(error);
-        }
-
-        void reset() {
-            _errors.clear();
-            _val = successType();
+        void setError(errorType&& err) {
+            _isError = true;
+            _error = err;
         }
     private:
         explicit Result(successType&& val): _val(val) {
         }
 
-        explicit Result(std::vector<errorType>&& errors): _errors(errors) {
+        explicit Result(errorType&& error): _error(error), _isError(true) {
         }
     private:
-        std::vector<errorType> _errors;
+        bool _isError = false;
+        errorType _error;
         successType _val;
     };
 }

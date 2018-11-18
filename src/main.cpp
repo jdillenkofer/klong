@@ -9,8 +9,8 @@ void printHelp();
 
 int main(int argc, char* argv[]) {
     auto optionResult = parseOptions(argc, argv);
-    if (optionResult.hasErrors()) {
-        std::cout << optionResult.getFirstError().value() << std::endl;
+    if (optionResult.isError()) {
+        std::cout << optionResult.error() << std::endl;
         return 1;
     }
     auto option = optionResult.success();

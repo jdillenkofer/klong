@@ -5,7 +5,7 @@
 #include <algorithm>
 
 namespace klong {
-    Result<ModulePtr, ParseException> Parser::parse() {
+    void Parser::parse() {
         std::vector<StmtPtr> statements;
         while(!isAtEnd()) {
             statements.push_back(std::move(declarationStmt()));
@@ -15,16 +15,16 @@ namespace klong {
         if (lastToken.sourceRange.start.valid()) {
             moduleName = lastToken.sourceRange.start.filename();
         }
-        if (!_errors.empty()) {
-            return Result<ModulePtr, ParseException>::fromErrors(std::move(_errors));
+        if (_compilationResult->hasErrors()) {
+            return;
         }
         auto module = std::make_shared<Module>(moduleName, std::move(statements));
-        return Result<ModulePtr, ParseException>::from(std::move(module));
+        _compilationResult->setSuccess(module);
     }
 
     ParserMemento Parser::saveToMemento() {
         return ParserMemento(_current, _previous, std::move(_lexer->saveToMemento()),
-                _isInsideFunction, _isInsideLoop, _isInsideDefer, _errors);
+                _isInsideFunction, _isInsideLoop, _isInsideDefer, *_compilationResult);
     }
 
     void Parser::loadFromMemento(ParserMemento& memento) {
@@ -34,7 +34,7 @@ namespace klong {
         _isInsideFunction = memento._isInsideFunction;
         _isInsideLoop = memento._isInsideLoop;
         _isInsideDefer = memento._isInsideDefer;
-        _errors = memento._errors;
+        *_compilationResult = memento._compilationResult;
     }
 
     Token Parser::consume(TokenType type, std::string errorMessage) {
@@ -42,7 +42,7 @@ namespace klong {
             return advance();
         }
 
-        throw ParseException::from(peek(), errorMessage);
+        throw CompilationError(peek().sourceRange, std::move(errorMessage));
     }
 
     bool Parser::check(TokenType type) {
@@ -135,7 +135,7 @@ namespace klong {
                 primitiveTypeKind = PrimitiveTypeKind::F64;
                 break;
             default:
-                throw ParseException(token.sourceRange, "Illegal builtin type.");
+                throw CompilationError(token.sourceRange, "Illegal builtin type.");
         }
         return std::make_shared<PrimitiveType>(token.sourceRange, primitiveTypeKind);
     }
@@ -171,7 +171,7 @@ namespace klong {
 			}
 
             if (isPublic) {
-                throw ParseException(pubToken.sourceRange, "Illegal pub Keyword.");
+                throw CompilationError(pubToken.sourceRange, "Illegal pub Keyword.");
             }
 
             if (match(TokenType::EXTERN)) {
@@ -185,8 +185,8 @@ namespace klong {
             }
 
             return statement();
-        } catch(const ParseException& error) {
-            _errors.push_back(error);
+        } catch(CompilationError& error) {
+            _compilationResult->addError(std::move(error));
             synchronize();
             return nullptr;
         }
@@ -226,7 +226,7 @@ namespace klong {
                 if (type->kind() == TypeKind::PRIMITIVE) {
                     auto primitiveType = dynamic_cast<PrimitiveType*>(type.get());
                     if (primitiveType->type() == PrimitiveTypeKind::VOID) {
-                        throw ParseException(primitiveType->sourceRange(), "Illegal type 'void' in argument list.");
+                        throw CompilationError(primitiveType->sourceRange(), "Illegal type 'void' in argument list.");
                     }
                 }
                 paramTypes.push_back(type);
@@ -322,7 +322,7 @@ namespace klong {
 					return customMember->name() == other->name();
 				});
 				if (it != members.end()) {
-					throw ParseException(
+					throw CompilationError(
 						customMember->sourceRange(),
 						"Member with name '" + customMember->name()
 						+ "' already exists in '" + name.value + "'.");
@@ -355,7 +355,7 @@ namespace klong {
 					return literal.value == other;
 				});
 				if (it != values.end()) {
-					throw ParseException(
+					throw CompilationError(
 						literal.sourceRange,
 						"Value with name '" + literal.value
 						+ "' already exists in '" + name.value + "'.");
@@ -431,7 +431,7 @@ namespace klong {
                 return std::make_shared<CustomType>(type.sourceRange, type.value);
             }
             default:
-                throw ParseException::from(peek(), "Expect type after ':'.");
+                throw CompilationError(peek().sourceRange, "Expect type after ':'.");
         }
     }
 
@@ -556,7 +556,7 @@ namespace klong {
         }
         if (match(TokenType::RETURN)) {
             if (_isInsideDefer) {
-                throw ParseException::from(previous(), "return stmt is not allowed inside defer.");
+                throw CompilationError(previous().sourceRange, "return stmt is not allowed inside defer.");
             }
             return returnStmt();
         }
@@ -568,28 +568,28 @@ namespace klong {
         }
         if (match(TokenType::BREAK)) {
             if (!_isInsideLoop) {
-                throw ParseException::from(previous(), "break stmt is not allowed outside of loops.");
+                throw CompilationError(previous().sourceRange, "break stmt is not allowed outside of loops.");
             }
             if (_isInsideDefer) {
-                throw ParseException::from(previous(), "break stmt is not allowed inside defer.");
+                throw CompilationError(previous().sourceRange, "break stmt is not allowed inside defer.");
             }
             return breakStmt();
         }
         if (match(TokenType::CONTINUE)) {
             if (!_isInsideLoop) {
-                throw ParseException::from(previous(), "continue stmt is not allowed outside of loops.");
+                throw CompilationError(previous().sourceRange, "continue stmt is not allowed outside of loops.");
             }
             if (_isInsideDefer) {
-                throw ParseException::from(previous(), "continue stmt is not allowed inside defer.");
+                throw CompilationError(previous().sourceRange, "continue stmt is not allowed inside defer.");
             }
             return continueStmt();
         }
         if (match(TokenType::DEFER)) {
             if (!_isInsideFunction) {
-                throw ParseException::from(previous(), "defer stmt is not allowed outside of functions.");
+                throw CompilationError(previous().sourceRange, "defer stmt is not allowed outside of functions.");
             }
             if (_isInsideDefer) {
-                throw ParseException::from(previous(), "nested defer stmt are not allowed.");
+                throw CompilationError(previous().sourceRange, "nested defer stmt are not allowed.");
             }
             return deferStmt();
         }
@@ -640,7 +640,7 @@ namespace klong {
 			            memberAccess, value);
 			}
 
-            throw ParseException::from(assign, "Invalid assign target");
+            throw CompilationError(assign.sourceRange, "Invalid assign target");
         }
         return expr;
     }
@@ -729,7 +729,7 @@ namespace klong {
                     binaryOperation = BinaryOperation::INEQUALITY;
                     break;
                 default:
-                    throw ParseException(op.sourceRange, "Expect '==' or '!=' Token.");
+                    throw CompilationError(op.sourceRange, "Expect '==' or '!=' Token.");
             }
             ExprPtr right = comparisonExpr();
             expr = std::make_shared<Binary>(
@@ -760,7 +760,7 @@ namespace klong {
                     binaryOperation = BinaryOperation::LESS_EQUAL;
                     break;
                 default:
-                    throw ParseException(op.sourceRange, "Expect '>', '>=', '<' or '<=' Token.");
+                    throw CompilationError(op.sourceRange, "Expect '>', '>=', '<' or '<=' Token.");
             }
             ExprPtr right = shiftExpr();
             expr = std::make_shared<Binary>(
@@ -788,7 +788,7 @@ namespace klong {
                     binaryOperation = BinaryOperation::ASR;
                     break;
                 default:
-                    throw ParseException(op.sourceRange, "Expect 'LSL', 'LSR or 'ASR' Token.");
+                    throw CompilationError(op.sourceRange, "Expect 'LSL', 'LSR or 'ASR' Token.");
             }
             ExprPtr right = additionExpr();
             expr = std::make_shared<Binary>(
@@ -813,7 +813,7 @@ namespace klong {
                     binaryOperation = BinaryOperation::PLUS;
                     break;
                 default:
-                    throw ParseException(op.sourceRange, "Expect '+' or '-' Token.");
+                    throw CompilationError(op.sourceRange, "Expect '+' or '-' Token.");
             }
             ExprPtr right = multiplicationExpr();
             expr = std::make_shared<Binary>(
@@ -841,7 +841,7 @@ namespace klong {
                     binaryOperation = BinaryOperation::MODULO;
                     break;
                 default:
-                    throw ParseException(op.sourceRange, "Expect '*', '/' or '%' Token.");
+                    throw CompilationError(op.sourceRange, "Expect '*', '/' or '%' Token.");
             }
             ExprPtr right = unaryExpr();
             expr = std::make_shared<Binary>(
@@ -977,7 +977,7 @@ namespace klong {
 	ExprPtr Parser::finishMemberAccessExpr(ExprPtr target) {
         // TODO: TEMPORARY FIX | CANT DIRECTLY ACCESS CALL RESULT
         if (target->kind() != ExprKind::VARIABLE) {
-            throw ParseException(target->sourceRange(), "Expect member target to be a variable.");
+            throw CompilationError(target->sourceRange(), "Expect member target to be a variable.");
         }
         Token period = previous();
         auto value = consume(TokenType::IDENTIFIER, "Expect member name after member access operator.");
@@ -1053,9 +1053,9 @@ namespace klong {
                 }
                 case NumberType::NONE:
                 default:
-                    throw ParseException(literalToken.sourceRange, "Unexpected numberType.");
+                    throw CompilationError(literalToken.sourceRange, "Unexpected numberType.");
             }
-            throw ParseException(literalToken.sourceRange, "Couldn't convert numberLiteral.");
+            throw CompilationError(literalToken.sourceRange, "Couldn't convert numberLiteral.");
         }
 
         if (match(TokenType::CHARACTER_LITERAL)) {
@@ -1076,6 +1076,6 @@ namespace klong {
             return std::make_shared<ArrayLiteral>(
                     SourceRange { literalToken.sourceRange.start, rightSquaredBracket.sourceRange.end }, std::move(values));
         }
-        throw ParseException(literalToken.sourceRange, "Couldn't parse literal.");
+        throw CompilationError(literalToken.sourceRange, "Couldn't parse literal.");
     }
 }

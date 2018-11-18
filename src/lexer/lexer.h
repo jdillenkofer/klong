@@ -4,11 +4,12 @@
 #include <sstream>
 #include <functional>
 
-#include "ilexer.h"
-#include "../common/source_file.h"
+#include "lexer/lexer_memento.h"
+#include "lexer/token.h"
+#include "common/source_file.h"
 
 namespace klong {
-    class Lexer : public ILexer {
+    class Lexer {
     public:
         using LexerCaseCallable = std::function<bool (Lexer*, Token&)>;
 
@@ -16,11 +17,10 @@ namespace klong {
             _sourceLocation = SourceLocation(source);
         }
 
-        bool hasNext() const override;
-        Token next() override;
+        Token next();
 
-        LexerMemento saveToMemento() override;
-        void loadFromMemento(LexerMemento& memento) override;
+        LexerMemento saveToMemento();
+        void loadFromMemento(LexerMemento& memento);
 
     private:
         void updateLocation();

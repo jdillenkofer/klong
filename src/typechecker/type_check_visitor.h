@@ -1,35 +1,20 @@
 #pragma once
 
 #include <map>
-#include "common/result.h"
+
+#include "common/compilation_result.h"
 #include "ast/visitor.h"
 #include "ast/module.h"
 #include "ast/stmt.h"
 #include "ast/expr.h"
 
 namespace klong {
-    class TypeCheckException : public std::exception {
-    public:
-        TypeCheckException(SourceRange sourceRange, std::string message):
-            _sourceRange(sourceRange), _message(std::move(message)) {
-        }
-
-        SourceRange sourceRange() const {
-            return _sourceRange;
-        }
-
-        const char* what () const noexcept override {
-            return _message.c_str();
-        }
-
-    private:
-        SourceRange _sourceRange;
-        std::string _message;
-    };
-
     class TypeCheckVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
-        TypeCheckVisitor() = default;
+        TypeCheckVisitor(CompilationResult* compilationResult):
+            _compilationResult(compilationResult) {
+
+        }
 
         // Module
         void visitModule(Module* module) override;
@@ -76,12 +61,10 @@ namespace klong {
         void visitArrayLiteral(ArrayLiteral* expr) override;
 
         // Types
-        void visitFunctionType(FunctionType* type);
-        void visitPrimitiveType(PrimitiveType* type);
-        void visitPointerType(PointerType* type);
-        void visitCustomType(CustomType *type);
-
-        Result<ModulePtr, TypeCheckException> getResult() const;
+        void visitFunctionType(FunctionType* type) override;
+        void visitPrimitiveType(PrimitiveType* type) override;
+        void visitPointerType(PointerType* type) override;
+        void visitCustomType(CustomType *type) override;
 
     private:
         void check(const std::vector<Stmt*>& statements);
@@ -99,7 +82,7 @@ namespace klong {
     private:
         Function* currentFunction = nullptr;
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
-        Result<ModulePtr, TypeCheckException> _result;
+        CompilationResult* _compilationResult;
         bool _returnsValue = false;
         std::vector<TypePtr> _arithmeticConversionStack = {
                 std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8),

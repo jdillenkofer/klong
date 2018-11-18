@@ -312,9 +312,6 @@ namespace klong {
         }
 
         bool isEqual(const Type* other) const override {
-            // TODO: rework this
-            // maybe we need a symbol table here!?
-            // how to support typedefs?
             if (other->kind() == TypeKind::CUSTOM) {
                 auto otherCustomType = dynamic_cast<const CustomType*>(other);
                 return this->name() == otherCustomType->name();

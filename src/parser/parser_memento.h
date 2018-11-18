@@ -1,8 +1,8 @@
 #pragma once
 
+#include "common/compilation_result.h"
 #include "lexer/token.h"
 #include "lexer/lexer_memento.h"
-#include "iparser.h"
 
 namespace klong {
     class Parser;
@@ -15,9 +15,9 @@ namespace klong {
                 bool isInsideFunction,
                 bool isInsideLoop,
                 bool isInsideDefer,
-                std::vector<ParseException> errors):
+                CompilationResult compilationResult):
                     _current(std::move(current)), _previous(std::move(previous)), _lexerMemento(std::move(lexerMemento)),
-                    _isInsideFunction(isInsideFunction), _isInsideLoop(isInsideLoop), _isInsideDefer(isInsideDefer), _errors(std::move(errors)) {
+                    _isInsideFunction(isInsideFunction), _isInsideLoop(isInsideLoop), _isInsideDefer(isInsideDefer), _compilationResult(std::move(compilationResult)) {
         }
     private:
         Token _current;
@@ -26,7 +26,7 @@ namespace klong {
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
         bool _isInsideDefer = false;
-        std::vector<ParseException> _errors;
+        CompilationResult _compilationResult;
 
         friend Parser;
     };

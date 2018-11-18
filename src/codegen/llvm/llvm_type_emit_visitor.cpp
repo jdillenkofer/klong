@@ -62,7 +62,6 @@ namespace klong {
                 _valueOfLastType = llvm::Type::getDoubleTy(_context);
                 break;
             default:
-                // TODO: how to handle the other types
                 assert(false);
         }
     }
@@ -79,7 +78,6 @@ namespace klong {
     }
 
     void LLVMTypeEmitVisitor::visitCustomType(CustomType* type) {
-        // TODO: how to handle non struct types
         auto it = _customTypeCache.find(type->name());
         if (it != _customTypeCache.end()) {
             _valueOfLastType = (*it).second;

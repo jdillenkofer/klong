@@ -1,12 +1,12 @@
 #pragma once
 
-#include "common/result.h"
+#include "common/compilation_result.h"
 #include "type_check_visitor.h"
 #include "ast/module.h"
 
 namespace klong {
     class TypeChecker {
     public:
-        Result<ModulePtr, TypeCheckException> check(ModulePtr module);
+        void check(ModulePtr module, CompilationResult* result);
     };
 }

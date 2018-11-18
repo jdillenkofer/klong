@@ -38,14 +38,14 @@ namespace klong {
         if (!option.help) {
             // if there is another argument
             if (optind > (argc - 1)) {
-                optionResult.addError("No input file!");
+                optionResult.setError("No input file!");
                 return optionResult;
             }
             // add the argument as target file to the options
             option.filepath = std::string(argv[optind]);
 			optind++;
 			if (optind != argc) {
-				optionResult.addError("Invalid argument after target file.");
+				optionResult.setError("Invalid argument after target file.");
 				return optionResult;
 			}
         }

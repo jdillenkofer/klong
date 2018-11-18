@@ -15,37 +15,25 @@ namespace klong {
 
     bool Compiler::parse(ModulePtr& module, SourceFile &sourceFile) {
         auto lexer = Lexer(&sourceFile);
-        auto parser = Parser(&lexer);
-        auto parseResult = parser.parse();
-        if (parseResult.hasErrors()) {
-            auto errors = parseResult.getErrors();
-            printErrors(errors);
+        auto parser = Parser(&lexer, &_result);
+        parser.parse();
+        if (_result.hasErrors()) {
             return false;
         }
-        module = parseResult.success();
+        module = _result.success();
         return true;
     }
 
     bool Compiler::resolve(ModulePtr &module) {
         Resolver resolver;
-        auto resolveResult = resolver.resolve(module);
-        if (resolveResult.hasErrors()) {
-            auto errors = resolveResult.getErrors();
-            printErrors(errors);
-            return false;
-        }
-        return true;
+        resolver.resolve(module, &_result);
+        return !_result.hasErrors();
     }
 
     bool Compiler::typecheck(ModulePtr &module) {
         TypeChecker typeChecker;
-        auto typeCheckResult = typeChecker.check(module);
-        if (typeCheckResult.hasErrors()) {
-            auto errors = typeCheckResult.getErrors();
-            printErrors(errors);
-            return false;
-        }
-        return true;
+        typeChecker.check(module, &_result);
+        return !_result.hasErrors();
     }
 
     bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType) {
@@ -58,6 +46,19 @@ namespace klong {
 
         llvmEmitter.writeToFile(filename, outputFileType);
         return true;
+    }
+
+    void Compiler::printErrors(CompilationResult& result) {
+        auto errors = result.getErrors();
+        for (uint64_t i = 0; i < errors.size(); i++) {
+            auto& error = errors[i];
+            auto sourceRange = error.sourceRange();
+            if (i == 0 && sourceRange.valid()) {
+                std::cout << "file: " << sourceRange.start.filename() << std::endl;
+            }
+            std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
+            std::cout << sourceRange.getRelevantSourceText() << std::flush;
+        }
     }
 
     bool Compiler::compile(std::string filepath) {
@@ -82,6 +83,7 @@ namespace klong {
             );
 
             if (!parse(module, sourceFile)) {
+                printErrors(_result);
                 return false;
             }
         }
@@ -100,6 +102,7 @@ namespace klong {
             );
 
             if (!resolve(module)) {
+                printErrors(_result);
                 return false;
             }
 
@@ -118,6 +121,7 @@ namespace klong {
             );
 
             if (!typecheck(module)) {
+                printErrors(_result);
                 return false;
             }
         }
