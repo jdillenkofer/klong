@@ -62,6 +62,7 @@ namespace klong {
         static bool isInteger(Type* type);
         static bool isPointer(Type* type);
         static bool isVoid(Type* type);
+		static bool isCustom(Type* type);
 
 
     private:

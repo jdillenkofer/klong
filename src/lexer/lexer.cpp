@@ -104,6 +104,7 @@ namespace klong {
 		// typedefs
 		{'s', std::bind(&Lexer::structKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'u', std::bind(&Lexer::unionKeyword, std::placeholders::_1, std::placeholders::_2)},
+		{'e', std::bind(&Lexer::enumKeyword, std::placeholders::_1, std::placeholders::_2)},
 
         // function
         {'f', std::bind(&Lexer::funKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -562,6 +563,10 @@ namespace klong {
 	bool Lexer::unionKeyword(Token &token) {
         return matchesKeyword(token, "union", TokenType::UNION);
     }
+
+	bool Lexer::enumKeyword(Token& token) {
+		return matchesKeyword(token, "enum", TokenType::ENUM);
+	}
 
     bool Lexer::funKeyword(Token& token) {
         return matchesKeyword(token, "fun", TokenType::FUN);

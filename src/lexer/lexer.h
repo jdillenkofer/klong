@@ -47,6 +47,7 @@ namespace klong {
         bool externKeyword(Token& token);
 		bool structKeyword(Token& token);
 		bool unionKeyword(Token& token);
+		bool enumKeyword(Token& token);
 
         bool funKeyword(Token& token);
         bool sizeofKeyword(Token& token);

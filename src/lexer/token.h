@@ -22,6 +22,7 @@ namespace klong {
 		// Typedefs
 		STRUCT,
 		UNION,
+		ENUM,
 
         // Functions
         FUN,

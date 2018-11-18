@@ -166,6 +166,10 @@ namespace klong {
 				return memberTypeDeclaration(isPublic);
 			}
 
+			if (match(TokenType::ENUM)) {
+				return enumDeclaration(isPublic);
+			}
+
             if (isPublic) {
                 throw ParseException(pubToken.sourceRange, "Illegal pub Keyword.");
             }
@@ -336,6 +340,32 @@ namespace klong {
 				SourceRange{ memberTypeToken.sourceRange.start, rightCurlyBracket.sourceRange.end },
 				name.value, std::move(members), isPublic);
 		}
+	}
+
+	std::shared_ptr<EnumDeclaration> Parser::enumDeclaration(bool isPublic) {
+		Token enumToken = previous();
+		Token name = consume(TokenType::IDENTIFIER, "Expect enum name.");
+		consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' after enum name.");
+		std::vector<std::string> values;
+		if (check(TokenType::IDENTIFIER)) {
+			do {
+				Token literal = consume(TokenType::IDENTIFIER, "Expect value.");
+				auto it = std::find_if(values.begin(), values.end(),
+					[&literal](const std::string& other) {
+					return literal.value == other;
+				});
+				if (it != values.end()) {
+					throw ParseException(
+						literal.sourceRange,
+						"Value with name '" + literal.value
+						+ "' already exists in '" + name.value + "'.");
+				}
+				values.emplace_back(literal.value);
+			} while (match(TokenType::COMMA));
+		}
+		Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last enum value.");
+		return std::make_shared<EnumDeclaration>(SourceRange{ enumToken.sourceRange.start, rightCurlyBracket.sourceRange.end }, 
+			name.value, std::move(values), isPublic);
 	}
 
     TypePtr Parser::typeDeclaration() {
@@ -950,15 +980,24 @@ namespace klong {
             throw ParseException(target->sourceRange(), "Expect member target to be a variable.");
         }
         Token period = previous();
-        auto member = consume(TokenType::IDENTIFIER, "Expect member name after member access operator.");
+        auto value = consume(TokenType::IDENTIFIER, "Expect member name after member access operator.");
 
-        return std::make_shared<MemberAccess>(SourceRange { period.sourceRange.start, member.sourceRange.end },
-                target, member.value);
+        return std::make_shared<MemberAccess>(SourceRange { period.sourceRange.start, value.sourceRange.end },
+                target, value.value);
     }
 
     ExprPtr Parser::primary() {
 		if (match(TokenType::IDENTIFIER)) {
 			Token identifier = previous();
+			if (match(TokenType::COLON)) {
+				if (match(TokenType::COLON)) {
+					auto rhs = consume(TokenType::IDENTIFIER, "Expect identifier after SCOPE operator.");
+					auto enumType = std::make_shared<CustomType>(identifier.sourceRange, identifier.value);
+					return std::make_shared<EnumAccess>(
+						SourceRange{ identifier.sourceRange.start, rhs.sourceRange.end }, 
+						enumType, rhs.value);
+				}
+			}
 			auto variableExpr = std::make_shared<Variable>(identifier.sourceRange, identifier.value);
 			return variableExpr;
 		}

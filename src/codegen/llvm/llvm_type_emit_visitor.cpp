@@ -97,7 +97,7 @@ namespace klong {
                 if (_outerTypes.size() > 1u) {
                     auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
                     if (previousOuterType == TypeKind::POINTER
-                        && type->resolvesTo()->isSelfReferential()) {
+                        && structDeclaration->isSelfReferential()) {
                         // this emits an opaque struct type
                         _valueOfLastType = llvm::StructType::create(_context, type->name());
                         return;
@@ -105,8 +105,8 @@ namespace klong {
                 }
 
                 std::vector<llvm::Type*> members;
-                for (auto& member : structDeclaration->members()) {
-                    members.push_back(getLLVMType(member->type()));
+                for (auto& value : structDeclaration->members()) {
+                    members.push_back(getLLVMType(value->type()));
                 }
 
                 _valueOfLastType = llvm::StructType::create(_context, members, type->name());
@@ -121,7 +121,7 @@ namespace klong {
                 if (_outerTypes.size() > 1u) {
                     auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
                     if (previousOuterType == TypeKind::POINTER
-                        && type->resolvesTo()->isSelfReferential()) {
+                        && unionDeclaration->isSelfReferential()) {
                         // this emits an opaque union type
                         _valueOfLastType = llvm::StructType::create(_context, type->name());
                         return;
@@ -130,8 +130,8 @@ namespace klong {
 
                 llvm::Type* biggestLLVMType = nullptr;
                 uint64_t biggestSizeInBits = 0;
-                for (auto& member : unionDeclaration->members()) {
-                    auto currentLLVMType = getLLVMType(member->type());
+                for (auto& value : unionDeclaration->members()) {
+                    auto currentLLVMType = getLLVMType(value->type());
                     auto currentTypeSize = _dataLayout.getTypeSizeInBits(currentLLVMType);
                     if (currentTypeSize > biggestSizeInBits) {
                         biggestSizeInBits = currentTypeSize;
@@ -149,6 +149,11 @@ namespace klong {
                 _customTypeCache[type->name()] = _valueOfLastType;
                 break;
             }
+			case TypeDeclarationKind::ENUM:
+			{
+				_valueOfLastType = llvm::Type::getInt32Ty(_context);
+				break;
+			}
             default:
                 assert(false);
                 break;

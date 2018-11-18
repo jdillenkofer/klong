@@ -170,6 +170,11 @@ namespace klong {
         (void) stmt;
     }
 
+	void ResolveVisitor::visitEnumDeclStmt(EnumDeclaration* stmt) {
+		// nothing to do here
+		(void) stmt;
+	}
+
 	void ResolveVisitor::visitCustomMemberStmt(CustomMember* stmt) {
         // nothing to do here
         (void) stmt;
@@ -190,12 +195,12 @@ namespace klong {
     }
 
     void ResolveVisitor::visitBreakStmt(Break* stmt) {
-        // Empty on purpose
+		// nothing to do here
         (void) stmt;
     }
 
     void ResolveVisitor::visitContinueStmt(Continue* stmt) {
-        // Empty on purpose
+		// nothing to do here
         (void) stmt;
     }
 
@@ -204,7 +209,7 @@ namespace klong {
     }
 
     void ResolveVisitor::visitCommentStmt(Comment* expr) {
-        // empty on purpose
+		// nothing to do here
         (void) expr;
     }
 
@@ -250,6 +255,11 @@ namespace klong {
         resolve(expr->target());
     }
 
+	void ResolveVisitor::visitEnumAccessExpr(EnumAccess* expr) {
+		// nothing to do here
+		(void) expr;
+	}
+
     void ResolveVisitor::visitLogicalExpr(Logical* expr) {
         resolve(expr->left());
         resolve(expr->right());
@@ -260,6 +270,7 @@ namespace klong {
     }
 
     void ResolveVisitor::visitSizeOfExpr(SizeOf* expr) {
+		// nothing to do here
         (void) expr;
     }
 

@@ -15,6 +15,7 @@ namespace klong {
     class VariableDeclaration;
     class StructDeclaration;
     class UnionDeclaration;
+	class EnumDeclaration;
     class CustomMember;
     class While;
     class For;
@@ -39,6 +40,7 @@ namespace klong {
         virtual void visitVarDeclStmt(VariableDeclaration* stmt) = 0;
 		virtual void visitStructDeclStmt(StructDeclaration* stmt) = 0;
         virtual void visitUnionDeclStmt(UnionDeclaration* stmt) = 0;
+		virtual void visitEnumDeclStmt(EnumDeclaration* stmt) = 0;
 		virtual void visitCustomMemberStmt(CustomMember* stmt) = 0;
         virtual void visitWhileStmt(While* stmt) = 0;
         virtual void visitForStmt(For* stmt) = 0;
@@ -55,6 +57,7 @@ namespace klong {
     class Grouping;
     class Subscript;
     class MemberAccess;
+	class EnumAccess;
     class Logical;
     class Unary;
     class SizeOf;
@@ -78,6 +81,7 @@ namespace klong {
         virtual void visitGroupingExpr(Grouping* expr) = 0;
 		virtual void visitSubscriptExpr(Subscript* expr) = 0;
 		virtual void visitMemberAccessExpr(MemberAccess* expr) = 0;
+		virtual void visitEnumAccessExpr(EnumAccess* expr) = 0;
         virtual void visitLogicalExpr(Logical* expr) = 0;
         virtual void visitUnaryExpr(Unary* expr) = 0;
         virtual void visitSizeOfExpr(SizeOf* expr) = 0;
