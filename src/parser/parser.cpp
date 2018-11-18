@@ -15,16 +15,16 @@ namespace klong {
         if (lastToken.sourceRange.start.valid()) {
             moduleName = lastToken.sourceRange.start.filename();
         }
-        if (_compilationResult->hasErrors()) {
+        if (_result->hasErrors()) {
             return;
         }
         auto module = std::make_shared<Module>(moduleName, std::move(statements));
-        _compilationResult->setSuccess(module);
+        _result->setSuccess(module);
     }
 
     ParserMemento Parser::saveToMemento() {
         return ParserMemento(_current, _previous, std::move(_lexer->saveToMemento()),
-                _isInsideFunction, _isInsideLoop, _isInsideDefer, *_compilationResult);
+                _isInsideFunction, _isInsideLoop, _isInsideDefer, *_result);
     }
 
     void Parser::loadFromMemento(ParserMemento& memento) {
@@ -34,7 +34,7 @@ namespace klong {
         _isInsideFunction = memento._isInsideFunction;
         _isInsideLoop = memento._isInsideLoop;
         _isInsideDefer = memento._isInsideDefer;
-        *_compilationResult = memento._compilationResult;
+        *_result = memento._compilationResult;
     }
 
     Token Parser::consume(TokenType type, std::string errorMessage) {
@@ -186,7 +186,7 @@ namespace klong {
 
             return statement();
         } catch(CompilationError& error) {
-            _compilationResult->addError(std::move(error));
+            _result->addError(std::move(error));
             synchronize();
             return nullptr;
         }
@@ -1022,7 +1022,7 @@ namespace klong {
         }
 
         if (match(TokenType::NUMBER_LITERAL)) {
-            // TODO: enhance conversion result error handling
+            // TODO: enhance conversion _result error handling
             switch (literalToken.numberType) {
                 case NumberType::INT:
                 {

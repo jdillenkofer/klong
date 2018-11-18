@@ -41,7 +41,7 @@ namespace klong {
                 return true;
             }
         }
-        _compilationResult->addError(
+        _result->addError(
                 CompilationError(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() + "'."));
         return false;
     }
@@ -60,7 +60,7 @@ namespace klong {
         }
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
         if (scope.find(name) != scope.end()) {
-            _compilationResult->addError(CompilationError(declarationStmt->sourceRange(),
+            _result->addError(CompilationError(declarationStmt->sourceRange(),
                     "Symbol with name '" + name + "' already declared in this scope"));
         }
         scope.insert(std::pair<std::string, SymbolInfo>(name, SymbolInfo { declarationStmt, declarationType, false }));
@@ -83,7 +83,7 @@ namespace klong {
 				&& stmt->kind() != StatementKind::TYPE_DECL
                 && stmt->kind() != StatementKind::EXT_DECL
                 && stmt->kind() != StatementKind::COMMENT) {
-                _compilationResult->addError(
+                _result->addError(
                         CompilationError(stmt->sourceRange(), "Illegal top level statement."));
             }
         }
@@ -140,7 +140,7 @@ namespace klong {
 
     void ResolveVisitor::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
-            _compilationResult->addError(
+            _result->addError(
                     CompilationError(stmt->sourceRange(), "Cannot return from top-level code."));
         }
         resolve(stmt->value());
@@ -226,7 +226,7 @@ namespace klong {
             if (isResolved && varDeclRes->kind() == StatementKind::VAR_DECL) {
                 auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
                 if (varDecl->isConst()) {
-                    _compilationResult->addError(
+                    _result->addError(
                             CompilationError(expr->sourceRange(), "Cannot reassign 'const'."));
                 }
             }
@@ -288,7 +288,7 @@ namespace klong {
         if (scope.find(expr->name()) != scope.end()) {
             auto& symbol = (*scope.find(expr->name())).second;
             if (!symbol.initialized) {
-                _compilationResult->addError(
+                _result->addError(
                         CompilationError(expr->sourceRange(), "Cannot read local variable in its own initializer."));
             }
         }

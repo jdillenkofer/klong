@@ -15,9 +15,9 @@
 namespace klong {
     class Parser {
     public:
-        explicit Parser(Lexer* lexer, CompilationResult* compilationResult):
+        explicit Parser(Lexer* lexer, CompilationResult* result):
             _lexer(lexer),
-            _compilationResult(compilationResult) {
+            _result(result) {
             advance();
         }
 
@@ -90,6 +90,6 @@ namespace klong {
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
         bool _isInsideDefer = false;
-        CompilationResult* _compilationResult;
+        CompilationResult* _result;
     };
 }

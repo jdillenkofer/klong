@@ -44,8 +44,8 @@ namespace klong {
 
     class ResolveVisitor : public StmtVisitor, public ExprVisitor {
     public:
-        ResolveVisitor(CompilationResult* compilationResult):
-            _compilationResult(compilationResult) {
+        ResolveVisitor(CompilationResult* result):
+            _result(result) {
 
         }
 
@@ -111,6 +111,6 @@ namespace klong {
     private:
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
         bool _isInsideFunction = false;
-        CompilationResult* _compilationResult;
+        CompilationResult* _result;
     };
 }

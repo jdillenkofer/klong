@@ -11,8 +11,8 @@
 namespace klong {
     class TypeCheckVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
-        TypeCheckVisitor(CompilationResult* compilationResult):
-            _compilationResult(compilationResult) {
+        TypeCheckVisitor(CompilationResult* result):
+            _result(result) {
 
         }
 
@@ -82,7 +82,7 @@ namespace klong {
     private:
         Function* currentFunction = nullptr;
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
-        CompilationResult* _compilationResult;
+        CompilationResult* _result;
         bool _returnsValue = false;
         std::vector<TypePtr> _arithmeticConversionStack = {
                 std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8),
