@@ -114,6 +114,11 @@ namespace klong {
         (void) stmt;
     }
 
+    void TypeCheckVisitor::visitImportStmt(Import* stmt) {
+        // TODO: IMPLEMENT IMPORT STMT
+        (void) stmt;
+    }
+
     void TypeCheckVisitor::visitFunctionStmt(Function* stmt) {
         resolveType(stmt->functionType());
         auto previousFunction = currentFunction;

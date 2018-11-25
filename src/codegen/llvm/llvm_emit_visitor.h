@@ -13,7 +13,7 @@ namespace klong {
 
     class LLVMEmitVisitor : public StmtVisitor, public ExprVisitor {
     public:
-        LLVMEmitVisitor(const llvm::DataLayout dataLayout);
+        explicit LLVMEmitVisitor(const llvm::DataLayout dataLayout);
 
         llvm::Module* getModule();
 
@@ -24,6 +24,7 @@ namespace klong {
         void visitBlockStmt(Block* stmt) override;
         void visitExpressionStmt(Expression* stmt) override;
         void visitExtDeclStmt(ExternalDeclaration* stmt) override;
+        void visitImportStmt(Import* stmt) override;
         void visitFunctionStmt(Function* stmt) override;
         void visitParameterStmt(Parameter* stmt) override;
         void visitIfStmt(If* stmt) override;

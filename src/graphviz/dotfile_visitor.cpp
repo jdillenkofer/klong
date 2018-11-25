@@ -61,6 +61,12 @@ namespace klong {
         + getType(stmt->type())+ "\"]");
     }
 
+    void DotfileVisitor::visitImportStmt(Import* stmt) {
+        // print importStmt stuff here
+        auto importStmtId = getStmtId(stmt);
+        appendLine(std::to_string(importStmtId) + " [label=\"Import\\n" + stmt->path() + "\"]");
+    }
+
     void DotfileVisitor::visitFunctionStmt(Function* stmt) {
         // print FunctionStmt stuff here
         auto functionStmtId = getStmtId(stmt);

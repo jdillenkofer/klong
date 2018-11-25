@@ -18,6 +18,7 @@ namespace klong {
 		CUSTOM_MEMBER,
         EXPRESSION,
         EXT_DECL,
+        IMPORT,
         FUNCTION,
         PARAMETER,
         IF,
@@ -122,6 +123,25 @@ namespace klong {
     private:
         std::string _name;
         TypePtr _type;
+    };
+
+    class Import : public Stmt {
+    public:
+        Import(SourceRange sourceRange, std::string path):
+            Stmt(StatementKind::IMPORT, sourceRange),
+            _path(std::move(path)) {
+        }
+
+        void accept(StmtVisitor* visitor) override {
+            visitor->visitImportStmt(this);
+        }
+
+        std::string path() const {
+            return _path;
+        }
+
+    private:
+        std::string _path;
     };
 
     class Parameter : public Stmt {

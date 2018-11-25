@@ -53,6 +53,7 @@ namespace klong {
         std::shared_ptr<VariableDeclaration> constDeclaration(bool isPublic = false);
 		std::shared_ptr<MemberTypeDeclaration> memberTypeDeclaration(bool isPublic = false);
 		std::shared_ptr<EnumDeclaration> enumDeclaration(bool isPublic = false);
+		std::shared_ptr<Import> import();
         TypePtr typeDeclaration();
         std::shared_ptr<If> ifStmt();
         std::shared_ptr<Return> returnStmt();

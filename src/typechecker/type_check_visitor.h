@@ -11,7 +11,7 @@
 namespace klong {
     class TypeCheckVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
-        TypeCheckVisitor(CompilationResult* result):
+        explicit TypeCheckVisitor(CompilationResult* result):
             _result(result) {
 
         }
@@ -23,6 +23,7 @@ namespace klong {
         void visitBlockStmt(Block* stmt) override;
         void visitExpressionStmt(Expression* stmt) override;
         void visitExtDeclStmt(ExternalDeclaration* stmt) override;
+        void visitImportStmt(Import* stmt) override;
         void visitFunctionStmt(Function* stmt) override;
         void visitParameterStmt(Parameter* stmt) override;
         void visitIfStmt(If* stmt) override;

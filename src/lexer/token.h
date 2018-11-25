@@ -10,7 +10,10 @@ namespace klong {
         END_OF_FILE,
         NONE,
         ERROR,
-        
+
+        // Import
+        IMPORT,
+
         // Comments
         LINE_COMMENT,
         BLOCK_COMMENT,

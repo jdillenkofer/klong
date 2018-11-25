@@ -40,6 +40,8 @@ namespace klong {
         bool binaryLiteral(Token& token, std::stringstream& content);
         bool decimalLiteral(Token& token, std::stringstream& content);
 
+        bool importKeyword(Token& token);
+
         bool blockComment(Token& token);
         bool lineComment(Token& token);
 

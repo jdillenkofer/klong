@@ -79,6 +79,7 @@ namespace klong {
             if (previous().type == TokenType::SEMICOLON) return;
 
             switch(peek().type) {
+                case TokenType::IMPORT:
                 case TokenType::FUN:
                 case TokenType::LET:
                 case TokenType::CONST:
@@ -172,6 +173,10 @@ namespace klong {
 
             if (isPublic) {
                 throw CompilationError(pubToken.sourceRange, "Illegal pub Keyword.");
+            }
+
+            if (match(TokenType::IMPORT)) {
+                return import();
             }
 
             if (match(TokenType::EXTERN)) {
@@ -367,6 +372,14 @@ namespace klong {
 		return std::make_shared<EnumDeclaration>(SourceRange{ enumToken.sourceRange.start, rightCurlyBracket.sourceRange.end }, 
 			name.value, std::move(values), isPublic);
 	}
+
+	std::shared_ptr<Import> Parser::import() {
+        Token importToken = previous();
+        Token path = consume(TokenType::STRING_LITERAL, "Expect path string.");
+        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after import stmt.");
+        return std::make_shared<Import>(SourceRange { importToken.sourceRange.start, semicolon.sourceRange.end },
+                path.value);
+    }
 
     TypePtr Parser::typeDeclaration() {
         Token type = peek();

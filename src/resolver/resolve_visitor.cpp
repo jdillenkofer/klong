@@ -110,6 +110,11 @@ namespace klong {
         define(stmt->name());
     }
 
+    void ResolveVisitor::visitImportStmt(Import* stmt) {
+        // TODO: IMPLEMENT IMPORT STMT
+        (void) stmt;
+    }
+
     void ResolveVisitor::visitFunctionStmt(Function* stmt) {
         resolveFunction(stmt, true);
     }

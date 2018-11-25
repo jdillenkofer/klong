@@ -195,6 +195,11 @@ namespace klong {
         }
     }
 
+    void LLVMEmitVisitor::visitImportStmt(Import *stmt) {
+        // TODO: IMPLEMENT IMPORT STMT
+        (void) stmt;
+    }
+
     void LLVMEmitVisitor::visitFunctionStmt(Function* stmt) {
         llvm::Function* function = _module->getFunction(stmt->name());
 
