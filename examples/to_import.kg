@@ -1,0 +1,5 @@
+extern printf: () -> void;
+
+pub test() {
+    printf("test\n");
+}

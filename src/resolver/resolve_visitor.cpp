@@ -82,6 +82,7 @@ namespace klong {
 				&& stmt->kind() != StatementKind::VAR_DECL
 				&& stmt->kind() != StatementKind::TYPE_DECL
                 && stmt->kind() != StatementKind::EXT_DECL
+				&& stmt->kind() != StatementKind::IMPORT
                 && stmt->kind() != StatementKind::COMMENT) {
                 _result->addError(
                         CompilationError(stmt->sourceRange(), "Illegal top level statement."));
@@ -105,7 +106,7 @@ namespace klong {
 
     void ResolveVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
         auto type = stmt->type();
-        auto declType = type->kind() == TypeKind::FUNCTION ? DeclarationType::FUNCTION : DeclarationType::CONST;
+        auto declType = type->kind() == TypeKind::FUNCTION ? DeclarationType::FUNCTION : DeclarationType::LET;
         declare(stmt, stmt->name(), declType);
         define(stmt->name());
     }
