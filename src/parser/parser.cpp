@@ -12,13 +12,15 @@ namespace klong {
         }
         Token lastToken = previous();
         std::string moduleName;
+		std::string absolutepath;
         if (lastToken.sourceRange.start.valid()) {
             moduleName = lastToken.sourceRange.start.filename();
+			absolutepath = lastToken.sourceRange.start.absolutepath();
         }
         if (_result->hasErrors()) {
             return;
         }
-        auto module = std::make_shared<Module>(moduleName, std::move(statements));
+        auto module = std::make_shared<Module>(absolutepath, moduleName, std::move(statements));
         _result->setSuccess(module);
     }
 

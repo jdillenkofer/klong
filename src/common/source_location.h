@@ -15,7 +15,7 @@ namespace klong {
         void incLine();
         void incCol();
 
-        std::string path() const;
+        std::string absolutepath() const;
         std::string filename() const;
         std::string code() const;
         uint64_t column() const;

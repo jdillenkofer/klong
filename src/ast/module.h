@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <memory>
+#include <filesystem>
 
 namespace klong {
     class Stmt;
@@ -12,8 +13,10 @@ namespace klong {
     
     class Module {
     public:
-        Module(std::string filename, std::vector<StmtPtr>&& statements):
-            _statements(statements), _filename(std::move(filename)) {
+        Module(std::string path, std::string filename, std::vector<StmtPtr>&& statements):
+            _statements(statements), 
+			_absolutepath(std::filesystem::absolute(std::move(path)).string()), 
+			_filename(std::move(filename)) {
         }
 
         virtual void accept(StmtVisitor* visitor) {
@@ -27,6 +30,10 @@ namespace klong {
             }
             return stmts;
         }
+
+		std::string absolutepath() const {
+			return _absolutepath;
+		}
 
         std::string filename() const {
             return _filename;
@@ -48,6 +55,7 @@ namespace klong {
 
     private:
         std::vector<StmtPtr> _statements;
+		std::string _absolutepath;
         std::string _filename;
     };
 

@@ -65,7 +65,7 @@ namespace klong {
         auto sourceFile = SourceFile(std::move(filepath));
         auto result = sourceFile.loadFromFile();
         if (!result) {
-            std::cout << "Cannot load source file " << sourceFile.path() << std::endl;
+            std::cout << "Cannot load source file " << sourceFile.absolutepath() << std::endl;
             return false;
         }
 

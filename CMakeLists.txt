@@ -57,8 +57,8 @@ set(SOURCE_FILES
     src/common/source_range.cpp
     src/common/source_location.cpp
     src/common/compilation_result.cpp
-    src/ast/type.cpp
     src/ast/string_helper.cpp
+    src/ast/type.cpp
     src/lexer/lexer.cpp
     src/parser/parser.cpp
     src/resolver/resolver.cpp
@@ -86,8 +86,9 @@ set(HEADER_FILES
     src/common/compilation_warning.h
     src/ast/expr.h
     src/ast/stmt.h
-    src/ast/visitor.h
+	src/ast/module.h
     src/ast/type.h
+    src/ast/visitor.h
     src/ast/string_helper.h
     src/lexer/token.h
     src/lexer/lexer.h
