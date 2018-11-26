@@ -40,7 +40,15 @@ namespace klong {
         if (_typeDeclarations.find(typeDeclarationStmt->name()) != _typeDeclarations.end()) {
             _session->getResult().addError(
                     CompilationError(typeDeclarationStmt->sourceRange(),
-                                       "Type '" + typeDeclarationStmt->name() + "' already declared."));
+                            "Type '" + typeDeclarationStmt->name() + "' already declared."));
+        }
+        if (typeDeclarationStmt->isPublic()) {
+            auto isAlreadyDeclared = !_session->declareType(typeDeclarationStmt->name(), typeDeclarationStmt);
+            if (isAlreadyDeclared) {
+                _session->getResult().addError(
+                        CompilationError(typeDeclarationStmt->sourceRange(),
+                                         "Type '" + typeDeclarationStmt->name() + "' already declared."));
+            }
         }
         _typeDeclarations[typeDeclarationStmt->name()] = typeDeclarationStmt;
     }
@@ -738,6 +746,9 @@ namespace klong {
 
     void TypeCheckVisitor::visitCustomType(CustomType *type) {
         auto typeDecl = findTypeDeclaration(type);
+        if (!typeDecl) {
+            typeDecl = _session->findTypeDeclaration(type->name());
+        }
         if (!typeDecl) {
             _session->getResult().addError(
                     CompilationError(type->sourceRange(), "Couldn't resolve typename."));

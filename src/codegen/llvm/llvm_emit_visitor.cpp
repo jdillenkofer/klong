@@ -179,10 +179,6 @@ namespace klong {
             }
         }
 
-        for (auto& externalDecl : _session->externalDeclarations()) {
-            externalDecl->accept(this);
-        }
-
         for (auto& stmt : module->statements()) {
             stmt->accept(this);
         }

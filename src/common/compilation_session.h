@@ -57,12 +57,20 @@ namespace klong {
             return unused;
         }
 
-        std::vector<std::shared_ptr<ExternalDeclaration>>& externalDeclarations() {
-            return _externalDeclarations;
+        bool declareType(std::string name, TypeDeclaration* typeDeclaration) {
+            if (_typeDeclarations.find(name) != _typeDeclarations.end()) {
+                return false;
+            }
+            _typeDeclarations.insert(std::pair(name, typeDeclaration));
+            return true;
+        }
+
+        TypeDeclaration* findTypeDeclaration(std::string name) {
+            return (*_typeDeclarations.find(name)).second;
         }
 
     private:
-        std::vector<std::shared_ptr<ExternalDeclaration>> _externalDeclarations;
+        std::map<std::string, TypeDeclaration*> _typeDeclarations;
         std::map<std::string, SymbolInfo> _globalScope;
         std::map<std::string, std::shared_ptr<Module>> _allModules;
         CompilationResult _result;

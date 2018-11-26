@@ -35,7 +35,9 @@ namespace klong {
     
     class Stmt {
     public:
-        Stmt(StatementKind kind, SourceRange sourceRange): _kind(kind), _sourceRange(sourceRange) {
+        Stmt(StatementKind kind, SourceRange sourceRange):
+            _kind(kind),
+            _sourceRange(std::move(sourceRange)) {
         }
 
         virtual ~Stmt() = default;
@@ -61,7 +63,7 @@ namespace klong {
     class Block : public Stmt {
     public:
         Block(SourceRange sourceRange, std::vector<StmtPtr>&& statements):
-            Stmt(StatementKind::BLOCK, sourceRange),
+            Stmt(StatementKind::BLOCK, std::move(sourceRange)),
             _statements(statements) {
         }
 
@@ -84,7 +86,7 @@ namespace klong {
     class Expression : public Stmt {
     public:
         Expression(SourceRange sourceRange, ExprPtr expression):
-            Stmt(StatementKind::EXPRESSION, sourceRange),
+            Stmt(StatementKind::EXPRESSION, std::move(sourceRange)),
             _expression(std::move(expression)) {
         }
 
@@ -103,7 +105,7 @@ namespace klong {
     class ExternalDeclaration : public Stmt {
     public:
         ExternalDeclaration(SourceRange sourceRange, std::string name, TypePtr type):
-            Stmt(StatementKind::EXT_DECL, sourceRange),
+            Stmt(StatementKind::EXT_DECL, std::move(sourceRange)),
             _name(std::move(name)),
             _type(std::move(type)) {
         }
@@ -121,7 +123,7 @@ namespace klong {
         }
 
         void type(TypePtr type) {
-            _type = type;
+            _type = std::move(type);
         }
 
     private:
@@ -132,7 +134,7 @@ namespace klong {
     class Import : public Stmt {
     public:
         Import(SourceRange sourceRange, std::string path):
-            Stmt(StatementKind::IMPORT, sourceRange),
+            Stmt(StatementKind::IMPORT, std::move(sourceRange)),
             _path(std::move(path)) {
         }
 
@@ -151,7 +153,7 @@ namespace klong {
     class Parameter : public Stmt {
     public:
         Parameter(SourceRange sourceRange, std::string name, TypePtr type):
-            Stmt(StatementKind::PARAMETER, sourceRange),
+            Stmt(StatementKind::PARAMETER, std::move(sourceRange)),
             _name(std::move(name)),
             _type(std::move(type)) {
         }
@@ -179,7 +181,7 @@ namespace klong {
     public:
         Function(SourceRange sourceRange, std::string name, std::vector<ParameterPtr>&& params,
             std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body, bool isPublic):
-            Stmt(StatementKind::FUNCTION, sourceRange),
+            Stmt(StatementKind::FUNCTION, std::move(sourceRange)),
             _name(std::move(name)),
             _params(params),
             _functionType(std::move(functionType)),
@@ -230,7 +232,7 @@ namespace klong {
     class If : public Stmt {
     public:
         If(SourceRange sourceRange, ExprPtr condition, StmtPtr thenBranch, StmtPtr elseBranch):
-            Stmt(StatementKind::IF, sourceRange),
+            Stmt(StatementKind::IF, std::move(sourceRange)),
             _condition(std::move(condition)),
             _thenBranch(std::move(thenBranch)),
             _elseBranch(std::move(elseBranch)),
@@ -271,7 +273,7 @@ namespace klong {
     class Return : public Stmt {
     public:
         Return(SourceRange sourceRange, ExprPtr value):
-            Stmt(StatementKind::RETURN, sourceRange), _value(std::move(value)) {
+            Stmt(StatementKind::RETURN, std::move(sourceRange)), _value(std::move(value)) {
         }
 
         void accept(StmtVisitor* visitor) override {
@@ -295,7 +297,7 @@ namespace klong {
                 bool isPublic,
                 bool isConst,
                 bool isGlobal):
-                Stmt(StatementKind::VAR_DECL, sourceRange),
+                Stmt(StatementKind::VAR_DECL, std::move(sourceRange)),
                 _name(std::move(name)),
                 _type(std::move(type)),
                 _initializer(std::move(initializer)),
@@ -348,7 +350,7 @@ namespace klong {
 	class CustomMember : public Stmt {
 	public:
 		CustomMember(SourceRange sourceRange, std::string name, TypePtr type) :
-			Stmt(StatementKind::CUSTOM_MEMBER, sourceRange),
+			Stmt(StatementKind::CUSTOM_MEMBER, std::move(sourceRange)),
 			_name(std::move(name)),
 			_type(std::move(type)) {
 		}
@@ -379,7 +381,7 @@ namespace klong {
     public:
 	    TypeDeclaration(SourceRange sourceRange, TypeDeclarationKind kind,
 	            std::string name, bool isPublic):
-            Stmt(StatementKind::TYPE_DECL, sourceRange),
+            Stmt(StatementKind::TYPE_DECL, std::move(sourceRange)),
 	        _name(std::move(name)),
             _kind(kind),
             _isPublic(isPublic) {
@@ -409,7 +411,7 @@ namespace klong {
 			std::string name,
 			std::vector<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
-				TypeDeclaration(sourceRange, kind, std::move(name), isPublic),
+				TypeDeclaration(std::move(sourceRange), kind, std::move(name), isPublic),
 				_members(members) {
             // check if this type is self referential
             for (auto& member : _members) {
@@ -469,7 +471,7 @@ namespace klong {
 			std::string name,
 			std::vector<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) : 
-				MemberTypeDeclaration(sourceRange, TypeDeclarationKind::STRUCT, std::move(name), std::move(members), isPublic) {
+				MemberTypeDeclaration(std::move(sourceRange), TypeDeclarationKind::STRUCT, std::move(name), std::move(members), isPublic) {
 		}
 
         void accept(StmtVisitor* visitor) override {
@@ -483,7 +485,7 @@ namespace klong {
 			std::string name,
 			std::vector<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
-				MemberTypeDeclaration(sourceRange, TypeDeclarationKind::UNION, std::move(name), std::move(members), isPublic) {
+				MemberTypeDeclaration(std::move(sourceRange), TypeDeclarationKind::UNION, std::move(name), std::move(members), isPublic) {
 		}
 
 		void accept(StmtVisitor* visitor) override {
@@ -497,7 +499,7 @@ namespace klong {
 			std::string name,
 			std::vector<std::string>&& values,
 			bool isPublic):
-				TypeDeclaration(sourceRange, TypeDeclarationKind::ENUM, name, isPublic), _values(std::move(values)) {
+				TypeDeclaration(std::move(sourceRange), TypeDeclarationKind::ENUM, std::move(name), isPublic), _values(std::move(values)) {
 		}
 
 		std::vector<std::string> values() const {
@@ -514,7 +516,7 @@ namespace klong {
     class While : public Stmt {
     public:
         While(SourceRange sourceRange, ExprPtr condition, StmtPtr body):
-            Stmt(StatementKind::WHILE, sourceRange),
+            Stmt(StatementKind::WHILE, std::move(sourceRange)),
             _condition(std::move(condition)), _body(std::move(body)) {
         }
 
@@ -538,7 +540,7 @@ namespace klong {
     class For : public Stmt {
     public:
         For(SourceRange sourceRange, StmtPtr initializer, ExprPtr condition, ExprPtr increment, StmtPtr body):
-            Stmt(StatementKind::FOR, sourceRange),
+            Stmt(StatementKind::FOR, std::move(sourceRange)),
             _initializer(std::move(initializer)),
             _condition(std::move(condition)),
             _increment(std::move(increment)),
@@ -575,7 +577,7 @@ namespace klong {
     class Break : public Stmt {
     public:
         explicit Break(SourceRange sourceRange):
-                Stmt(StatementKind::BREAK, sourceRange) {
+                Stmt(StatementKind::BREAK, std::move(sourceRange)) {
         }
 
         void accept(StmtVisitor* visitor) override {
@@ -586,7 +588,7 @@ namespace klong {
     class Continue : public Stmt {
     public:
         explicit Continue(SourceRange sourceRange):
-            Stmt(StatementKind::CONTINUE, sourceRange) {
+            Stmt(StatementKind::CONTINUE, std::move(sourceRange)) {
         }
 
         void accept(StmtVisitor* visitor) override {
@@ -597,7 +599,7 @@ namespace klong {
     class Defer : public Stmt {
     public:
         Defer(SourceRange sourceRange, StmtPtr stmtToDefer):
-                Stmt(StatementKind::DEFER, sourceRange),
+                Stmt(StatementKind::DEFER, std::move(sourceRange)),
                 _stmtToDefer(std::move(stmtToDefer)) {
         }
 
@@ -621,7 +623,7 @@ namespace klong {
     class Comment : public Stmt {
     public:
         Comment(SourceRange sourceRange, std::string text, CommentType commentType):
-            Stmt(StatementKind::COMMENT, sourceRange),
+            Stmt(StatementKind::COMMENT, std::move(sourceRange)),
             _text(std::move(text)),
             _commentType(commentType){
         }

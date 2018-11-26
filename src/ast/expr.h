@@ -28,7 +28,7 @@ namespace klong {
     class Expr {
     public:
         Expr(ExprKind kind, SourceRange sourceRange): _kind(kind),
-            _sourceRange(sourceRange) {
+            _sourceRange(std::move(sourceRange)) {
         }
 
         virtual ~Expr() = default;
@@ -71,12 +71,12 @@ namespace klong {
     class Assign : public Expr {
     public:
         Assign(SourceRange sourceRange, std::shared_ptr<Variable> target, ExprPtr value):
-            Expr(ExprKind::ASSIGN, sourceRange),
+            Expr(ExprKind::ASSIGN, std::move(sourceRange)),
             _target(std::move(target)), _value(std::move(value)) {
         }
 
         Assign(SourceRange sourceRange, std::shared_ptr<Expr> target, ExprPtr value):
-                Expr(ExprKind::ASSIGN, sourceRange),
+                Expr(ExprKind::ASSIGN, std::move(sourceRange)),
                 _targetExpr(std::move(target)), _value(std::move(value)) {
         }
 
@@ -129,7 +129,7 @@ namespace klong {
     class Binary : public Expr {
     public:
         Binary(SourceRange sourceRange, ExprPtr left, BinaryOperation op, ExprPtr right):
-            Expr(ExprKind::BINARY, sourceRange),
+            Expr(ExprKind::BINARY, std::move(sourceRange)),
             _left(std::move(left)), _op(op), _right(std::move(right)) {
         }
 
@@ -158,7 +158,7 @@ namespace klong {
     class Call : public Expr {
     public:
         Call(SourceRange sourceRange, ExprPtr callee, std::vector<ExprPtr>&& args):
-            Expr(ExprKind::CALL, sourceRange),
+            Expr(ExprKind::CALL, std::move(sourceRange)),
             _callee(std::move(callee)), _args(args) {
         }
 
@@ -186,7 +186,7 @@ namespace klong {
     class Grouping : public Expr {
     public:
         Grouping(SourceRange sourceRange, ExprPtr expr):
-            Expr(ExprKind::GROUPING, sourceRange),
+            Expr(ExprKind::GROUPING, std::move(sourceRange)),
             _expr(std::move(expr)) {
         }
 
@@ -205,7 +205,7 @@ namespace klong {
 	class Subscript : public Expr {
 	public:
 		Subscript(SourceRange sourceRange, ExprPtr target, ExprPtr index): 
-			Expr(ExprKind::SUBSCRIPT, sourceRange),
+			Expr(ExprKind::SUBSCRIPT, std::move(sourceRange)),
 			_target(std::move(target)),
 			_index(std::move(index)) {
 		}
@@ -230,7 +230,8 @@ namespace klong {
 	class MemberAccess : public Expr {
 	public:
 	    MemberAccess(SourceRange sourceRange, ExprPtr target, std::string value):
-	        Expr(ExprKind::MEMBER_ACCESS, sourceRange), _target(std::move(target)), _value(std::move(value)) {
+	        Expr(ExprKind::MEMBER_ACCESS, std::move(sourceRange)),
+	        _target(std::move(target)), _value(std::move(value)) {
 	    }
 
 	    void accept(ExprVisitor* visitor) override {
@@ -253,7 +254,7 @@ namespace klong {
 	class EnumAccess : public Expr {
 	public:
 		EnumAccess(SourceRange sourceRange, std::shared_ptr<CustomType> target, std::string value) :
-			Expr(ExprKind::ENUM_ACCESS, sourceRange), 
+			Expr(ExprKind::ENUM_ACCESS, std::move(sourceRange)),
 			_target(std::move(target)), 
 			_value(std::move(value)) {
 		}
@@ -277,27 +278,27 @@ namespace klong {
     class Literal : public Expr {
     public:
         Literal(SourceRange sourceRange, TypePtr literalType):
-            Expr(ExprKind::LITERAL, sourceRange),
+            Expr(ExprKind::LITERAL, std::move(sourceRange)),
             _literalType(std::move(literalType)) {
         }
 
-        Literal(TypePtr literalType):
+        explicit Literal(TypePtr literalType):
             Expr(ExprKind::LITERAL, SourceRange()),
             _literalType(std::move(literalType)) {
         }
 
-        Literal(SourceRange sourceRange):
-            Expr(ExprKind::LITERAL, sourceRange) {
+        explicit Literal(SourceRange sourceRange):
+            Expr(ExprKind::LITERAL, std::move(sourceRange)) {
         }
 
-        void accept(ExprVisitor* visitor) = 0;
+        void accept(ExprVisitor* visitor) override = 0;
 
         Type* literalType() const {
             return _literalType.get();
         }
 
         void literalType(TypePtr type) {
-            _literalType = type;
+            _literalType = std::move(type);
         }
 
     private:
@@ -307,21 +308,21 @@ namespace klong {
     class NumberLiteral: public Literal {
     public:
         NumberLiteral(SourceRange sourceRange, double value):
-            Literal(sourceRange,
+            Literal(std::move(sourceRange),
                     std::make_shared<PrimitiveType>(PrimitiveTypeKind::F64)),
                     _primitiveTypeKind(PrimitiveTypeKind::F64) {
             _value.f = value;
         }
 
         NumberLiteral(SourceRange sourceRange, int64_t value):
-            Literal(sourceRange,
+            Literal(std::move(sourceRange),
                     std::make_shared<PrimitiveType>(PrimitiveTypeKind::I64)),
                     _primitiveTypeKind(PrimitiveTypeKind::I64){
             _value.i = value;
         }
 
         NumberLiteral(SourceRange sourceRange, uint64_t value):
-            Literal(sourceRange,
+            Literal(std::move(sourceRange),
                     std::make_shared<PrimitiveType>(PrimitiveTypeKind::U64)),
                     _primitiveTypeKind(PrimitiveTypeKind::U64) {
             _value.u = value;
@@ -358,7 +359,7 @@ namespace klong {
     class BoolLiteral: public Literal {
     public:
         BoolLiteral(SourceRange sourceRange, bool value):
-            Literal(sourceRange,
+            Literal(std::move(sourceRange),
                     std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL)),
                     _value(value) {
         }
@@ -383,7 +384,7 @@ namespace klong {
     class StringLiteral: public Literal {
     public:
         StringLiteral(SourceRange sourceRange, std::string value):
-            Literal(sourceRange,
+            Literal(std::move(sourceRange),
                     std::make_shared<PointerType>(std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8))),
                     _value(std::move(value)) {
         }
@@ -402,7 +403,7 @@ namespace klong {
     class CharacterLiteral: public Literal {
     public:
         CharacterLiteral(SourceRange sourceRange, char value):
-            Literal(sourceRange,
+            Literal(std::move(sourceRange),
                     std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8)),
                     _value(value) {
         }
@@ -421,7 +422,7 @@ namespace klong {
     class ArrayLiteral: public Literal {
     public:
         ArrayLiteral(SourceRange sourceRange, std::vector<ExprPtr>&& values):
-            Literal(sourceRange),
+            Literal(std::move(sourceRange)),
             _values(values) {
         }
 
@@ -449,7 +450,7 @@ namespace klong {
     class Logical : public Expr {
     public:
         Logical(SourceRange sourceRange, ExprPtr left, LogicalOperation op, ExprPtr right):
-            Expr(ExprKind::LOGICAL, sourceRange),
+            Expr(ExprKind::LOGICAL, std::move(sourceRange)),
             _left(std::move(left)), _op(op), _right(std::move(right)) {
         }
 
@@ -485,7 +486,7 @@ namespace klong {
     class Unary : public Expr {
     public:
         Unary(SourceRange sourceRange, UnaryOperation op, ExprPtr right):
-            Expr(ExprKind::UNARY, sourceRange),
+            Expr(ExprKind::UNARY, std::move(sourceRange)),
             _op(op), _right(std::move(right)) {
         }
 
@@ -509,7 +510,7 @@ namespace klong {
     class SizeOf : public Expr {
     public:
         SizeOf(SourceRange sourceRange, TypePtr right):
-        Expr(ExprKind::SIZE_OF, sourceRange),
+        Expr(ExprKind::SIZE_OF, std::move(sourceRange)),
         _right(std::move(right)) {
         }
 
@@ -528,7 +529,7 @@ namespace klong {
     class Cast : public Expr {
     public:
         Cast(SourceRange sourceRange, TypePtr targetType, ExprPtr right):
-            Expr(ExprKind::CAST, sourceRange),
+            Expr(ExprKind::CAST, std::move(sourceRange)),
             _targetType(std::move(targetType)),
             _right(std::move(right)){
         }
@@ -555,7 +556,7 @@ namespace klong {
     class Variable : public Expr {
     public:
         Variable(SourceRange sourceRange, std::string name):
-            Expr(ExprKind::VARIABLE, sourceRange),
+            Expr(ExprKind::VARIABLE, std::move(sourceRange)),
             _name(std::move(name)) {
         }
 
