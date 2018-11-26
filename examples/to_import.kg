@@ -1,7 +1,7 @@
-import "import.kg";
+extern printf: (ptr<i8>, i64) -> void;
 
-extern printf: () -> void;
+pub const i: i64 = 2;
 
-pub fun test() {
-    printf("test\n");
+pub fun test(a: i64) {
+    printf("test %d\n", a);
 }

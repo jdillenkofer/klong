@@ -33,6 +33,14 @@ namespace klong {
             _allModules.insert(std::pair(std::move(modulepath), std::move(module)));
         }
 
+        std::vector<ModulePtr> modules() {
+            std::vector<ModulePtr> modules;
+            for(auto& item : _allModules) {
+                modules.push_back(item.second);
+            }
+            return modules;
+        }
+
         std::optional<SymbolInfo> find(const std::string& name) {
             auto symbol = _globalScope.find(name);
             if (symbol != _globalScope.end()) {
@@ -66,10 +74,10 @@ namespace klong {
                         function->name(), std::shared_ptr<Type>(function->functionType()->clone()));
             }
             if (varDecl) {
-                // BUG: cannot clone here because the type is not resolved for smth like this:
+                // TODO: BUG: cannot clone here because the type is not resolved for smth like this:
                 // pub const a = 5;
                 return std::make_shared<ExternalDeclaration>(varDecl->sourceRange(),
-                        varDecl->name(), std::shared_ptr<Type>(varDecl->type()->clone()));
+                        varDecl->name(), std::shared_ptr<Type>(varDecl->type() ? varDecl->type()->clone() : nullptr));
             }
             if (extDecl) {
                 return std::make_shared<ExternalDeclaration>(*extDecl);

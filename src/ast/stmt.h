@@ -120,6 +120,10 @@ namespace klong {
             return _type.get();
         }
 
+        void type(TypePtr type) {
+            _type = type;
+        }
+
     private:
         std::string _name;
         TypePtr _type;

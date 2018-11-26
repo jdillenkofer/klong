@@ -3,11 +3,11 @@
 
 #include "type_check_visitor.h"
 
-#include "resolver/resolve_visitor.h"
 #include "ast/module.h"
 #include "ast/stmt.h"
 #include "ast/expr.h"
 #include "ast/type.h"
+#include "typechecker.h"
 
 namespace klong {
 
@@ -96,6 +96,10 @@ namespace klong {
                 auto stmt = dynamic_cast<TypeDeclaration*>(statement);
                 declareType(stmt);
             }
+        }
+        for (auto& dependency : module->dependencies()) {
+            auto typechecker = std::make_shared<TypeChecker>();
+            typechecker->check(dependency, _session);
         }
         check(module->statements());
     }

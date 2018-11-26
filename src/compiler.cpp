@@ -85,19 +85,20 @@ namespace klong {
         }
 
         /* PARSING */
-        ModulePtr module;
+        ModulePtr rootModule;
         auto parseStart = std::chrono::high_resolution_clock::now();
         {
             defer(
-                if (_option.verbose) {
-                    auto parseEnd = std::chrono::high_resolution_clock::now();
-                    std::cout << "Parsing time: " <<
-                    std::chrono::duration_cast<std::chrono::milliseconds>(parseEnd - parseStart).count() <<
-                    "ms" << std::endl;
-                }
+                    if (_option.verbose) {
+                        auto parseEnd = std::chrono::high_resolution_clock::now();
+                        std::cout << "Parsing time: " <<
+                                  std::chrono::duration_cast<std::chrono::milliseconds>(parseEnd - parseStart).count()
+                                  <<
+                                  "ms" << std::endl;
+                    }
             );
 
-            if (!parse(module, sourceFile)) {
+            if (!parse(rootModule, sourceFile)) {
                 printResult(_session.getResult());
                 return false;
             }
@@ -108,15 +109,16 @@ namespace klong {
         {
             auto resolveStart = std::chrono::high_resolution_clock::now();
             defer(
-                if (_option.verbose) {
-                    auto resolveEnd = std::chrono::high_resolution_clock::now();
-                    std::cout << "Resolve time: " <<
-                    std::chrono::duration_cast<std::chrono::milliseconds>(resolveEnd - resolveStart).count() <<
-                    "ms" << std::endl;
-                }
+                    if (_option.verbose) {
+                        auto resolveEnd = std::chrono::high_resolution_clock::now();
+                        std::cout << "Resolve time: " <<
+                                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                                          resolveEnd - resolveStart).count() <<
+                                  "ms" << std::endl;
+                    }
             );
 
-            if (!resolve(module)) {
+            if (!resolve(rootModule)) {
                 printResult(_session.getResult());
                 return false;
             }
@@ -127,15 +129,16 @@ namespace klong {
         {
             auto typeCheckStart = std::chrono::high_resolution_clock::now();
             defer(
-                if (_option.verbose) {
-                    auto typeCheckEnd = std::chrono::high_resolution_clock::now();
-                    std::cout << "Typecheck time: " <<
-                    std::chrono::duration_cast<std::chrono::milliseconds>(typeCheckEnd - typeCheckStart).count() <<
-                    "ms" << std::endl;
-                }
+                    if (_option.verbose) {
+                        auto typeCheckEnd = std::chrono::high_resolution_clock::now();
+                        std::cout << "Typecheck time: " <<
+                                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                                          typeCheckEnd - typeCheckStart).count() <<
+                                  "ms" << std::endl;
+                    }
             );
 
-            if (!typecheck(module)) {
+            if (!typecheck(rootModule)) {
                 printResult(_session.getResult());
                 return false;
             }
@@ -150,36 +153,39 @@ namespace klong {
             targetTriple = _option.customTarget;
         }
 
-        LLVMEmitter llvmEmitter(targetTriple);
         {
             auto llvmEmissionStart = std::chrono::high_resolution_clock::now();
             defer(
-                if (_option.verbose) {
-                    auto llvmEmissionEnd = std::chrono::high_resolution_clock::now();
-                    std::cout << "LLVM time: " <<
-                    std::chrono::duration_cast<std::chrono::milliseconds>(llvmEmissionEnd - llvmEmissionStart).count() <<
-                    "ms" << std::endl;
+                    if (_option.verbose) {
+                        auto llvmEmissionEnd = std::chrono::high_resolution_clock::now();
+                        std::cout << "LLVM time: " <<
+                                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                                          llvmEmissionEnd - llvmEmissionStart).count() <<
+                                  "ms" << std::endl;
 
-                    std::cout << "overall time: " <<
-                    std::chrono::duration_cast<std::chrono::milliseconds>(llvmEmissionEnd - parseStart).count() <<
-                    "ms" << std::endl;
-                }
+                        std::cout << "overall time: " <<
+                                  std::chrono::duration_cast<std::chrono::milliseconds>(
+                                          llvmEmissionEnd - parseStart).count() <<
+                                  "ms" << std::endl;
+                    }
             );
+            for (auto& module : _session.modules()) {
+                LLVMEmitter llvmEmitter(targetTriple);
+                auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
+                if (!codegen(module, llvmEmitter, outputFileType)) {
+                    return false;
+                }
 
-            auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
-            if (!codegen(module, llvmEmitter, outputFileType)) {
-                return false;
+                if (_option.verbose) {
+                    llvmEmitter.printIR();
+                }
             }
-        }
-
-        if (_option.verbose) {
-            llvmEmitter.printIR();
         }
 
         /* GRAPHVIZ */
         if (_option.emitDotFile) {
             DotfileEmitter graphvizDotFileEmitter;
-            graphvizDotFileEmitter.emit(module->filenameWithoutExtension() + ".dot", module);
+            graphvizDotFileEmitter.emit(rootModule->filenameWithoutExtension() + ".dot", rootModule);
         }
         return true;
     }
