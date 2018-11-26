@@ -75,6 +75,7 @@ namespace klong {
         void emitAllDefers();
         llvm::Value* getVariableAddress(Expr* expr);
         llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
+		std::shared_ptr<ExternalDeclaration> translateToExternalDeclaration(Stmt* stmt);
     private:
         llvm::LLVMContext _context;
         llvm::IRBuilder<> _builder;

@@ -1,7 +1,7 @@
-extern printf: (ptr<i8>, i64) -> void;
+extern printf: (ptr<i8>, u64) -> void;
 
-pub const i: i64 = 2;
+pub const i = 2;
 
-pub fun test(a: i64) {
+pub fun test(a: u64) {
     printf("test %d\n", a);
 }
