@@ -14,30 +14,33 @@
 namespace klong {
 
     bool Compiler::parse(ModulePtr& module, std::shared_ptr<SourceFile> sourceFile) {
+        auto path = sourceFile->absolutepath();
         auto lexer = Lexer(std::move(sourceFile));
-        auto parser = Parser(&lexer, &_result);
+        auto parser = Parser(&lexer, &_session);
+        _session.reserveModule(path);
         parser.parse();
-        if (_result.hasErrors()) {
+        if (_session.getResult().hasErrors()) {
             return false;
         }
-        module = _result.success();
+        module = _session.getResult().success();
+        _session.addModule(path, module);
         return true;
     }
 
     bool Compiler::resolve(ModulePtr &module) {
         Resolver resolver;
-        resolver.resolve(module, &_result);
-        return !_result.hasErrors();
+        resolver.resolve(module, &_session);
+        return !_session.getResult().hasErrors();
     }
 
     bool Compiler::typecheck(ModulePtr &module) {
         TypeChecker typeChecker;
-        typeChecker.check(module, &_result);
-        return !_result.hasErrors();
+        typeChecker.check(module, &_session);
+        return !_session.getResult().hasErrors();
     }
 
     bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType) {
-        llvmEmitter.emit(module);
+        llvmEmitter.emit(module, &_session);
 
         auto filename = module->filenameWithoutExtension();
         if (_option.disableLinking && _option.useCustomOutputPath) {
@@ -48,13 +51,25 @@ namespace klong {
         return true;
     }
 
-    void Compiler::printErrors(CompilationResult& result) {
+    void Compiler::printResult(CompilationResult &result) {
+        auto warnings = result.getWarnings();
+        // TODO: fix warnings from multiple files
+        for (uint64_t i = 0; i < warnings.size(); i++) {
+            auto& error = warnings[i];
+            auto sourceRange = error.sourceRange();
+            if (i == 0 && sourceRange.valid()) {
+                std::cout << "WARNING - file: " << sourceRange.start.filename() << std::endl;
+            }
+            std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
+            std::cout << sourceRange.getRelevantSourceText() << std::flush;
+        }
         auto errors = result.getErrors();
+        // TODO: fix error messages from multiple files
         for (uint64_t i = 0; i < errors.size(); i++) {
             auto& error = errors[i];
             auto sourceRange = error.sourceRange();
             if (i == 0 && sourceRange.valid()) {
-                std::cout << "file: " << sourceRange.start.filename() << std::endl;
+                std::cout << "ERROR - file: " << sourceRange.start.filename() << std::endl;
             }
             std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
             std::cout << sourceRange.getRelevantSourceText() << std::flush;
@@ -83,7 +98,7 @@ namespace klong {
             );
 
             if (!parse(module, sourceFile)) {
-                printErrors(_result);
+                printResult(_session.getResult());
                 return false;
             }
         }
@@ -102,7 +117,7 @@ namespace klong {
             );
 
             if (!resolve(module)) {
-                printErrors(_result);
+                printResult(_session.getResult());
                 return false;
             }
 
@@ -121,7 +136,7 @@ namespace klong {
             );
 
             if (!typecheck(module)) {
-                printErrors(_result);
+                printResult(_session.getResult());
                 return false;
             }
         }

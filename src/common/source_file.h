@@ -9,12 +9,12 @@ namespace klong {
     class SourceFile {
     public:
         explicit SourceFile(std::string path):
-            _absolutepath(std::filesystem::absolute(std::move(path)).string()),
+            _absolutepath(std::filesystem::absolute(std::move(path)).lexically_normal().string()),
 			_filename(std::filesystem::path(_absolutepath).filename().string()) {
         }
 
         SourceFile(std::string path, std::string code):
-            _absolutepath(std::filesystem::absolute(std::move(path)).string()),
+            _absolutepath(std::filesystem::absolute(std::move(path)).lexically_normal().string()),
             _filename(std::filesystem::path(_absolutepath).filename().string()),
             _code(std::move(code)) {
         }

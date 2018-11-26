@@ -3,7 +3,7 @@
 #include <string>
 #include <iostream>
 
-#include "common/compilation_result.h"
+#include "common/compilation_session.h"
 #include "common/option.h"
 #include "ast/module.h"
 #include "codegen/llvm/llvm_emitter.h"
@@ -11,7 +11,7 @@
 namespace klong {
     class Compiler {
     public:
-        Compiler(Option option) :
+        explicit Compiler(Option option) :
             _option(std::move(option)) {
         }
 
@@ -21,9 +21,9 @@ namespace klong {
         bool codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType);
         bool compile(std::string filepath);
     private:
-        void printErrors(CompilationResult& result);
+        void printResult(CompilationResult &result);
     private:
-        CompilationResult _result;
+        CompilationSession _session;
         Option _option;
     };
 }

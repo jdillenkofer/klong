@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/compilation_result.h"
+#include "common/compilation_session.h"
 #include "lexer/token.h"
 #include "lexer/lexer_memento.h"
 
@@ -15,9 +15,10 @@ namespace klong {
                 bool isInsideFunction,
                 bool isInsideLoop,
                 bool isInsideDefer,
-                CompilationResult compilationResult):
+                CompilationSession compilationSession):
                     _current(std::move(current)), _previous(std::move(previous)), _lexerMemento(std::move(lexerMemento)),
-                    _isInsideFunction(isInsideFunction), _isInsideLoop(isInsideLoop), _isInsideDefer(isInsideDefer), _compilationResult(std::move(compilationResult)) {
+                    _isInsideFunction(isInsideFunction), _isInsideLoop(isInsideLoop), _isInsideDefer(isInsideDefer),
+                    _compilationSession(std::move(compilationSession)) {
         }
     private:
         Token _current;
@@ -26,7 +27,7 @@ namespace klong {
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
         bool _isInsideDefer = false;
-        CompilationResult _compilationResult;
+        CompilationSession _compilationSession;
 
         friend Parser;
     };

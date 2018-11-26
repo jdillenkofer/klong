@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+
+#include "common/compilation_session.h"
 #include "ast/stmt.h"
 #include "ast/visitor.h"
 
@@ -62,6 +64,8 @@ namespace klong {
         void visitCharacterLiteral(CharacterLiteral* expr) override;
         void visitArrayLiteral(ArrayLiteral* expr) override;
 
+        void setSession(CompilationSession* session);
+
     private:
         llvm::Value* emitCodeL(Expr* expr);
         llvm::Value* emitCodeR(Expr* expr);
@@ -92,5 +96,6 @@ namespace klong {
 
 		// used for defer
 		std::deque<std::vector<Stmt*>> _deferScopes;
+		CompilationSession* _session;
     };
 }

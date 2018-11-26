@@ -17,16 +17,16 @@ namespace klong {
 
         _module->addStatements(std::move(statements));
 
-        if (_result->hasErrors()) {
+        if (_session->getResult().hasErrors()) {
             return;
         }
-        _result->setSuccess(_module);
+        _session->getResult().setSuccess(_module);
         _module = nullptr;
     }
 
     ParserMemento Parser::saveToMemento() {
         return ParserMemento(_current, _previous, _lexer->saveToMemento(),
-                _isInsideFunction, _isInsideLoop, _isInsideDefer, *_result);
+                _isInsideFunction, _isInsideLoop, _isInsideDefer, *_session);
     }
 
     void Parser::loadFromMemento(ParserMemento& memento) {
@@ -36,7 +36,7 @@ namespace klong {
         _isInsideFunction = memento._isInsideFunction;
         _isInsideLoop = memento._isInsideLoop;
         _isInsideDefer = memento._isInsideDefer;
-        *_result = memento._compilationResult;
+        *_session = memento._compilationSession;
     }
 
     Token Parser::consume(TokenType type, std::string errorMessage) {
@@ -193,7 +193,7 @@ namespace klong {
 
             return statement();
         } catch(CompilationError& error) {
-            _result->addError(std::move(error));
+            _session->getResult().addError(std::move(error));
             synchronize();
             return nullptr;
         }
@@ -379,38 +379,43 @@ namespace klong {
         Token importToken = previous();
         Token pathToken = consume(TokenType::STRING_LITERAL, "Expect path string.");
         Token semicolonToken = consume(TokenType::SEMICOLON, "Expect ';' after import stmt.");
+
+        auto absolutePath = std::filesystem::absolute(pathToken.value).string();
+
         // try as relative path
-        auto relativeBasePath = std::filesystem::path(_lexer->absolutepath()).remove_filename().string();
         auto filename = std::filesystem::path(pathToken.value).filename().string();
-        auto sourceFile = std::make_shared<SourceFile>(relativeBasePath + "/" + filename);
+        auto relativeBasePath = std::filesystem::path(_lexer->absolutepath()).remove_filename().string();
+
+        auto sourceFile = std::make_shared<SourceFile>(relativeBasePath + filename);
         auto result = sourceFile->loadFromFile();
         if (!result) {
             // try as absolute path
-            sourceFile = std::make_shared<SourceFile>(pathToken.value);
+            sourceFile = std::make_shared<SourceFile>(absolutePath);
             result = sourceFile->loadFromFile();
             if (!result) {
-                _result->addError(CompilationError(pathToken.sourceRange,
-                                                   "Cannot find imported source file " + filename + " in " + _lexer->filename() + "."));
+                _session->getResult().addError(CompilationError(pathToken.sourceRange,
+                        "Cannot find imported source file " + filename + " in " + _lexer->filename() + "."));
                 return nullptr;
             }
         }
-        CompilationResult compilationResult;
-        auto lexer = Lexer(sourceFile);
-        auto parser = Parser(&lexer, &compilationResult);
-        parser.parse();
-        if (compilationResult.hasWarnings()) {
-            for (auto warning : compilationResult.getWarnings()) {
-                _result->addWarning(std::move(warning));
+
+        ModulePtr dependency;
+        if (!_session->hasModule(sourceFile->absolutepath())) {
+            _session->reserveModule(sourceFile->absolutepath());
+
+            auto lexer = Lexer(sourceFile);
+            auto parser = std::make_shared<Parser>(&lexer, _session);
+            parser->parse();
+            if (!_session->getResult().hasErrors()) {
+                dependency = _session->getResult().success();
+                _session->addModule(sourceFile->absolutepath(), dependency);
             }
-        }
-        if (compilationResult.hasErrors()) {
-            for (auto error : compilationResult.getErrors()) {
-                _result->addError(std::move(error));
-            }
-        } else {
-            auto dependency = compilationResult.success();
             _module->addDependency(dependency);
+        } else {
+            _session->getResult().addWarning(
+                    CompilationWarning(pathToken.sourceRange, "Cyclic dependency detected."));
         }
+
         return std::make_shared<Import>(SourceRange { importToken.sourceRange.start, semicolonToken.sourceRange.end },
                 pathToken.value);
     }

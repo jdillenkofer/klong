@@ -3,6 +3,7 @@
 #include "ast/stmt.h"
 #include "ast/expr.h"
 #include "ast/type.h"
+#include "resolver.h"
 
 namespace klong {
 
@@ -22,7 +23,7 @@ namespace klong {
         for (const auto& statement : statements) {
             if (statement->kind() == StatementKind::FUNCTION) {
                 auto stmt = dynamic_cast<Function*>(statement);
-                declare(stmt, stmt->name(), DeclarationType::FUNCTION);
+                declare(stmt, stmt->name(), DeclarationType::FUNCTION, stmt->isPublic());
                 define(stmt->name());
             }
         }
@@ -41,7 +42,12 @@ namespace klong {
                 return true;
             }
         }
-        _result->addError(
+        auto symbolInfoOptional = _session->find(variable->name());
+        if (symbolInfoOptional.has_value()) {
+            variable->resolvesTo(symbolInfoOptional.value().declarationStmt);
+            return true;
+        }
+        _session->getResult().addError(
                 CompilationError(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() + "'."));
         return false;
     }
@@ -54,16 +60,23 @@ namespace klong {
         _scopes.pop_back();
     }
 
-    void ResolveVisitor::declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType) {
+    void ResolveVisitor::declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType, bool isPublic) {
         if (_scopes.empty()) {
             return;
         }
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
+        auto symbolInfo = SymbolInfo { declarationStmt, declarationType, false };
+        if (!_isInsideFunction && isPublic) {
+            if (!_session->declare(name, symbolInfo)) {
+                _session->getResult().addError(CompilationError(declarationStmt->sourceRange(),
+                        "Symbol with name '" + name + "' already declared in global scope"));
+            }
+        }
         if (scope.find(name) != scope.end()) {
-            _result->addError(CompilationError(declarationStmt->sourceRange(),
+            _session->getResult().addError(CompilationError(declarationStmt->sourceRange(),
                     "Symbol with name '" + name + "' already declared in this scope"));
         }
-        scope.insert(std::pair<std::string, SymbolInfo>(name, SymbolInfo { declarationStmt, declarationType, false }));
+        scope.insert(std::pair<std::string, SymbolInfo>(name, symbolInfo));
     }
 
     void ResolveVisitor::define(std::string name) {
@@ -84,9 +97,13 @@ namespace klong {
                 && stmt->kind() != StatementKind::EXT_DECL
 				&& stmt->kind() != StatementKind::IMPORT
                 && stmt->kind() != StatementKind::COMMENT) {
-                _result->addError(
+                _session->getResult().addError(
                         CompilationError(stmt->sourceRange(), "Illegal top level statement."));
             }
+        }
+        for (auto& dependency : module->dependencies()) {
+            auto resolver = std::make_shared<Resolver>();
+            resolver->resolve(dependency, _session);
         }
         enterScope();
         resolve(module->statements());
@@ -107,17 +124,17 @@ namespace klong {
     void ResolveVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
         auto type = stmt->type();
         auto declType = type->kind() == TypeKind::FUNCTION ? DeclarationType::FUNCTION : DeclarationType::LET;
-        declare(stmt, stmt->name(), declType);
+        declare(stmt, stmt->name(), declType, true);
         define(stmt->name());
     }
 
     void ResolveVisitor::visitImportStmt(Import* stmt) {
-        // TODO: IMPLEMENT IMPORT STMT
+        // nothing to do here
         (void) stmt;
     }
 
     void ResolveVisitor::visitFunctionStmt(Function* stmt) {
-        resolveFunction(stmt, true);
+        resolveFunction(stmt);
     }
 
     void ResolveVisitor::visitParameterStmt(Parameter* stmt) {
@@ -125,9 +142,9 @@ namespace klong {
         define(stmt->name());
     }
 
-    void ResolveVisitor::resolveFunction(Function *stmt, bool insideFunction) {
+    void ResolveVisitor::resolveFunction(Function *stmt) {
         bool enclosingFunction = _isInsideFunction;
-        _isInsideFunction = insideFunction;
+        _isInsideFunction = true;
         enterScope();
         for (const auto& param : stmt->params()) {
             resolve(param);
@@ -146,7 +163,7 @@ namespace klong {
 
     void ResolveVisitor::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
-            _result->addError(
+            _session->getResult().addError(
                     CompilationError(stmt->sourceRange(), "Cannot return from top-level code."));
         }
         resolve(stmt->value());
@@ -157,7 +174,7 @@ namespace klong {
             resolve(stmt->initializer());
         }
         auto declType = stmt->isConst() ? DeclarationType::CONST : DeclarationType::LET;
-        declare(stmt, stmt->name(), declType);
+        declare(stmt, stmt->name(), declType, stmt->isPublic());
         if (stmt->initializer()) {
             define(stmt->name());
         }
@@ -232,7 +249,7 @@ namespace klong {
             if (isResolved && varDeclRes->kind() == StatementKind::VAR_DECL) {
                 auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
                 if (varDecl->isConst()) {
-                    _result->addError(
+                    _session->getResult().addError(
                             CompilationError(expr->sourceRange(), "Cannot reassign 'const'."));
                 }
             }
@@ -294,7 +311,7 @@ namespace klong {
         if (scope.find(expr->name()) != scope.end()) {
             auto& symbol = (*scope.find(expr->name())).second;
             if (!symbol.initialized) {
-                _result->addError(
+                _session->getResult().addError(
                         CompilationError(expr->sourceRange(), "Cannot read local variable in its own initializer."));
             }
         }

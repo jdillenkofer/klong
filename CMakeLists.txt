@@ -104,7 +104,7 @@ set(HEADER_FILES
     src/codegen/llvm/llvm_type_emit_visitor.h
     src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
-)
+        src/common/compilation_session.h src/common/symbol_info.h)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

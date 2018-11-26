@@ -160,6 +160,10 @@ namespace klong {
             }
         }
 
+        for (auto& externalDecl : _session->externalDeclarations()) {
+            externalDecl->accept(this);
+        }
+
         for (auto& stmt : module->statements()) {
             stmt->accept(this);
         }
@@ -196,7 +200,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitImportStmt(Import *stmt) {
-        // TODO: IMPLEMENT IMPORT STMT
+        // nothing to do here
         (void) stmt;
     }
 
@@ -719,7 +723,7 @@ namespace klong {
     }
 
 	void LLVMEmitVisitor::visitEnumAccessExpr(EnumAccess* expr) {
-		auto value = expr->value();
+		auto& value = expr->value();
 		auto enumType = dynamic_cast<EnumDeclaration*>(expr->target()->resolvesTo());
 		auto enumValues = enumType->values();
 		auto it = std::find(enumValues.begin(), enumValues.end(), value);
@@ -883,5 +887,9 @@ namespace klong {
         }
 		auto llvmArrayType = _typeEmitVisitor.getLLVMType(expr->type());
         _valueOfLastExpr = llvm::ConstantArray::get((llvm::ArrayType*)llvmArrayType, values);
+    }
+
+    void LLVMEmitVisitor::setSession(CompilationSession* session) {
+        _session = session;
     }
 }
