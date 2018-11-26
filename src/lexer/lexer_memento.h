@@ -8,12 +8,15 @@ namespace klong {
 
     class LexerMemento {
     public:
-        LexerMemento(SourceFile* sourceFile, std::string code, SourceLocation sourceLocation, size_t currentPosition):
-            _sourceFile(sourceFile), _code(std::move(code)), _sourceLocation(sourceLocation), _currentPosition(currentPosition) {
+        LexerMemento(std::shared_ptr<SourceFile> sourceFile, std::string code, SourceLocation sourceLocation, size_t currentPosition):
+            _sourceFile(std::move(sourceFile)),
+            _code(std::move(code)),
+            _sourceLocation(std::move(sourceLocation)),
+            _currentPosition(currentPosition) {
 
         }
     private:
-        SourceFile* _sourceFile;
+        std::shared_ptr<SourceFile> _sourceFile;
         std::string _code;
         SourceLocation _sourceLocation;
         size_t _currentPosition;

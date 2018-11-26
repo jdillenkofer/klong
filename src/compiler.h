@@ -15,7 +15,7 @@ namespace klong {
             _option(std::move(option)) {
         }
 
-        bool parse(ModulePtr& module, SourceFile &sourceFile);
+        bool parse(ModulePtr& module, std::shared_ptr<SourceFile> sourceFile);
         bool resolve(ModulePtr& module);
         bool typecheck(ModulePtr& module);
         bool codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType);

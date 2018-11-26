@@ -9,7 +9,9 @@ namespace klong {
         SourceLocation(): _source(nullptr), _valid(false) {
         }
             
-        explicit SourceLocation(SourceFile* source): _source(source), _valid(true) {
+        explicit SourceLocation(std::shared_ptr<SourceFile> source):
+            _source(std::move(source)),
+            _valid(true) {
         }
 
         void incLine();
@@ -24,7 +26,7 @@ namespace klong {
         bool valid() const;
 
     private:
-        SourceFile* _source;
+        std::shared_ptr<SourceFile> _source;
         uint64_t _line = 1;
         uint64_t _column = 1;
         uint64_t _charPos = 0;

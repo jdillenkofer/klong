@@ -6,26 +6,26 @@
 
 namespace klong {
     void Parser::parse() {
+        std::string moduleName = _lexer->filename();
+        std::string absolutepath = _lexer->absolutepath();
+        _module = std::make_shared<Module>(absolutepath, moduleName);
+
         std::vector<StmtPtr> statements;
         while(!isAtEnd()) {
-            statements.push_back(std::move(declarationStmt()));
+            statements.push_back(declarationStmt());
         }
-        Token lastToken = previous();
-        std::string moduleName;
-		std::string absolutepath;
-        if (lastToken.sourceRange.start.valid()) {
-            moduleName = lastToken.sourceRange.start.filename();
-			absolutepath = lastToken.sourceRange.start.absolutepath();
-        }
+
+        _module->addStatements(std::move(statements));
+
         if (_result->hasErrors()) {
             return;
         }
-        auto module = std::make_shared<Module>(absolutepath, moduleName, std::move(statements));
-        _result->setSuccess(module);
+        _result->setSuccess(_module);
+        _module = nullptr;
     }
 
     ParserMemento Parser::saveToMemento() {
-        return ParserMemento(_current, _previous, std::move(_lexer->saveToMemento()),
+        return ParserMemento(_current, _previous, _lexer->saveToMemento(),
                 _isInsideFunction, _isInsideLoop, _isInsideDefer, *_result);
     }
 
@@ -377,10 +377,42 @@ namespace klong {
 
 	std::shared_ptr<Import> Parser::import() {
         Token importToken = previous();
-        Token path = consume(TokenType::STRING_LITERAL, "Expect path string.");
-        Token semicolon = consume(TokenType::SEMICOLON, "Expect ';' after import stmt.");
-        return std::make_shared<Import>(SourceRange { importToken.sourceRange.start, semicolon.sourceRange.end },
-                path.value);
+        Token pathToken = consume(TokenType::STRING_LITERAL, "Expect path string.");
+        Token semicolonToken = consume(TokenType::SEMICOLON, "Expect ';' after import stmt.");
+        // try as relative path
+        auto relativeBasePath = std::filesystem::path(_lexer->absolutepath()).remove_filename().string();
+        auto filename = std::filesystem::path(pathToken.value).filename().string();
+        auto sourceFile = std::make_shared<SourceFile>(relativeBasePath + "/" + filename);
+        auto result = sourceFile->loadFromFile();
+        if (!result) {
+            // try as absolute path
+            sourceFile = std::make_shared<SourceFile>(pathToken.value);
+            result = sourceFile->loadFromFile();
+            if (!result) {
+                _result->addError(CompilationError(pathToken.sourceRange,
+                                                   "Cannot find imported source file " + filename + " in " + _lexer->filename() + "."));
+                return nullptr;
+            }
+        }
+        CompilationResult compilationResult;
+        auto lexer = Lexer(sourceFile);
+        auto parser = Parser(&lexer, &compilationResult);
+        parser.parse();
+        if (compilationResult.hasWarnings()) {
+            for (auto warning : compilationResult.getWarnings()) {
+                _result->addWarning(std::move(warning));
+            }
+        }
+        if (compilationResult.hasErrors()) {
+            for (auto error : compilationResult.getErrors()) {
+                _result->addError(std::move(error));
+            }
+        } else {
+            auto dependency = compilationResult.success();
+            _module->addDependency(dependency);
+        }
+        return std::make_shared<Import>(SourceRange { importToken.sourceRange.start, semicolonToken.sourceRange.end },
+                pathToken.value);
     }
 
     TypePtr Parser::typeDeclaration() {

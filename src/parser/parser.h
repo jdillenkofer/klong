@@ -88,6 +88,7 @@ namespace klong {
         Token _current;
         Token _previous;
         Lexer* _lexer;
+        std::shared_ptr<Module> _module;
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
         bool _isInsideDefer = false;

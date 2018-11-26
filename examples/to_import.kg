@@ -1,5 +1,5 @@
 extern printf: () -> void;
 
-pub test() {
+pub fun test() {
     printf("test\n");
 }

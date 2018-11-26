@@ -13,8 +13,8 @@
 
 namespace klong {
 
-    bool Compiler::parse(ModulePtr& module, SourceFile &sourceFile) {
-        auto lexer = Lexer(&sourceFile);
+    bool Compiler::parse(ModulePtr& module, std::shared_ptr<SourceFile> sourceFile) {
+        auto lexer = Lexer(std::move(sourceFile));
         auto parser = Parser(&lexer, &_result);
         parser.parse();
         if (_result.hasErrors()) {
@@ -62,10 +62,10 @@ namespace klong {
     }
 
     bool Compiler::compile(std::string filepath) {
-        auto sourceFile = SourceFile(std::move(filepath));
-        auto result = sourceFile.loadFromFile();
+        auto sourceFile = std::make_shared<SourceFile>(std::move(filepath));
+        auto result = sourceFile->loadFromFile();
         if (!result) {
-            std::cout << "Cannot load source file " << sourceFile.absolutepath() << std::endl;
+            std::cout << "Cannot load source file " << sourceFile->absolutepath() << std::endl;
             return false;
         }
 

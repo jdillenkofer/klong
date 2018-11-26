@@ -13,8 +13,7 @@ namespace klong {
     
     class Module {
     public:
-        Module(std::string path, std::string filename, std::vector<StmtPtr>&& statements):
-            _statements(statements), 
+        Module(std::string path, std::string filename):
 			_absolutepath(std::filesystem::absolute(std::move(path)).string()), 
 			_filename(std::move(filename)) {
         }
@@ -29,6 +28,10 @@ namespace klong {
                 stmts.push_back(stmt.get());
             }
             return stmts;
+        }
+
+        void addStatements(std::vector<StmtPtr>&& stmts) {
+            _statements = stmts;
         }
 
 		std::string absolutepath() const {
@@ -53,7 +56,20 @@ namespace klong {
             return filenameNoExt.str();
         }
 
+        std::vector<Module*> dependencies() const {
+            std::vector<Module*> dependencies;
+            for (auto& dep : _dependencies) {
+                dependencies.emplace_back(dep.get());
+            }
+            return dependencies;
+        }
+
+        void addDependency(std::shared_ptr<Module> module) {
+            _dependencies.emplace_back(module);
+        }
+
     private:
+        std::vector<std::shared_ptr<Module>> _dependencies;
         std::vector<StmtPtr> _statements;
 		std::string _absolutepath;
         std::string _filename;

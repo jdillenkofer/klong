@@ -13,7 +13,7 @@ namespace klong {
     public:
         using LexerCaseCallable = std::function<bool (Lexer*, Token&)>;
 
-        explicit Lexer(SourceFile* source) : _source(source), _code(source->code()) {
+        explicit Lexer(std::shared_ptr<SourceFile> source) : _source(source), _code(source->code()) {
             _sourceLocation = SourceLocation(source);
         }
 
@@ -21,6 +21,14 @@ namespace klong {
 
         LexerMemento saveToMemento();
         void loadFromMemento(LexerMemento& memento);
+
+        std::string filename() const {
+            return _source->filename();
+        }
+
+        std::string absolutepath() const {
+            return _source->absolutepath();
+        }
 
     private:
         void updateLocation();
@@ -133,7 +141,7 @@ namespace klong {
     private:
         static std::multimap<char, LexerCaseCallable> cases;
 
-        SourceFile* _source;
+        std::shared_ptr<SourceFile> _source;
         std::string _code;
         SourceLocation _sourceLocation;
         size_t _currentPosition = 0;
