@@ -400,11 +400,20 @@ namespace klong {
         }
 
         ModulePtr dependency;
+        /*
+         * TODO:
+         * Zwei mögliche Wege zyklische Abhängigkeiten zu erkennen:
+         * 1. Erstelle einen Stack in der Session.
+         *    Wenn ein neues Modul importiert wird, pushen des Moduls.
+         *    Wenn es abgearbeitet ist pop des Moduls.
+         *    Nach jedem Pushen darf kein Modul doppelt vorkommen.
+         * 2. Neue Compilerphases
+         */
         if (!_session->hasModule(sourceFile->absolutepath())) {
             _session->reserveModule(sourceFile->absolutepath());
 
-            auto lexer = Lexer(sourceFile);
-            auto parser = std::make_shared<Parser>(&lexer, _session);
+            auto lexer = std::make_shared<Lexer>(sourceFile);
+            auto parser = std::make_shared<Parser>(lexer.get(), _session);
             parser->parse();
             if (!_session->getResult().hasErrors()) {
                 dependency = _session->getResult().success();

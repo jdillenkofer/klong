@@ -141,6 +141,10 @@ namespace klong {
             if (!typecheck(rootModule)) {
                 printResult(_session.getResult());
                 return false;
+            } else {
+                if (_session.getResult().hasWarnings()) {
+                    printResult(_session.getResult());
+                }
             }
         }
 
