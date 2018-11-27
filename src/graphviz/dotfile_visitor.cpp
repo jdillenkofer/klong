@@ -16,7 +16,6 @@ namespace klong {
         appendLine("node [shape=record fontname=Arial];");
         appendLine("edge [fontname=Arial];");
 
-        // print module stuff here
         auto moduleId = getModuleId(module);
         appendLine(std::to_string(moduleId) + " [label=\"Module\\n" + module->filename() + "\\n\"]");
 
@@ -31,11 +30,9 @@ namespace klong {
 
     // Stmt
     void DotfileVisitor::visitBlockStmt(Block* stmt) {
-        // print block stuff here
         auto blockId = getStmtId(stmt);
         appendLine(std::to_string(blockId) + " [label=\"Block\"]");
 
-        // visit statements
         for (auto& statement : stmt->statements()) {
             statement->accept(this);
             auto stmtId = getStmtId(statement);
@@ -44,7 +41,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitExpressionStmt(Expression* stmt) {
-        // print ExpressionStmt stuff here
         auto expressionStmtId = getStmtId(stmt);
         appendLine(std::to_string(expressionStmtId) + " [label=\"ExpressionStmt\"]");
 
@@ -55,20 +51,17 @@ namespace klong {
     }
 
     void DotfileVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
-        // print ExtDeclStmt stuff here
         auto externalDeclStmtId = getStmtId(stmt);
         appendLine(std::to_string(externalDeclStmtId) + " [label=\"ExternalDeclaration\\n" + stmt->name() + "\\n"
         + getType(stmt->type())+ "\"]");
     }
 
     void DotfileVisitor::visitImportStmt(Import* stmt) {
-        // print importStmt stuff here
         auto importStmtId = getStmtId(stmt);
         appendLine(std::to_string(importStmtId) + " [label=\"Import\\n" + stmt->path() + "\"]");
     }
 
     void DotfileVisitor::visitFunctionStmt(Function* stmt) {
-        // print FunctionStmt stuff here
         auto functionStmtId = getStmtId(stmt);
         appendLine(std::to_string(functionStmtId) + " [label=\"Function\\n" + stmt->name() + "\\n"
         + getType(stmt->functionType())+ "\"]");
@@ -88,14 +81,12 @@ namespace klong {
     }
 
     void DotfileVisitor::visitParameterStmt(Parameter* stmt) {
-        // print ParameterStmt stuff here
         auto parameterStmtId = getStmtId(stmt);
         appendLine(std::to_string(parameterStmtId) + " [label=\"Parameter\\n" + stmt->name() + "\\n"
         + getType(stmt->type())+ "\"]");
     }
 
     void DotfileVisitor::visitIfStmt(If* stmt) {
-        // print IfStmt stuff here
         auto ifStmtId = getStmtId(stmt);
         appendLine(std::to_string(ifStmtId) + " [label=\"If\"]");
 
@@ -118,7 +109,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitReturnStmt(Return* stmt) {
-        // print ReturnStmt stuff here
         auto returnStmtId = getStmtId(stmt);
         appendLine(std::to_string(returnStmtId) + " [label=\"Return\"]");
 
@@ -129,7 +119,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
-        // print VariableDeclaration stuff here
         auto varDeclStmtId = getStmtId(stmt);
         appendLine(std::to_string(varDeclStmtId) + " [label=\"VariableDeclaration\\n" + stmt->name() + "\\n"
         + "isPublic: " + to_string(stmt->isPublic()) + "\\n"
@@ -145,7 +134,6 @@ namespace klong {
     }
 	
 	void DotfileVisitor::visitStructDeclStmt(StructDeclaration* stmt) {
-		// print StructDeclaration stuff here
 		auto structDeclStmtId = getStmtId(stmt);
 		appendLine(std::to_string(structDeclStmtId) + " [label=\"StructDeclaration\\n" + stmt->name() + "\\n"
 			+ "isPublic: " + to_string(stmt->isPublic()) + "\"]");
@@ -158,7 +146,6 @@ namespace klong {
 	}
 
     void DotfileVisitor::visitUnionDeclStmt(UnionDeclaration* stmt) {
-        // print UnionDeclaration stuff here
         auto unionDeclStmtId = getStmtId(stmt);
         appendLine(std::to_string(unionDeclStmtId) + " [label=\"UnionDeclaration\\n" + stmt->name() + "\\n"
                    + "isPublic: " + to_string(stmt->isPublic()) + "\"]");
@@ -171,7 +158,6 @@ namespace klong {
     }
 
 	void DotfileVisitor::visitEnumDeclStmt(EnumDeclaration* stmt) {
-		// print EnumDeclaration stuff here
 		auto enumDeclStmtId = getStmtId(stmt);
 		appendLine(std::to_string(enumDeclStmtId) + " [label=\"EnumDeclaration\\n" + stmt->name() + "\\n"
 			+ "isPublic: " + to_string(stmt->isPublic()) + "\"]");
@@ -186,7 +172,6 @@ namespace klong {
 	}
 
     void DotfileVisitor::visitWhileStmt(While* stmt) {
-        // print While stuff here
         auto whileStmtId = getStmtId(stmt);
         appendLine(std::to_string(whileStmtId) + " [label=\"While\"]");
 
@@ -201,7 +186,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitForStmt(For* stmt) {
-        // print For stuff here
         auto forStmtId = getStmtId(stmt);
         appendLine(std::to_string(forStmtId) + " [label=\"For\"]");
 
@@ -249,14 +233,12 @@ namespace klong {
     }
 
     void DotfileVisitor::visitCommentStmt(Comment* stmt) {
-        // print Comment stuff here
         auto commentStmtId = getStmtId(stmt);
         appendLine(std::to_string(commentStmtId) + " [label=\"Comment\\n" + stmt->text() + "\"]");
     }
 
     // Expr
     void DotfileVisitor::visitAssignExpr(Assign* expr) {
-        // print Assignment stuff here
         auto assignmentExprId = getExprId(expr);
         appendLine(std::to_string(assignmentExprId) + " [label=\"Assignment\\n"+ getType(expr->type()) + "\"]");
 
@@ -280,7 +262,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitBinaryExpr(Binary* expr) {
-        // print Binary stuff here
         auto binaryExprId = getExprId(expr);
         appendLine(std::to_string(binaryExprId) + " [label=\"Binary\\n"
         + to_string(expr->op()) + "\\n" +
@@ -298,7 +279,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitCallExpr(Call* expr) {
-        // print Call stuff here
         auto callExprId = getExprId(expr);
         appendLine(std::to_string(callExprId) + " [label=\"Call\\n" + getType(expr->type()) + "\"]");
 
@@ -316,7 +296,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitGroupingExpr(Grouping* expr) {
-        // print Grouping stuff here
         auto groupingExprId = getExprId(expr);
         appendLine(std::to_string(groupingExprId) + " [label=\"Grouping\\n" + getType(expr->type()) + "\"]");
 
@@ -327,7 +306,6 @@ namespace klong {
     }
 
 	void DotfileVisitor::visitSubscriptExpr(Subscript* expr) {
-		// print Subscript stuff here
 		auto subscriptExprId = getExprId(expr);
 		appendLine(std::to_string(subscriptExprId) + " [label=\"Subscript\\n" + getType(expr->type()) + "\"]");
 
@@ -343,7 +321,6 @@ namespace klong {
 	}
 
 	void DotfileVisitor::visitMemberAccessExpr(MemberAccess *expr) {
-        // print MemberAccess stuff here
         auto memberAccessExprId = getExprId(expr);
         appendLine(std::to_string(memberAccessExprId) + " [label=\"MemberAccess\\n"
         + expr->value() + "\\n"
@@ -356,7 +333,6 @@ namespace klong {
     }
 	
 	void DotfileVisitor::visitEnumAccessExpr(EnumAccess* expr) {
-		// print ScopeAccess stuff here
 		auto scopeAccessExprId = getExprId(expr);
 		appendLine(std::to_string(scopeAccessExprId) + " [label=\"EnumAccess\\n"
 			+ expr->value() + "\\n"
@@ -364,7 +340,6 @@ namespace klong {
 	}
 
     void DotfileVisitor::visitLogicalExpr(Logical* expr) {
-        // print Logical stuff here
         auto logicalExprId = getExprId(expr);
         appendLine(std::to_string(logicalExprId) + " [label=\"Logical\\n"
         + to_string(expr->op()) + "\\n"
@@ -382,7 +357,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitUnaryExpr(Unary* expr) {
-        // print Unary stuff here
         auto unaryExprId = getExprId(expr);
         appendLine(std::to_string(unaryExprId) + " [label=\"Unary\\n"
         + to_string(expr->op()) + "\\n"
@@ -395,7 +369,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitSizeOfExpr(SizeOf *expr) {
-        // print SizeOf stuff here
         auto sizeOfExprId = getExprId(expr);
         appendLine(std::to_string(sizeOfExprId) + " [label=\"sizeof\\n"
         + getType(expr->right()) + "\\n"
@@ -403,7 +376,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitCastExpr(Cast* expr) {
-        // print Unary stuff here
         auto castExprId = getExprId(expr);
         appendLine(std::to_string(castExprId) + " [label=\"cast\\n"
                    + getType(expr->targetType()) + "\"]");
@@ -415,7 +387,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitVariableExpr(Variable* expr) {
-        // print Variable stuff here
         auto variableExprId = getExprId(expr);
         appendLine(std::to_string(variableExprId) + " [label=\"Variable\\n"
         + expr->name() + "\\n"
@@ -431,7 +402,6 @@ namespace klong {
 
     // Literals
     void DotfileVisitor::visitNumberLiteral(NumberLiteral* expr) {
-        // print NumberLiteral stuff here
         auto numberLiteralId = getExprId(expr);
         appendLine(std::to_string(numberLiteralId) + " [label=\"NumberLiteral\\n"
         + "value: \\n" +
@@ -442,7 +412,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitBoolLiteral(BoolLiteral* expr) {
-        // print BoolLiteral stuff here
         auto boolLiteralId = getExprId(expr);
         appendLine(std::to_string(boolLiteralId) + " [label=\"BoolLiteral\\n"
         + "value: " + to_string(expr->value()) + "\\n"
@@ -450,7 +419,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitStringLiteral(StringLiteral* expr) {
-        // print StringLiteral stuff here
         auto stringLiteralId = getExprId(expr);
         appendLine(std::to_string(stringLiteralId) + " [label=\"StringLiteral\\n"
         + "value: " + expr->value() + "\\n"
@@ -458,7 +426,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
-        // print CharacterLiteral stuff here
         auto charLiteralId = getExprId(expr);
         appendLine(std::to_string(charLiteralId) + " [label=\"CharLiteral\\n"
         + "value: '" + std::to_string(expr->value()) + "\\n"
@@ -466,7 +433,6 @@ namespace klong {
     }
 
     void DotfileVisitor::visitArrayLiteral(ArrayLiteral* expr) {
-        // print ArrayLiteral stuff here
         auto arrayLiteralId = getExprId(expr);
         appendLine(std::to_string(arrayLiteralId) + " [label=\"ArrayLiteral\\n"
         + getType(expr->type())+ "\"]");
