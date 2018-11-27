@@ -102,8 +102,11 @@ namespace klong {
             }
         }
         for (auto& dependency : module->dependencies()) {
-            auto resolver = std::make_shared<Resolver>();
-            resolver->resolve(dependency, _session);
+            if (!_session->isResolved(dependency->absolutepath())) {
+                auto resolver = std::make_shared<Resolver>();
+                resolver->resolve(dependency, _session);
+                _session->completeResolved(dependency->absolutepath());
+            }
         }
         enterScope();
         resolve(module->statements());

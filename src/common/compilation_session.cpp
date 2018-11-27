@@ -22,6 +22,21 @@ namespace klong {
         _allModules.insert(std::pair(std::move(modulepath), std::move(module)));
     }
 
+    bool CompilationSession::isCyclicDependency(std::string modulepath) {
+        if (hasModule(modulepath)) {
+            return _allModules[modulepath] == nullptr;
+        }
+        return false;
+    }
+
+    ModulePtr CompilationSession::getModule(std::string modulepath) {
+        if (hasModule(modulepath)) {
+            return _allModules[modulepath];
+        }
+        assert(false);
+        return nullptr;
+    }
+
     std::vector<ModulePtr> CompilationSession::modules() {
         std::vector<ModulePtr> modules;
         for(auto& item : _allModules) {
@@ -56,5 +71,25 @@ namespace klong {
 
     TypeDeclaration* CompilationSession::findTypeDeclaration(std::string name) {
         return (*_typeDeclarations.find(name)).second;
+    }
+
+    void CompilationSession::completeResolved(const std::string& modulepath) {
+        if (!isResolved(modulepath)) {
+            _resolvedModules.insert(modulepath);
+        }
+    }
+
+    bool CompilationSession::isResolved(const std::string& modulepath) {
+        return std::find(_resolvedModules.begin(), _resolvedModules.end(), modulepath) != _resolvedModules.end();
+    }
+
+    void CompilationSession::completeTypechecked(const std::string& modulepath) {
+        if (!isTypechecked(modulepath)) {
+            _typecheckedModules.insert(modulepath);
+        }
+    }
+
+    bool CompilationSession::isTypechecked(const std::string& modulepath) {
+        return std::find(_typecheckedModules.begin(), _typecheckedModules.end(), modulepath) != _typecheckedModules.end();
     }
 }

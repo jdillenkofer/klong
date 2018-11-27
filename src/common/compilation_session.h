@@ -5,7 +5,7 @@
 #include "common/symbol_info.h"
 
 #include <map>
-#include <vector>
+#include <set>
 #include <memory>
 #include <algorithm>
 
@@ -18,6 +18,8 @@ namespace klong {
         bool hasModule(const std::string& modulepath);
         void reserveModule(std::string modulepath);
         void addModule(std::string modulepath, ModulePtr module);
+        bool isCyclicDependency(std::string modulepath);
+        ModulePtr getModule(std::string modulepath);
 
         std::vector<ModulePtr> modules();
 
@@ -27,10 +29,17 @@ namespace klong {
         bool declareType(std::string name, TypeDeclaration* typeDeclaration);
         TypeDeclaration* findTypeDeclaration(std::string name);
 
+        void completeResolved(const std::string& modulepath);
+        bool isResolved(const std::string& modulepath);
+        void completeTypechecked(const std::string& modulepath);
+        bool isTypechecked(const std::string& modulepath);
+
     private:
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
         std::map<std::string, SymbolInfo> _globalScope;
         std::map<std::string, std::shared_ptr<Module>> _allModules;
+        std::set<std::string> _resolvedModules;
+        std::set<std::string> _typecheckedModules;
         CompilationResult _result;
     };
 }

@@ -106,8 +106,11 @@ namespace klong {
             }
         }
         for (auto& dependency : module->dependencies()) {
-            auto typechecker = std::make_shared<TypeChecker>();
-            typechecker->check(dependency, _session);
+            if (!_session->isTypechecked(dependency->absolutepath())) {
+                auto typechecker = std::make_shared<TypeChecker>();
+                typechecker->check(dependency, _session);
+                _session->completeTypechecked(dependency->absolutepath());
+            }
         }
         check(module->statements());
     }

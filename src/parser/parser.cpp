@@ -400,15 +400,6 @@ namespace klong {
         }
 
         ModulePtr dependency;
-        /*
-         * TODO:
-         * Zwei mögliche Wege zyklische Abhängigkeiten zu erkennen:
-         * 1. Erstelle einen Stack in der Session.
-         *    Wenn ein neues Modul importiert wird, pushen des Moduls.
-         *    Wenn es abgearbeitet ist pop des Moduls.
-         *    Nach jedem Pushen darf kein Modul doppelt vorkommen.
-         * 2. Neue Compilerphases
-         */
         if (!_session->hasModule(sourceFile->absolutepath())) {
             _session->reserveModule(sourceFile->absolutepath());
 
@@ -419,11 +410,13 @@ namespace klong {
                 dependency = _session->getResult().success();
                 _session->addModule(sourceFile->absolutepath(), dependency);
             }
-            _module->addDependency(dependency);
         } else {
-            _session->getResult().addWarning(
-                    CompilationWarning(pathToken.sourceRange, "Cyclic dependency detected."));
+            if (_session->isCyclicDependency(sourceFile->absolutepath())) {
+                _session->getResult().addError(CompilationError(pathToken.sourceRange, "Found cyclic dependency!"));
+            }
+            dependency = _session->getModule(sourceFile->absolutepath());
         }
+        _module->addDependency(dependency);
 
         return std::make_shared<Import>(SourceRange { importToken.sourceRange.start, semicolonToken.sourceRange.end },
                 pathToken.value);

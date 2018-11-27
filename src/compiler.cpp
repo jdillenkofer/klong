@@ -27,7 +27,7 @@ namespace klong {
         return true;
     }
 
-    bool Compiler::resolve(ModulePtr &module) {
+    bool Compiler::resolve(ModulePtr& module) {
         Resolver resolver;
         resolver.resolve(module, &_session);
         return !_session.getResult().hasErrors();
@@ -103,7 +103,6 @@ namespace klong {
                 return false;
             }
         }
-
 
         /* RESOLVING */
         {
