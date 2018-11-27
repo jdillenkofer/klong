@@ -70,7 +70,7 @@ set(SOURCE_FILES
     src/codegen/llvm/llvm_type_emit_visitor.cpp
     src/graphviz/dotfile_visitor.cpp
     src/graphviz/dotfile_emitter.cpp
-)
+        src/common/compilation_session.cpp)
 
 set(HEADER_FILES
     src/compiler.h

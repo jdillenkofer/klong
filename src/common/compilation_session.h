@@ -13,61 +13,19 @@ namespace klong {
     class CompilationSession {
     public:
 
-        CompilationResult& getResult() {
-            return _result;
-        }
+        CompilationResult& getResult();
 
-        bool hasModule(const std::string& modulepath) {
-            return _allModules.find(modulepath) != _allModules.end();
-        }
+        bool hasModule(const std::string& modulepath);
+        void reserveModule(std::string modulepath);
+        void addModule(std::string modulepath, ModulePtr module);
 
-        void reserveModule(std::string modulepath) {
-            if (hasModule(modulepath)) {
-                return;
-            }
-            _allModules.insert(std::pair(std::move(modulepath), nullptr));
-        }
+        std::vector<ModulePtr> modules();
 
-        void addModule(std::string modulepath, ModulePtr module) {
-            _allModules.erase(modulepath);
-            _allModules.insert(std::pair(std::move(modulepath), std::move(module)));
-        }
+        std::optional<SymbolInfo> findSymbol(const std::string &name);
+        bool declareSymbol(std::string name, SymbolInfo symbolInfo);
 
-        std::vector<ModulePtr> modules() {
-            std::vector<ModulePtr> modules;
-            for(auto& item : _allModules) {
-                modules.push_back(item.second);
-            }
-            return modules;
-        }
-
-        std::optional<SymbolInfo> find(const std::string& name) {
-            auto symbol = _globalScope.find(name);
-            if (symbol != _globalScope.end()) {
-                return (*symbol).second;
-            }
-            return {};
-        }
-
-        bool declare(std::string name, SymbolInfo symbolInfo) {
-            auto unused = _globalScope.find(name) == _globalScope.end();
-            if (unused) {
-                _globalScope.insert(std::pair(name, symbolInfo));
-            }
-            return unused;
-        }
-
-        bool declareType(std::string name, TypeDeclaration* typeDeclaration) {
-            if (_typeDeclarations.find(name) != _typeDeclarations.end()) {
-                return false;
-            }
-            _typeDeclarations.insert(std::pair(name, typeDeclaration));
-            return true;
-        }
-
-        TypeDeclaration* findTypeDeclaration(std::string name) {
-            return (*_typeDeclarations.find(name)).second;
-        }
+        bool declareType(std::string name, TypeDeclaration* typeDeclaration);
+        TypeDeclaration* findTypeDeclaration(std::string name);
 
     private:
         std::map<std::string, TypeDeclaration*> _typeDeclarations;

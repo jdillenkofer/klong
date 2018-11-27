@@ -42,7 +42,7 @@ namespace klong {
                 return true;
             }
         }
-        auto symbolInfoOptional = _session->find(variable->name());
+        auto symbolInfoOptional = _session->findSymbol(variable->name());
         if (symbolInfoOptional.has_value()) {
             variable->resolvesTo(symbolInfoOptional.value().declarationStmt);
             return true;
@@ -67,7 +67,7 @@ namespace klong {
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
         auto symbolInfo = SymbolInfo { declarationStmt, declarationType, false };
         if (!_isInsideFunction && isPublic) {
-            if (!_session->declare(name, symbolInfo)) {
+            if (!_session->declareSymbol(name, symbolInfo)) {
                 _session->getResult().addError(CompilationError(declarationStmt->sourceRange(),
                         "Symbol with name '" + name + "' already declared in global scope"));
             }
