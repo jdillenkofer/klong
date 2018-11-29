@@ -964,24 +964,15 @@ namespace klong {
     }
 
     ExprPtr Parser::postfixExpr() {
-        ExprPtr primaryExpr = primary();
-		
-		auto memento = saveToMemento();
-		ExprPtr prevLoopExpr = primaryExpr;
+		auto prevLoopExpr = primary();
 		while(true) {
 			auto loopExpr = finishPostfixExpr(prevLoopExpr);
 			if (!loopExpr) {
-				if (!prevLoopExpr) {
-					break;
-				} else {
-					return prevLoopExpr;
-				}
+			    break;
 			}
 			prevLoopExpr = loopExpr;
         }
-		loadFromMemento(memento);
-
-        return primaryExpr;
+        return prevLoopExpr;
     }
 
 	ExprPtr Parser::finishPostfixExpr(ExprPtr lhs) {
