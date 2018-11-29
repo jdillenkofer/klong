@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <future>
 
 #include "common/defer.h"
 #include "common/source_file.h"
@@ -172,15 +173,31 @@ namespace klong {
                                   "ms" << std::endl;
                     }
             );
-            for (auto& module : _session.modules()) {
-                LLVMEmitter llvmEmitter(targetTriple);
-                auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
-                if (!codegen(module, llvmEmitter, outputFileType)) {
-                    return false;
-                }
 
-                if (_option.verbose) {
-                    llvmEmitter.printIR();
+            std::mutex printLock;
+            std::vector<std::shared_future<bool>> compileFutures;
+            for (auto& module : _session.modules()) {
+                auto compileFuture = std::async([this, &printLock, targetTriple, module]() mutable {
+                    LLVMEmitter llvmEmitter(targetTriple);
+                    auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
+                    if (!codegen(module, llvmEmitter, outputFileType)) {
+                        return false;
+                    }
+
+                    if (_option.verbose) {
+                        std::unique_lock<std::mutex> lock(printLock);
+                        llvmEmitter.printIR();
+                    }
+                    return true;
+                });
+                compileFutures.emplace_back(compileFuture.share());
+            }
+
+            for (auto& future : compileFutures) {
+                future.wait();
+                
+                if (!future.get()) {
+                    return false;
                 }
             }
         }
