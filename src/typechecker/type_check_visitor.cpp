@@ -732,6 +732,10 @@ namespace klong {
     void TypeCheckVisitor::visitFunctionType(FunctionType* type) {
         for (auto& param : type->paramTypes()) {
             resolveType(param);
+            if (param->kind() == TypeKind::FUNCTION) {
+                _session->getResult().addError(
+                        CompilationError(param->sourceRange(), "Parameters of type functionType are not allowed."));
+            }
         }
 
         resolveType(type->returnType());
