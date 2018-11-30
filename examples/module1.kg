@@ -1,0 +1,5 @@
+import "submodule.kg";
+
+pub fun do_smth1() {
+    printf("do_smth1\n");
+}

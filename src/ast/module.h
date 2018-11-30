@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <memory>
+#include <filesystem>
 
 namespace klong {
     class Stmt;
@@ -12,8 +13,9 @@ namespace klong {
     
     class Module {
     public:
-        Module(std::string filename, std::vector<StmtPtr>&& statements):
-            _statements(statements), _filename(std::move(filename)) {
+        Module(std::string path, std::string filename):
+			_absolutepath(std::filesystem::absolute(std::move(path)).lexically_normal().string()),
+			_filename(std::move(filename)) {
         }
 
         virtual void accept(StmtVisitor* visitor) {
@@ -27,6 +29,14 @@ namespace klong {
             }
             return stmts;
         }
+
+        void addStatements(std::vector<StmtPtr>&& stmts) {
+            _statements = stmts;
+        }
+
+		std::string absolutepath() const {
+			return _absolutepath;
+		}
 
         std::string filename() const {
             return _filename;
@@ -46,8 +56,18 @@ namespace klong {
             return filenameNoExt.str();
         }
 
+        std::vector<std::shared_ptr<Module>> dependencies() const {
+            return _dependencies;
+        }
+
+        void addDependency(std::shared_ptr<Module> module) {
+            _dependencies.emplace_back(module);
+        }
+
     private:
+        std::vector<std::shared_ptr<Module>> _dependencies;
         std::vector<StmtPtr> _statements;
+		std::string _absolutepath;
         std::string _filename;
     };
 

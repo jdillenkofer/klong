@@ -99,6 +99,9 @@ namespace klong {
         {'l', std::bind(&Lexer::lsrOp, std::placeholders::_1, std::placeholders::_2)},
         {'a', std::bind(&Lexer::asrOp, std::placeholders::_1, std::placeholders::_2)},
 
+        // import
+        {'i', std::bind(&Lexer::importKeyword, std::placeholders::_1, std::placeholders::_2)},
+
         // modifier
         {'p', std::bind(&Lexer::pubKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'e', std::bind(&Lexer::externKeyword, std::placeholders::_1, std::placeholders::_2)},
@@ -484,6 +487,9 @@ namespace klong {
         return true;
     }
 
+    bool Lexer::importKeyword(Token& token) {
+        return matchesKeyword(token, "import", TokenType::IMPORT);
+    }
 
     bool Lexer::blockComment(Token& token) {
         auto commentStart = _currentPosition;

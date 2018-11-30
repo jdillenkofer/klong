@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 
-#include "common/compilation_result.h"
+#include "common/compilation_session.h"
 #include "lexer/lexer.h"
 #include "ast/type.h"
 #include "ast/module.h"
@@ -15,9 +15,9 @@
 namespace klong {
     class Parser {
     public:
-        explicit Parser(Lexer* lexer, CompilationResult* result):
+        explicit Parser(Lexer* lexer, CompilationSession* session):
             _lexer(lexer),
-            _result(result) {
+            _session(session) {
             advance();
         }
 
@@ -53,6 +53,7 @@ namespace klong {
         std::shared_ptr<VariableDeclaration> constDeclaration(bool isPublic = false);
 		std::shared_ptr<MemberTypeDeclaration> memberTypeDeclaration(bool isPublic = false);
 		std::shared_ptr<EnumDeclaration> enumDeclaration(bool isPublic = false);
+		std::shared_ptr<Import> import();
         TypePtr typeDeclaration();
         std::shared_ptr<If> ifStmt();
         std::shared_ptr<Return> returnStmt();
@@ -87,9 +88,10 @@ namespace klong {
         Token _current;
         Token _previous;
         Lexer* _lexer;
+        std::shared_ptr<Module> _module;
         bool _isInsideFunction = false;
         bool _isInsideLoop = false;
         bool _isInsideDefer = false;
-        CompilationResult* _result;
+        CompilationSession* _session;
     };
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+
+#include "common/compilation_session.h"
 #include "ast/stmt.h"
 #include "ast/visitor.h"
 
@@ -13,7 +15,7 @@ namespace klong {
 
     class LLVMEmitVisitor : public StmtVisitor, public ExprVisitor {
     public:
-        LLVMEmitVisitor(const llvm::DataLayout dataLayout);
+        explicit LLVMEmitVisitor(const llvm::DataLayout dataLayout);
 
         llvm::Module* getModule();
 
@@ -24,6 +26,7 @@ namespace klong {
         void visitBlockStmt(Block* stmt) override;
         void visitExpressionStmt(Expression* stmt) override;
         void visitExtDeclStmt(ExternalDeclaration* stmt) override;
+        void visitImportStmt(Import* stmt) override;
         void visitFunctionStmt(Function* stmt) override;
         void visitParameterStmt(Parameter* stmt) override;
         void visitIfStmt(If* stmt) override;
@@ -61,6 +64,8 @@ namespace klong {
         void visitCharacterLiteral(CharacterLiteral* expr) override;
         void visitArrayLiteral(ArrayLiteral* expr) override;
 
+        void setSession(CompilationSession* session);
+
     private:
         llvm::Value* emitCodeL(Expr* expr);
         llvm::Value* emitCodeR(Expr* expr);
@@ -70,6 +75,7 @@ namespace klong {
         void emitAllDefers();
         llvm::Value* getVariableAddress(Expr* expr);
         llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
+		std::shared_ptr<ExternalDeclaration> translateToExternalDeclaration(Stmt* stmt);
     private:
         llvm::LLVMContext _context;
         llvm::IRBuilder<> _builder;
@@ -91,5 +97,6 @@ namespace klong {
 
 		// used for defer
 		std::deque<std::vector<Stmt*>> _deferScopes;
+		CompilationSession* _session;
     };
 }

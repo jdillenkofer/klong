@@ -15,7 +15,8 @@ namespace klong {
         }
     }
 
-    void LLVMEmitter::emit(ModulePtr module) {
+    void LLVMEmitter::emit(ModulePtr module, CompilationSession* session) {
+        _llvmEmitVisitor->setSession(session);
         module->accept(_llvmEmitVisitor.get());
     }
 

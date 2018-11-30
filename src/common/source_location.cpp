@@ -12,8 +12,8 @@ namespace klong {
         _charPos++;
     }
 
-    std::string SourceLocation::path() const {
-        return _source->path();
+    std::string SourceLocation::absolutepath() const {
+        return _source->absolutepath();
     }
 
     std::string SourceLocation::filename() const {

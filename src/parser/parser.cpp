@@ -6,25 +6,27 @@
 
 namespace klong {
     void Parser::parse() {
+        std::string moduleName = _lexer->filename();
+        std::string absolutepath = _lexer->absolutepath();
+        _module = std::make_shared<Module>(absolutepath, moduleName);
+
         std::vector<StmtPtr> statements;
         while(!isAtEnd()) {
-            statements.push_back(std::move(declarationStmt()));
+            statements.push_back(declarationStmt());
         }
-        Token lastToken = previous();
-        std::string moduleName;
-        if (lastToken.sourceRange.start.valid()) {
-            moduleName = lastToken.sourceRange.start.filename();
-        }
-        if (_result->hasErrors()) {
+
+        _module->addStatements(std::move(statements));
+
+        if (_session->getResult().hasErrors()) {
             return;
         }
-        auto module = std::make_shared<Module>(moduleName, std::move(statements));
-        _result->setSuccess(module);
+        _session->getResult().setSuccess(_module);
+        _module = nullptr;
     }
 
     ParserMemento Parser::saveToMemento() {
-        return ParserMemento(_current, _previous, std::move(_lexer->saveToMemento()),
-                _isInsideFunction, _isInsideLoop, _isInsideDefer, *_result);
+        return ParserMemento(_current, _previous, _lexer->saveToMemento(),
+                _isInsideFunction, _isInsideLoop, _isInsideDefer, *_session);
     }
 
     void Parser::loadFromMemento(ParserMemento& memento) {
@@ -34,7 +36,7 @@ namespace klong {
         _isInsideFunction = memento._isInsideFunction;
         _isInsideLoop = memento._isInsideLoop;
         _isInsideDefer = memento._isInsideDefer;
-        *_result = memento._compilationResult;
+        *_session = memento._compilationSession;
     }
 
     Token Parser::consume(TokenType type, std::string errorMessage) {
@@ -79,6 +81,7 @@ namespace klong {
             if (previous().type == TokenType::SEMICOLON) return;
 
             switch(peek().type) {
+                case TokenType::IMPORT:
                 case TokenType::FUN:
                 case TokenType::LET:
                 case TokenType::CONST:
@@ -174,6 +177,10 @@ namespace klong {
                 throw CompilationError(pubToken.sourceRange, "Illegal pub Keyword.");
             }
 
+            if (match(TokenType::IMPORT)) {
+                return import();
+            }
+
             if (match(TokenType::EXTERN)) {
                 return externDeclStmt();
             }
@@ -186,7 +193,7 @@ namespace klong {
 
             return statement();
         } catch(CompilationError& error) {
-            _result->addError(std::move(error));
+            _session->getResult().addError(std::move(error));
             synchronize();
             return nullptr;
         }
@@ -367,6 +374,53 @@ namespace klong {
 		return std::make_shared<EnumDeclaration>(SourceRange{ enumToken.sourceRange.start, rightCurlyBracket.sourceRange.end }, 
 			name.value, std::move(values), isPublic);
 	}
+
+	std::shared_ptr<Import> Parser::import() {
+        Token importToken = previous();
+        Token pathToken = consume(TokenType::STRING_LITERAL, "Expect path string.");
+        Token semicolonToken = consume(TokenType::SEMICOLON, "Expect ';' after import stmt.");
+
+        auto absolutePath = std::filesystem::absolute(pathToken.value).string();
+
+        // try as relative path
+        auto filename = std::filesystem::path(pathToken.value).filename().string();
+        auto relativeBasePath = std::filesystem::path(_lexer->absolutepath()).remove_filename().string();
+
+        auto sourceFile = std::make_shared<SourceFile>(relativeBasePath + filename);
+        auto result = sourceFile->loadFromFile();
+        if (!result) {
+            // try as absolute path
+            sourceFile = std::make_shared<SourceFile>(absolutePath);
+            result = sourceFile->loadFromFile();
+            if (!result) {
+                _session->getResult().addError(CompilationError(pathToken.sourceRange,
+                        "Cannot find imported source file " + filename + " in " + _lexer->filename() + "."));
+                return nullptr;
+            }
+        }
+
+        ModulePtr dependency;
+        if (!_session->hasModule(sourceFile->absolutepath())) {
+            _session->reserveModule(sourceFile->absolutepath());
+
+            auto lexer = std::make_shared<Lexer>(sourceFile);
+            auto parser = std::make_shared<Parser>(lexer.get(), _session);
+            parser->parse();
+            if (!_session->getResult().hasErrors()) {
+                dependency = _session->getResult().success();
+                _session->addModule(sourceFile->absolutepath(), dependency);
+            }
+        } else {
+            if (_session->isCyclicDependency(sourceFile->absolutepath())) {
+                _session->getResult().addError(CompilationError(pathToken.sourceRange, "Found cyclic dependency!"));
+            }
+            dependency = _session->getModule(sourceFile->absolutepath());
+        }
+        _module->addDependency(dependency);
+
+        return std::make_shared<Import>(SourceRange { importToken.sourceRange.start, semicolonToken.sourceRange.end },
+                pathToken.value);
+    }
 
     TypePtr Parser::typeDeclaration() {
         Token type = peek();
@@ -910,24 +964,15 @@ namespace klong {
     }
 
     ExprPtr Parser::postfixExpr() {
-        ExprPtr primaryExpr = primary();
-		
-		auto memento = saveToMemento();
-		ExprPtr prevLoopExpr = primaryExpr;
+		auto prevLoopExpr = primary();
 		while(true) {
 			auto loopExpr = finishPostfixExpr(prevLoopExpr);
 			if (!loopExpr) {
-				if (!prevLoopExpr) {
-					break;
-				} else {
-					return prevLoopExpr;
-				}
+			    break;
 			}
 			prevLoopExpr = loopExpr;
         }
-		loadFromMemento(memento);
-
-        return primaryExpr;
+        return prevLoopExpr;
     }
 
 	ExprPtr Parser::finishPostfixExpr(ExprPtr lhs) {

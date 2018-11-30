@@ -10,6 +10,7 @@
 #include "llvm/Support/TargetSelect.h"
 
 #include "llvm_emit_visitor.h"
+#include "common/compilation_session.h"
 #include "ast/module.h"
 
 namespace klong {
@@ -40,7 +41,7 @@ namespace klong {
             _llvmEmitVisitor = std::make_unique<LLVMEmitVisitor>(_dataLayout);
         }
 
-        void emit(ModulePtr module);
+        void emit(ModulePtr module, CompilationSession* session);
 
         void printIR();
 

@@ -1,8 +1,8 @@
 #include "typechecker.h"
 
 namespace klong {
-    void TypeChecker::check(ModulePtr module, CompilationResult* result) {
-        auto typeCheckVisitor = TypeCheckVisitor(result);
+    void TypeChecker::check(ModulePtr module, CompilationSession* session) {
+        auto typeCheckVisitor = TypeCheckVisitor(session);
         module->accept(&typeCheckVisitor);
     }
 }

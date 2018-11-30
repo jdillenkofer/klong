@@ -24,7 +24,7 @@ namespace klong {
 
     std::string SourceRange::getRelevantSourceText() const {
         assert(start.filename() == end.filename());
-        assert(start.path() == end.path());
+        assert(start.absolutepath() == end.absolutepath());
 
         auto code = start.code();
         if (start.line() == end.line()) {

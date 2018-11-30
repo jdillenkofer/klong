@@ -57,8 +57,8 @@ set(SOURCE_FILES
     src/common/source_range.cpp
     src/common/source_location.cpp
     src/common/compilation_result.cpp
-    src/ast/type.cpp
     src/ast/string_helper.cpp
+    src/ast/type.cpp
     src/lexer/lexer.cpp
     src/parser/parser.cpp
     src/resolver/resolver.cpp
@@ -70,7 +70,7 @@ set(SOURCE_FILES
     src/codegen/llvm/llvm_type_emit_visitor.cpp
     src/graphviz/dotfile_visitor.cpp
     src/graphviz/dotfile_emitter.cpp
-)
+	src/common/compilation_session.cpp)
 
 set(HEADER_FILES
     src/compiler.h
@@ -86,8 +86,9 @@ set(HEADER_FILES
     src/common/compilation_warning.h
     src/ast/expr.h
     src/ast/stmt.h
-    src/ast/visitor.h
+	src/ast/module.h
     src/ast/type.h
+    src/ast/visitor.h
     src/ast/string_helper.h
     src/lexer/token.h
     src/lexer/lexer.h
@@ -103,7 +104,8 @@ set(HEADER_FILES
     src/codegen/llvm/llvm_type_emit_visitor.h
     src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
-)
+    src/common/compilation_session.h
+	src/common/symbol_info.h)
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

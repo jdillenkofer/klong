@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "common/compilation_result.h"
+#include "common/compilation_session.h"
 #include "ast/visitor.h"
 #include "ast/module.h"
 #include "ast/stmt.h"
@@ -11,8 +11,8 @@
 namespace klong {
     class TypeCheckVisitor : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
-        TypeCheckVisitor(CompilationResult* result):
-            _result(result) {
+        explicit TypeCheckVisitor(CompilationSession* session):
+            _session(session) {
 
         }
 
@@ -23,6 +23,7 @@ namespace klong {
         void visitBlockStmt(Block* stmt) override;
         void visitExpressionStmt(Expression* stmt) override;
         void visitExtDeclStmt(ExternalDeclaration* stmt) override;
+        void visitImportStmt(Import* stmt) override;
         void visitFunctionStmt(Function* stmt) override;
         void visitParameterStmt(Parameter* stmt) override;
         void visitIfStmt(If* stmt) override;
@@ -82,7 +83,7 @@ namespace klong {
     private:
         Function* currentFunction = nullptr;
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
-        CompilationResult* _result;
+        CompilationSession* _session;
         bool _returnsValue = false;
         std::vector<TypePtr> _arithmeticConversionStack = {
                 std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8),

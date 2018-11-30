@@ -9,6 +9,7 @@ namespace klong {
     class Expression;
     class Function;
     class ExternalDeclaration;
+    class Import;
     class Parameter;
     class If;
     class Return;
@@ -33,6 +34,7 @@ namespace klong {
         virtual void visitBlockStmt(Block* stmt) = 0;
         virtual void visitExpressionStmt(Expression* stmt) = 0;
         virtual void visitExtDeclStmt(ExternalDeclaration* stmt) = 0;
+        virtual void visitImportStmt(Import* stmt) = 0;
         virtual void visitFunctionStmt(Function* stmt) = 0;
         virtual void visitParameterStmt(Parameter* stmt) = 0;
         virtual void visitIfStmt(If* stmt) = 0;

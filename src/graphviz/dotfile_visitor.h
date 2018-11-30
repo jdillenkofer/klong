@@ -15,6 +15,7 @@ namespace klong {
         void visitBlockStmt(Block* stmt) override;
         void visitExpressionStmt(Expression* stmt) override;
         void visitExtDeclStmt(ExternalDeclaration* stmt) override;
+        void visitImportStmt(Import* stmt) override;
         void visitFunctionStmt(Function* stmt) override;
         void visitParameterStmt(Parameter* stmt) override;
         void visitIfStmt(If* stmt) override;

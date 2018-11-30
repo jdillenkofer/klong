@@ -3,7 +3,8 @@
 #include <stack>
 #include <map>
 
-#include "common/compilation_result.h"
+#include "common/compilation_session.h"
+#include "common/symbol_info.h"
 #include "ast/module.h"
 #include "ast/visitor.h"
 #include "ast/stmt.h"
@@ -29,23 +30,10 @@ namespace klong {
         std::string _message;
     };
 
-    enum class DeclarationType {
-        CONST,
-        LET,
-        PARAM,
-        FUNCTION
-    };
-
-    struct SymbolInfo {
-        Stmt* declarationStmt;
-        DeclarationType declarationType;
-        bool initialized = false;
-    };
-
     class ResolveVisitor : public StmtVisitor, public ExprVisitor {
     public:
-        ResolveVisitor(CompilationResult* result):
-            _result(result) {
+        explicit ResolveVisitor(CompilationSession* session):
+            _session(session) {
 
         }
 
@@ -56,6 +44,7 @@ namespace klong {
         void visitBlockStmt(Block* stmt) override;
         void visitExpressionStmt(Expression* stmt) override;
         void visitExtDeclStmt(ExternalDeclaration* stmt) override;
+        void visitImportStmt(Import* stmt) override;
         void visitFunctionStmt(Function* stmt) override;
         void visitParameterStmt(Parameter* stmt) override;
         void visitIfStmt(If* stmt) override;
@@ -100,17 +89,17 @@ namespace klong {
 
         bool resolveLocal(Variable* variable);
 
-        void resolveFunction(Function* stmt, bool insideFunction);
+        void resolveFunction(Function* stmt);
 
         void enterScope();
         void exitScope();
 
-        void declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType);
+        void declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType, bool isPublic = false);
         void define(std::string name);
 
     private:
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
         bool _isInsideFunction = false;
-        CompilationResult* _result;
+        CompilationSession* _session;
     };
 }

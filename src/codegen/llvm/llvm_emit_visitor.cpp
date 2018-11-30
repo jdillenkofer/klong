@@ -142,6 +142,25 @@ namespace klong {
         return value;
     }
 
+    std::shared_ptr<ExternalDeclaration> LLVMEmitVisitor::translateToExternalDeclaration(Stmt* stmt) {
+        auto function = dynamic_cast<Function*>(stmt);
+        auto varDecl = dynamic_cast<VariableDeclaration*>(stmt);
+        auto extDecl = dynamic_cast<ExternalDeclaration*>(stmt);
+        if (function) {
+            return std::make_shared<ExternalDeclaration>(function->sourceRange(),
+                    function->name(), std::shared_ptr<Type>(function->functionType()->clone()));
+        }
+        if (varDecl) {
+            return std::make_shared<ExternalDeclaration>(varDecl->sourceRange(),
+                    varDecl->name(), std::shared_ptr<Type>(varDecl->type()->clone()));
+        }
+        if (extDecl) {
+            return std::make_shared<ExternalDeclaration>(*extDecl);
+        }
+        assert(false);
+        return nullptr;
+    }
+
     void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), _context);
 
@@ -193,6 +212,11 @@ namespace klong {
         } else {
             _namedValues[stmt] = _module->getOrInsertGlobal(stmt->name(), type);
         }
+    }
+
+    void LLVMEmitVisitor::visitImportStmt(Import *stmt) {
+        // nothing to do here
+        (void) stmt;
     }
 
     void LLVMEmitVisitor::visitFunctionStmt(Function* stmt) {
@@ -678,7 +702,7 @@ namespace klong {
         llvm::Value* address = nullptr;
         auto targetVal = emitCodeL(expr->target());
         {
-            auto customType = dynamic_cast<CustomType *>(expr->target()->type());
+            auto customType = dynamic_cast<CustomType*>(expr->target()->type());
             auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());
             if (pointerType) {
                 customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
@@ -714,7 +738,7 @@ namespace klong {
     }
 
 	void LLVMEmitVisitor::visitEnumAccessExpr(EnumAccess* expr) {
-		auto value = expr->value();
+		auto& value = expr->value();
 		auto enumType = dynamic_cast<EnumDeclaration*>(expr->target()->resolvesTo());
 		auto enumValues = enumType->values();
 		auto it = std::find(enumValues.begin(), enumValues.end(), value);
@@ -815,6 +839,13 @@ namespace klong {
                 case StatementKind::PARAMETER:
                 {
                     llvm::Value* value = _namedValues[expr->resolvesTo()];
+
+                    if (!value) {
+                        // this doesn't resolve to a value, if it is from another module
+                        auto asExternalDecl = translateToExternalDeclaration(expr->resolvesTo());
+                        emitCode(asExternalDecl.get());
+                        value = _namedValues[asExternalDecl.get()];
+                    }
                     if (expr->resolvesTo()->kind() == StatementKind::VAR_DECL) {
                         auto varDecl = dynamic_cast<VariableDeclaration*>(expr->resolvesTo());
                         if (Type::isPointer(varDecl->type())) {
@@ -836,6 +867,12 @@ namespace klong {
                 default:
                 {
                     _valueOfLastExpr = _namedValues[expr->resolvesTo()];
+                    if (!_valueOfLastExpr) {
+                        // this doesn't resolve to a value, if it is from another module
+                        auto asExternalDecl = translateToExternalDeclaration(expr->resolvesTo());
+                        emitCode(asExternalDecl.get());
+                        _valueOfLastExpr = _namedValues[asExternalDecl.get()];
+                    }
                     break;
                 }
             }
@@ -878,5 +915,9 @@ namespace klong {
         }
 		auto llvmArrayType = _typeEmitVisitor.getLLVMType(expr->type());
         _valueOfLastExpr = llvm::ConstantArray::get((llvm::ArrayType*)llvmArrayType, values);
+    }
+
+    void LLVMEmitVisitor::setSession(CompilationSession* session) {
+        _session = session;
     }
 }

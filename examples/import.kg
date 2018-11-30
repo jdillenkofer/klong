@@ -1,0 +1,6 @@
+import "to_import.kg";
+
+pub fun main() -> i64 {
+    test(cast<u64>(i));
+    return 0;
+}

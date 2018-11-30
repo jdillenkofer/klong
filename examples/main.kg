@@ -1,0 +1,8 @@
+import "module1.kg";
+import "module2.kg";
+
+pub fun main() -> i64 {
+    do_smth1();
+    do_smth2();
+    return 0;
+}
