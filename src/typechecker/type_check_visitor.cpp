@@ -736,6 +736,12 @@ namespace klong {
                 _session->getResult().addError(
                         CompilationError(param->sourceRange(), "Parameters of type functionType are not allowed."));
             }
+            if (param->kind() == TypeKind::PRIMITIVE) {
+                if (Type::isVoid(param)) {
+                    _session->getResult().addError(
+                            CompilationError(param->sourceRange(), "Parameters of type void are not allowed."));
+                }
+            }
         }
 
         resolveType(type->returnType());
