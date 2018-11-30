@@ -125,8 +125,7 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitExtDeclStmt(ExternalDeclaration* stmt) {
-        // nothing to do here
-        (void) stmt;
+        resolveType(stmt->type());
     }
 
     void TypeCheckVisitor::visitImportStmt(Import* stmt) {
