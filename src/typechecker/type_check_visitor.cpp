@@ -632,6 +632,11 @@ namespace klong {
                     CompilationError(sourceType->sourceRange(),
                             "Can not cast from void type."));
         }
+        if (sourceType->kind() == TypeKind::CUSTOM) {
+            _session->getResult().addError(
+                    CompilationError(expr->targetType()->sourceRange(),
+                                     "Can not cast from custom type."));
+        }
         auto targetType = std::shared_ptr<Type>(expr->targetType()->clone());
         if (expr->targetType()->kind() == TypeKind::FUNCTION) {
             _session->getResult().addError(
