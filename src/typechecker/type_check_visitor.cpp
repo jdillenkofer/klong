@@ -315,6 +315,10 @@ namespace klong {
             targetType = expr->targetExpr()->type();
         }
 
+        if (!targetType || !expr->value()->type()) {
+            return;
+        }
+
         if (!targetType->isEqual(expr->value()->type())) {
             _session->getResult().addError(
                     CompilationError(expr->value()->sourceRange(), "Expect valid type in assignment."));
@@ -331,7 +335,10 @@ namespace klong {
         
 		auto leftType = expr->left()->type();
         auto rightType = expr->right()->type();
-        auto resultType = std::shared_ptr<Type>(expr->left()->type()->clone());
+        if (!leftType) {
+            return;
+        }
+        auto resultType = std::shared_ptr<Type>(leftType->clone());
 		
 		auto applyBinaryPromotion = [this](Type*& lhsType, Type*& rhsType, TypePtr& resType) {
 			if (!lhsType->isEqual(rhsType)) {
@@ -435,7 +442,11 @@ namespace klong {
         std::vector<Type*> callParamTypes;
         for (const auto& arg : expr->args()) {
             check(arg);
-            callParamTypes.push_back(arg->type());
+            auto argType = arg->type();
+            if (!argType) {
+                return;
+            }
+            callParamTypes.push_back(argType);
         }
         auto calleeType = expr->callee()->type();
         if (calleeType->kind() == TypeKind::POINTER) {
@@ -633,6 +644,9 @@ namespace klong {
     void TypeCheckVisitor::visitCastExpr(Cast* expr) {
         check(expr->right());
         auto sourceType = expr->right()->type();
+        if (!sourceType) {
+            return;
+        }
         if (Type::isVoid(sourceType)) {
             _session->getResult().addError(
                     CompilationError(sourceType->sourceRange(),
