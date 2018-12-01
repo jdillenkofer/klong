@@ -638,6 +638,11 @@ namespace klong {
                     CompilationError(expr->targetType()->sourceRange(),
                             "Can not cast to function type. Did you mean ptr to function?"));
         }
+        if (expr->targetType()->kind() == TypeKind::CUSTOM) {
+            _session->getResult().addError(
+                    CompilationError(expr->targetType()->sourceRange(),
+                            "Can not cast to custom type. Did you mean ptr to custom type?"));
+        }
         expr->type(targetType);
     }
 
