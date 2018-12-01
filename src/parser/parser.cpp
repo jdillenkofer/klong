@@ -250,7 +250,7 @@ namespace klong {
         auto functionType = std::make_shared<FunctionType>(SourceRange {
             leftPar.sourceRange.start,
             returnType ? returnType->sourceRange().end : rightPar.sourceRange.end
-            }, std::move(paramTypes), returnType);
+            }, std::move(paramTypes), returnType, false);
 
         _isInsideFunction = previousIsInsideFunction;
 
@@ -428,10 +428,19 @@ namespace klong {
         switch(type.type) {
             case TokenType::LEFT_PAR:
             {
+                bool isVariadic = false;
                 std::vector<TypePtr> argTypes;
                 if (peek().type != TokenType::RIGHT_PAR) {
                     do {
-                        argTypes.push_back(typeDeclaration());
+                        if (match(TokenType::SPREAD)) {
+                            isVariadic = true;
+                            if (peek().type == TokenType::COMMA) {
+                                throw CompilationError(peek().sourceRange,
+                                        "Variadic function arguments are only allowed at the end of the argument list.");
+                            }
+                        } else {
+                            argTypes.push_back(typeDeclaration());
+                        }
                     } while(match(TokenType::COMMA));
                 }
                 consume(TokenType::RIGHT_PAR, "Expect ')' as type list terminator.");
@@ -439,7 +448,7 @@ namespace klong {
                 auto returnType = typeDeclaration();
                 return std::make_shared<FunctionType>(
                         SourceRange { type.sourceRange.start, returnType->sourceRange().end },
-                        std::move(argTypes), returnType);
+                        std::move(argTypes), returnType, isVariadic);
             }
             case TokenType::PTR:
             {

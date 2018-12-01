@@ -74,10 +74,11 @@ namespace klong {
 
     class FunctionType : public Type {
     public:
-        FunctionType(SourceRange sourceRange, std::vector<TypePtr>&& paramTypes, TypePtr returnType):
+        FunctionType(SourceRange sourceRange, std::vector<TypePtr>&& paramTypes, TypePtr returnType, bool isVariadic):
             Type(TypeKind::FUNCTION, sourceRange),
             _paramTypes(paramTypes),
-            _returnType(returnType) {
+            _returnType(returnType),
+            _isVariadic(isVariadic) {
             if (returnType == nullptr) {
             _returnType = std::static_pointer_cast<Type>(
                     std::make_shared<PrimitiveType>(PrimitiveTypeKind::VOID));
@@ -100,10 +101,18 @@ namespace klong {
             return _returnType.get();
         }
 
+        bool isVariadic() const {
+            return _isVariadic;
+        }
+
         bool isEqual(const Type* other) const override {
             if (other->kind() == TypeKind::FUNCTION) {
                 auto otherFunctionType = dynamic_cast<const FunctionType*>(other);
                 if (this->_paramTypes.size() != otherFunctionType->_paramTypes.size()) {
+                    return false;
+                }
+
+                if (this->_isVariadic != otherFunctionType->_isVariadic) {
                     return false;
                 }
 
@@ -118,7 +127,7 @@ namespace klong {
 
         Type* clone() const override {
             return new FunctionType(SourceRange(), std::vector<TypePtr>(this->_paramTypes),
-                    std::shared_ptr<Type>(this->_returnType->clone()));
+                    std::shared_ptr<Type>(this->_returnType->clone()), _isVariadic);
         }
 
         bool matchesSignature(const std::vector<Type*>& callSignature) const {
@@ -136,6 +145,7 @@ namespace klong {
     private:
         std::vector<TypePtr> _paramTypes;
         TypePtr _returnType;
+        bool _isVariadic;
     };
 
     class PrimitiveType : public Type {

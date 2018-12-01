@@ -69,6 +69,7 @@ namespace klong {
         SEMICOLON,
         COLON,
         COMMA,
+        SPREAD,
         PERIOD,
         PERCENT,
         QUESTION,

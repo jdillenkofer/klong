@@ -40,6 +40,7 @@ namespace klong {
         {'?', std::bind(&Lexer::question, std::placeholders::_1, std::placeholders::_2)},
 
         // period/spread
+        {'.', std::bind(&Lexer::spread, std::placeholders::_1, std::placeholders::_2)},
         {'.', std::bind(&Lexer::period, std::placeholders::_1, std::placeholders::_2)},
 
         // block comment, line comment, slash
@@ -735,6 +736,10 @@ namespace klong {
 
     bool Lexer::comma(Token& token) {
         return readSingleLineToken(token, TokenType::COMMA);
+    }
+
+    bool Lexer::spread(Token& token) {
+        return matchesKeyword(token, "...", TokenType::SPREAD);
     }
 
     bool Lexer::period(Token& token) {

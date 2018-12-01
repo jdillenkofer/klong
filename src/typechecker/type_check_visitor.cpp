@@ -442,6 +442,12 @@ namespace klong {
             auto calleePointer = dynamic_cast<PointerType*>(calleeType);
             auto functionType = dynamic_cast<FunctionType*>(calleePointer->pointsTo());
             if (functionType != nullptr) {
+                if (functionType->isVariadic()) {
+                    // only check the known arguments for variadic functions
+                    while (functionType->paramTypes().size() < callParamTypes.size()) {
+                        callParamTypes.pop_back();
+                    }
+                }
                 if (!functionType->matchesSignature(callParamTypes)) {
                     _session->getResult().addError(
                             CompilationError(expr->sourceRange(), "Call Expr doesn't match function signature."));

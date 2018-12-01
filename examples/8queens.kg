@@ -1,4 +1,4 @@
-extern printf: (ptr<i8>) -> void;
+extern printf: (ptr<i8>, ...) -> void;
 
 pub fun main() -> i64 {
     let board: [i64, 64];

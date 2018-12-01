@@ -96,6 +96,7 @@ namespace klong {
         bool semicolon(Token& token);
         bool colon(Token& token);
         bool comma(Token& token);
+        bool spread(Token& token);
         bool period(Token& token);
         bool percent(Token& token);
         bool question(Token& token);

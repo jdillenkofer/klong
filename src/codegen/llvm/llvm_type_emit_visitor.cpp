@@ -22,7 +22,7 @@ namespace klong {
 
         _outerTypes.pop_back();
 
-        _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, false);
+        _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, type->isVariadic());
     }
 
     void LLVMTypeEmitVisitor::visitPrimitiveType(PrimitiveType* type) {
