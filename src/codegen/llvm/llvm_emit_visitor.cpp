@@ -707,14 +707,20 @@ namespace klong {
         // see: https://github.com/jdillenkofer/klong/issues/40
         {
             Expr* realMemberExpr = expr->target();
-            while(realMemberExpr->kind() == ExprKind::CAST) {
+            while(realMemberExpr->kind() == ExprKind::CAST || realMemberExpr->kind() == ExprKind::GROUPING) {
                 auto castExpr = dynamic_cast<Cast*>(realMemberExpr);
-                realMemberExpr = castExpr->right();
+                if (castExpr) {
+                    realMemberExpr = castExpr->right();
+                }
+                auto groupingExpr = dynamic_cast<Grouping*>(realMemberExpr);
+                if (groupingExpr) {
+                    realMemberExpr = groupingExpr->expression();
+                }
             }
 
             auto type = _typeEmitVisitor.getLLVMType(realMemberExpr->type());
 
-            if (expr->target()->kind() == ExprKind::CALL) {
+            if (realMemberExpr->kind() == ExprKind::CALL) {
                 auto localAlloc = _builder.CreateAlloca(type);
                 _builder.CreateStore(targetVal, localAlloc);
                 targetVal = localAlloc;

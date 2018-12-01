@@ -29,6 +29,10 @@ pub fun main() -> i64 {
     if (testPassByPtr(&node).value != 0) {
         return 1;
     }
+
+    if ((cast<ptr<Node>>(cast<ptr<i32>>(testPassByPtr(&node)))).value != 0) {
+        return 1;
+    }
     return 0;
 }
 
