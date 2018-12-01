@@ -557,12 +557,20 @@ namespace klong {
 
     void TypeCheckVisitor::visitLogicalExpr(Logical* expr) {
         check(expr->left());
-        if (!Type::isBoolean(expr->left()->type())) {
+        auto leftType = expr->left()->type();
+        if (!leftType) {
+            return;
+        }
+        if (!Type::isBoolean(leftType)) {
             _session->getResult().addError(
                     CompilationError(expr->left()->sourceRange(), "Expect boolean expr."));
         }
         check(expr->right());
-        if (!Type::isBoolean(expr->right()->type())) {
+        auto rightType = expr->right()->type();
+        if (!rightType) {
+            return;
+        }
+        if (!Type::isBoolean(rightType)) {
             _session->getResult().addError(
                     CompilationError(expr->right()->sourceRange(), "Expect boolean expr."));
         }
@@ -572,23 +580,28 @@ namespace klong {
     void TypeCheckVisitor::visitUnaryExpr(Unary* expr) {
         check(expr->right());
 
-        if (expr->op() == UnaryOperation::NOT && !Type::isBoolean(expr->right()->type())) {
+        auto rightType = expr->right()->type();
+        if (!rightType) {
+            return;
+        }
+
+        if (expr->op() == UnaryOperation::NOT && !Type::isBoolean(rightType)) {
             _session->getResult().addError(
                     CompilationError(expr->sourceRange(), "'!' expects boolean expression."));
         }
 
-        if (expr->op() == UnaryOperation::MINUS && !Type::isInteger(expr->right()->type())) {
+        if (expr->op() == UnaryOperation::MINUS && !Type::isInteger(rightType)) {
             _session->getResult().addError(
                     CompilationError(expr->sourceRange(), "Unary '-' expects number expression."));
         }
 
         if (expr->op() == UnaryOperation::DEREF) {
-            if (!Type::isPointer(expr->right()->type())) {
+            if (!Type::isPointer(rightType)) {
                 _session->getResult().addError(
                         CompilationError(expr->sourceRange(), "Deref expects pointer type."));
                 return;
             }
-            auto pointerType = dynamic_cast<PointerType*>(expr->right()->type());
+            auto pointerType = dynamic_cast<PointerType*>(rightType);
             if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
                 _session->getResult().addError(
                         CompilationError(expr->sourceRange(),
@@ -625,10 +638,10 @@ namespace klong {
             }
             expr->type(std::make_shared<PointerType>(
                     expr->sourceRange(),
-                    std::shared_ptr<Type>(expr->right()->type()->clone())));
+                    std::shared_ptr<Type>(rightType->clone())));
             return;
         }
-        expr->type(std::shared_ptr<Type>(expr->right()->type()->clone()));
+        expr->type(std::shared_ptr<Type>(rightType->clone()));
     }
 
     void TypeCheckVisitor::visitSizeOfExpr(SizeOf *expr) {
