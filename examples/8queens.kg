@@ -1,7 +1,7 @@
 extern printf: (ptr<i8>, ...) -> void;
 
-pub fun main() -> i64 {
-    let board: [i64, 64];
+pub fun main() -> i32 {
+    let board: [i32, 64];
     for (let i = 0; i < 64; i = i + 1) {
         board[i] = 0;
     }
@@ -11,7 +11,7 @@ pub fun main() -> i64 {
     return 0;
 }
 
-fun solve(board: ptr<i64>, row: i64) -> bool {
+fun solve(board: ptr<i32>, row: i32) -> bool {
     if (row == 8) {
         print_board(board);
         return false;
@@ -26,7 +26,7 @@ fun solve(board: ptr<i64>, row: i64) -> bool {
     return true;
 }
 
-fun print_board(board: ptr<i64>) -> void {
+fun print_board(board: ptr<i32>) -> void {
     for (let i = 0; i < 8; i = i + 1) {
         for (let j = 0; j < 8; j = j + 1) {
             if (board[i * 8 + j] == 1) {
@@ -40,7 +40,7 @@ fun print_board(board: ptr<i64>) -> void {
     printf("\n\n");
 }
 
-fun conflict(board: ptr<i64>, row: i64, col: i64) -> bool {
+fun conflict(board: ptr<i32>, row: i32, col: i32) -> bool {
     for (let i = 0; i < row; i = i + 1) {
         if (board[i * 8 + col] == 1) {
             return true;

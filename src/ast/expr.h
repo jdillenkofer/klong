@@ -309,22 +309,22 @@ namespace klong {
     public:
         NumberLiteral(SourceRange sourceRange, double value):
             Literal(std::move(sourceRange),
-                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::F64)),
-                    _primitiveTypeKind(PrimitiveTypeKind::F64) {
+                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::F32 : PrimitiveTypeKind::F64)),
+                    _primitiveTypeKind(canBe32Bit(value) ? PrimitiveTypeKind::F32 : PrimitiveTypeKind::F64) {
             _value.f = value;
         }
 
         NumberLiteral(SourceRange sourceRange, int64_t value):
             Literal(std::move(sourceRange),
-                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::I64)),
-                    _primitiveTypeKind(PrimitiveTypeKind::I64){
+                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::I32 : PrimitiveTypeKind::I64)),
+                    _primitiveTypeKind(canBe32Bit(value) ? PrimitiveTypeKind::I32 : PrimitiveTypeKind::I64){
             _value.i = value;
         }
 
         NumberLiteral(SourceRange sourceRange, uint64_t value):
             Literal(std::move(sourceRange),
-                    std::make_shared<PrimitiveType>(PrimitiveTypeKind::U64)),
-                    _primitiveTypeKind(PrimitiveTypeKind::U64) {
+                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::U32 : PrimitiveTypeKind::U64)),
+                    _primitiveTypeKind(canBe32Bit(value) ? PrimitiveTypeKind::U32 : PrimitiveTypeKind::U64) {
             _value.u = value;
         }
 
@@ -332,13 +332,25 @@ namespace klong {
             return _primitiveTypeKind;
         }
 
+        float f32() const {
+            return (float) _value.f;
+        }
+
         double f64() const {
             return _value.f;
         }
 
+        int32_t i32() const {
+            return (int32_t) _value.i;
+        }
+
         int64_t i64() const {
             return _value.i;
-        };
+        }
+
+        uint32_t u32() const {
+            return (uint32_t) _value.u;
+        }
 
         uint64_t u64() const {
             return _value.u;
@@ -347,6 +359,18 @@ namespace klong {
         void accept(ExprVisitor* visitor) override {
             visitor->visitNumberLiteral(this);
         };
+    private:
+        bool canBe32Bit(int64_t i) {
+            return i == (int32_t) i;
+        }
+
+        bool canBe32Bit(uint64_t u) {
+            return u == (uint32_t) u;
+        }
+
+        bool canBe32Bit(double d) {
+            return d == (float) d;
+        }
     private:
         union {
             double f;

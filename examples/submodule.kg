@@ -1,1 +1,1 @@
-extern printf: (ptr<i8>) -> void;
+extern printf: (ptr<i8>, ...) -> void;

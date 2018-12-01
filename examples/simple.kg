@@ -1,7 +1,7 @@
 const from = 0;
 const to = 5;
 
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     // a b c
     let funVariable = fib;
     funVariable = fibDoubled;
@@ -9,11 +9,11 @@ pub fun main() -> i64 {
     let sum = sum(from, to, funVariable);
     let fl = 1;
     let a = cast<f32> fl;
-    let b = cast<i64> a;
+    let b = cast<i32> a;
     return b;
 }
 
-fun sum(from: i64, to: i64, func: ptr<(i64) -> i64>) -> i64 {
+fun sum(from: i32, to: i32, func: ptr<(i32) -> i32>) -> i32 {
     let sum = 0;
     for(let i = from; i < to; i = i + 1) {
         sum = sum + func(i);
@@ -21,7 +21,7 @@ fun sum(from: i64, to: i64, func: ptr<(i64) -> i64>) -> i64 {
     return sum;
 }
 
-fun fib(n: i64) -> i64 {
+fun fib(n: i32) -> i32 {
     if (n == 0) {
         return 0;
     }
@@ -33,6 +33,6 @@ fun fib(n: i64) -> i64 {
     return fib(n - 1) + fib(n - 2);
 }
 
-fun fibDoubled(n: i64) -> i64 {
+fun fibDoubled(n: i32) -> i32 {
     return fib(n) * 2;
 }

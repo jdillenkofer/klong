@@ -1,8 +1,8 @@
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     return test();
     return 2;
 }
 
-fun test() -> i64 {
+fun test() -> i32 {
     return 0;
 }

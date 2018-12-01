@@ -1,7 +1,7 @@
 let f = [1, 2, 3, 4, 5, 6];
 
-pub fun main() -> i64 {
-    const a: [i64, 5] = [1, 2, 3, 4, 5];
+pub fun main() -> i32 {
+    const a: [i32, 5] = [1, 2, 3, 4, 5];
 
     if (f[5] != 6) {
         return 1;

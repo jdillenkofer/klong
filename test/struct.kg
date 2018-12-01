@@ -1,11 +1,12 @@
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     let node_size = sizeof(Node);
-    if (node_size != 16) {
+    // expect 8 Byte alignment
+    if (node_size != 24) {
         return 1;
     }
 
     let zeroByteStruct: ZeroByteStruct;
-    if (sizeof(ZeroByteStruct) != cast<u64> 0) {
+    if (sizeof(ZeroByteStruct) != 0) {
         return 1;
     }
 
@@ -49,8 +50,9 @@ fun testPassByPtr(t: ptr<Node>) -> ptr<Node> {
 }
 
 struct Node {
-    value: i64,
-    next: ptr<Node>
+    value: i32,
+    next: ptr<Node>,
+    metadata: i8
 }
 
 struct ZeroByteStruct {}

@@ -1,7 +1,7 @@
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     return call();
 }
 
-fun call() -> i64 {
+fun call() -> i32 {
     return 0;
 }

@@ -1,4 +1,4 @@
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     let last_i_set = 0;
     for (let i = 0; i < 5; i = i + 1) {
         if (i < 5) {

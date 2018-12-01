@@ -10,7 +10,7 @@ fun negateResult(res: Result) -> Result {
     return Result::ERROR;
 }
 
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     let result: Result = negateResult(Result::ERROR);
     if (result == Result::ERROR) {
         return 1;

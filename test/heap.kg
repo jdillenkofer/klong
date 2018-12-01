@@ -1,8 +1,8 @@
 extern malloc: (u64) -> ptr<void>;
 extern free: (ptr<void>) -> void;
 
-pub fun main() -> i64 {
-    let i = cast<ptr<i64>> malloc(sizeof(i64));
+pub fun main() -> i32 {
+    let i = cast<ptr<i32>> malloc(sizeof(i32));
     let num = 0;
     *i = num;
     num = *i;

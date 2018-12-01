@@ -1,4 +1,4 @@
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     if (1 == 0.5) {
         return 1;
     }

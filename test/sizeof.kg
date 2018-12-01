@@ -1,4 +1,4 @@
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     if (sizeof(i64) != 8) {
         return 1;
     }

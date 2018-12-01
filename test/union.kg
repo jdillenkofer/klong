@@ -25,23 +25,23 @@ union ptrUnion {
     b: ptr<i8>
 }
 
-pub fun main() -> i64 {
-    if (sizeof(zeroBytes) != cast<u64> 0) {
+pub fun main() -> i32 {
+    if (sizeof(zeroBytes) != 0) {
         return 1;
     }
-    if (sizeof(oneBytes) != cast<u64> 1) {
+    if (sizeof(oneBytes) != 1) {
         return 1;
     }
-    if (sizeof(twoBytes) != cast<u64> 2) {
+    if (sizeof(twoBytes) != 2) {
         return 1;
     }
-    if (sizeof(fourBytes) != cast<u64> 4) {
+    if (sizeof(fourBytes) != 4) {
         return 1;
     }
-    if (sizeof(eightBytes) != cast<u64> 8) {
+    if (sizeof(eightBytes) != 8) {
         return 1;
     }
-    if (sizeof(ptrUnion) != cast<u64> 8) {
+    if (sizeof(ptrUnion) != 8) {
         return 1;
     }
     let i: oneBytes;
@@ -50,7 +50,7 @@ pub fun main() -> i64 {
         return 1;
     }
     passByPtr(&i);
-    return cast<i64> i.b;
+    return cast<i32> i.b;
 }
 
 fun passByValue(i: oneBytes) -> oneBytes {

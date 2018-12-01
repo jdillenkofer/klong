@@ -1,6 +1,6 @@
-extern exit: (i64) -> void;
+extern exit: (i32) -> void;
 
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     exit(0);
     return 1;
 }

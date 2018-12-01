@@ -1,4 +1,4 @@
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     let a = [ 1, 2, 3, 4 ];
     if (test(a)[1] != 2) {
         return 1;
@@ -6,6 +6,6 @@ pub fun main() -> i64 {
     return 0;
 }
 
-fun test(a: ptr<i64>) -> ptr<i64> {
+fun test(a: ptr<i32>) -> ptr<i32> {
     return a;
 }

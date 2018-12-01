@@ -1,10 +1,10 @@
 struct Test {
-    value: i64
+    value: i32
 }
 
 extern printf: (ptr<i8>) -> void;
 
-pub fun main() -> i64 {
+pub fun main() -> i32 {
     let test1: Test;
     let test2: Test;
 

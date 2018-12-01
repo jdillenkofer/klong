@@ -907,11 +907,20 @@ namespace klong {
 
     void LLVMEmitVisitor::visitNumberLiteral(NumberLiteral* expr) {
         switch (expr->typeKind()) {
+            case PrimitiveTypeKind::I32:
+                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t) expr->i32(), true));
+                break;
             case PrimitiveTypeKind::I64:
                 _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(64, (uint64_t) expr->i64(), true));
                 break;
+            case PrimitiveTypeKind::U32:
+                _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t) expr->u32(), false));
+                break;
             case PrimitiveTypeKind::U64:
                 _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(64, expr->u64(), false));
+                break;
+            case PrimitiveTypeKind::F32:
+                _valueOfLastExpr = llvm::ConstantFP::get(_context, llvm::APFloat(expr->f32()));
                 break;
             case PrimitiveTypeKind::F64:
                 _valueOfLastExpr = llvm::ConstantFP::get(_context, llvm::APFloat(expr->f64()));
