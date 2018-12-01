@@ -701,6 +701,26 @@ namespace klong {
 
         llvm::Value* address = nullptr;
         auto targetVal = emitCodeL(expr->target());
+
+        // this is a workaround
+        // because we cannot directly access the value of a call expr
+        // see: https://github.com/jdillenkofer/klong/issues/40
+        {
+            Expr* realMemberExpr = expr->target();
+            while(realMemberExpr->kind() == ExprKind::CAST) {
+                auto castExpr = dynamic_cast<Cast*>(realMemberExpr);
+                realMemberExpr = castExpr->right();
+            }
+
+            auto type = _typeEmitVisitor.getLLVMType(realMemberExpr->type());
+
+            if (expr->target()->kind() == ExprKind::CALL) {
+                auto localAlloc = _builder.CreateAlloca(type);
+                _builder.CreateStore(targetVal, localAlloc);
+                targetVal = localAlloc;
+            }
+        }
+
         {
             auto customType = dynamic_cast<CustomType*>(expr->target()->type());
             auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());

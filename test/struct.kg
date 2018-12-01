@@ -26,12 +26,9 @@ pub fun main() -> i64 {
         return 1;
     }
 
-    /*
-    // FIX THIS >>> CANT DIRECTLY ACCESS CALL RESULT <<<
     if (testPassByPtr(&node).value != 0) {
         return 1;
     }
-    */
     return 0;
 }
 

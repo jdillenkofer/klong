@@ -1,0 +1,42 @@
+
+struct Test {
+    a: i32,
+    b: i8
+}
+
+pub fun main() -> i64 {
+    let test: Test;
+    let test2: Test;
+    test2.a = cast<i32> 32;
+    test2.b = cast<i8> 8;
+    test = test2;
+    if (test.a != cast<i32> 32) {
+        return 1;
+    }
+    if (test.b != cast<i8> 8) {
+        return 1;
+    }
+
+    test2.a = cast<i32> 5;
+    test2.b = cast<i8> 1;
+    test2 = *(&test);
+    if (test2.a != cast<i32> 32) {
+        return 1;
+    }
+    if (test2.b != cast<i8> 8) {
+        return 1;
+    }
+
+    if (returnStruct().a != cast<i32> 32) {
+        return 1;
+    }
+
+    return 0;
+}
+
+fun returnStruct() -> Test {
+    let test: Test;
+    test.a = cast<i32> 32;
+    test.b = cast<i8> 8;
+    return test;
+}
