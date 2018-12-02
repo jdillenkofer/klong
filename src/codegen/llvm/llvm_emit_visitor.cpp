@@ -163,6 +163,12 @@ namespace klong {
 
     void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), _context);
+		if (_session->emitDebugInfo()) {
+			// TODO: SWITCH THIS false FLAG TO true
+			_debugInfoBuilder = llvm::make_unique<llvm::DIBuilder>(*_module, false);
+			_debugUnit = _debugInfoBuilder->createFile(module->filename(), module->absolutepath());
+			_debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugUnit, "Klong Compiler", false, "", 0);
+		}
 
         for (auto& stmt : module->statements()) {
             if (stmt->kind() == StatementKind::FUNCTION) {
@@ -175,6 +181,16 @@ namespace klong {
                 auto llvmFunction = llvm::Function::Create(functionType,
                         linkage, function->name(), _module.get());
 
+				if (_session->emitDebugInfo()) {
+					llvm::DIScope* fContext = _debugUnit;
+					llvm::DIType* dblTy = _debugInfoBuilder->createBasicType("float", 0, llvm::dwarf::DW_ATE_float);
+					llvm::SmallVector<llvm::Metadata* , 8> EltTys;
+					EltTys.push_back(dblTy);
+					llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(fContext, function->name(), function->name(), _debugUnit, function->sourceRange().start.line(),
+						_debugInfoBuilder->createSubroutineType(_debugInfoBuilder->getOrCreateTypeArray(EltTys)), function->isPublic(), true, 0, llvm::DINode::FlagPrototyped, false);
+					llvmFunction->setSubprogram(subProgram);
+				}
+
                 _namedValues[stmt] = llvmFunction;
             }
         }
@@ -182,6 +198,9 @@ namespace klong {
         for (auto& stmt : module->statements()) {
             stmt->accept(this);
         }
+		if (_session->emitDebugInfo()) {
+			_debugInfoBuilder->finalize();
+		}
     }
 
     void LLVMEmitVisitor::visitBlockStmt(Block* stmt) {

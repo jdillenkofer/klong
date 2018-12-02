@@ -9,6 +9,7 @@
 #include "llvm_type_emit_visitor.h"
 
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 
 namespace klong {
@@ -78,8 +79,12 @@ namespace klong {
 		std::shared_ptr<ExternalDeclaration> translateToExternalDeclaration(Stmt* stmt);
     private:
         llvm::LLVMContext _context;
+
         llvm::IRBuilder<> _builder;
-        LLVMTypeEmitVisitor _typeEmitVisitor;
+		llvm::DIFile* _debugUnit;
+		std::unique_ptr<llvm::DIBuilder> _debugInfoBuilder;
+        
+		LLVMTypeEmitVisitor _typeEmitVisitor;
 
         std::unique_ptr<llvm::Module> _module;
 

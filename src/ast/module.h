@@ -14,7 +14,7 @@ namespace klong {
     class Module {
     public:
         Module(std::string path, std::string filename):
-			_absolutepath(std::filesystem::absolute(std::move(path)).lexically_normal().string()),
+			_absolutepath(std::filesystem::absolute(std::move(path)).lexically_normal().parent_path().string()),
 			_filename(std::move(filename)) {
         }
 

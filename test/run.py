@@ -44,6 +44,7 @@ def link(objfile, executable):
         result = subprocess.call([
             "link.exe", 
             "/NOLOGO",
+            #"/DEBUG", # This generates pdb files
             "/SUBSYSTEM:CONSOLE", 
             "/MACHINE:x64", 
             "/DEFAULTLIB:libcmt", 
