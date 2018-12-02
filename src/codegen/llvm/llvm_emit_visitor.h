@@ -77,12 +77,18 @@ namespace klong {
         llvm::Value* getVariableAddress(Expr* expr);
         llvm::Value* emitCast(llvm::Value *value, Type *from, Type *to);
 		std::shared_ptr<ExternalDeclaration> translateToExternalDeclaration(Stmt* stmt);
+
+		void emitDebugLocation(Stmt* stmt);
+		void emitDebugLocation(Expr* expr);
     private:
         llvm::LLVMContext _context;
 
         llvm::IRBuilder<> _builder;
+
+		// DEBUG INFO
 		llvm::DIFile* _debugUnit;
 		std::unique_ptr<llvm::DIBuilder> _debugInfoBuilder;
+		std::vector<llvm::DIScope*> _debugBlocks;
         
 		LLVMTypeEmitVisitor _typeEmitVisitor;
 

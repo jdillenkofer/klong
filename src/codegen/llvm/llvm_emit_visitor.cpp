@@ -32,6 +32,9 @@ namespace klong {
     llvm::Value* LLVMEmitVisitor::emitCodeL(Expr* expr) {
         _isCodeL = true;
         _valueOfLastExpr = nullptr;
+		if (_session->emitDebugInfo()) {
+			emitDebugLocation(expr);
+		}
         expr->accept(this);
         return _valueOfLastExpr;
     }
@@ -39,12 +42,18 @@ namespace klong {
     llvm::Value* LLVMEmitVisitor::emitCodeR(Expr *expr) {
         _isCodeL = false;
         _valueOfLastExpr = nullptr;
-        expr->accept(this);
+		if (_session->emitDebugInfo()) {
+			emitDebugLocation(expr);
+		}
+		expr->accept(this);
         return _valueOfLastExpr;
     }
 
     void LLVMEmitVisitor::emitCode(Stmt *stmt) {
         // eliminate dead code after return
+		if (_session->emitDebugInfo()) {
+			emitDebugLocation(stmt);
+		}
 		bool blockChanged = _builder.GetInsertBlock() != _previousBlock;
 		if (blockChanged) {
 			_previousBlock = _builder.GetInsertBlock();
@@ -161,11 +170,41 @@ namespace klong {
         return nullptr;
     }
 
+	void LLVMEmitVisitor::emitDebugLocation(Stmt* stmt) {
+		if (!stmt)
+			return _builder.SetCurrentDebugLocation(llvm::DebugLoc());
+		llvm::DIScope *scope;
+		if (_debugBlocks.empty()) {
+			scope = _debugUnit;
+		} else {
+			scope = _debugBlocks.back();
+		}
+		auto startLocation = stmt->sourceRange().start;
+		_builder.SetCurrentDebugLocation(
+			llvm::DebugLoc::get(startLocation.line(), startLocation.column(), scope));
+	}
+
+	void LLVMEmitVisitor::emitDebugLocation(Expr* expr) {
+		if (!expr)
+			return _builder.SetCurrentDebugLocation(llvm::DebugLoc());
+		llvm::DIScope *scope;
+		if (_debugBlocks.empty()) {
+			scope = _debugUnit;
+		}
+		else {
+			scope = _debugBlocks.back();
+		}
+		auto startLocation = expr->sourceRange().start;
+		_builder.SetCurrentDebugLocation(
+			llvm::DebugLoc::get(startLocation.line(), startLocation.column(), scope));
+	}
+
     void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), _context);
 		if (_session->emitDebugInfo()) {
 			// TODO: SWITCH THIS false FLAG TO true
-			_debugInfoBuilder = llvm::make_unique<llvm::DIBuilder>(*_module, false);
+			_debugInfoBuilder = std::make_unique<llvm::DIBuilder>(*_module, false);
+			_typeEmitVisitor.setDebugInfoBuilder(_debugInfoBuilder.get());
 			_debugUnit = _debugInfoBuilder->createFile(module->filename(), module->absolutepath());
 			_debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugUnit, "Klong Compiler", false, "", 0);
 		}
@@ -180,16 +219,6 @@ namespace klong {
 
                 auto llvmFunction = llvm::Function::Create(functionType,
                         linkage, function->name(), _module.get());
-
-				if (_session->emitDebugInfo()) {
-					llvm::DIScope* fContext = _debugUnit;
-					llvm::DIType* dblTy = _debugInfoBuilder->createBasicType("float", 0, llvm::dwarf::DW_ATE_float);
-					llvm::SmallVector<llvm::Metadata* , 8> EltTys;
-					EltTys.push_back(dblTy);
-					llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(fContext, function->name(), function->name(), _debugUnit, function->sourceRange().start.line(),
-						_debugInfoBuilder->createSubroutineType(_debugInfoBuilder->getOrCreateTypeArray(EltTys)), function->isPublic(), true, 0, llvm::DINode::FlagPrototyped, false);
-					llvmFunction->setSubprogram(subProgram);
-				}
 
                 _namedValues[stmt] = llvmFunction;
             }
@@ -241,11 +270,24 @@ namespace klong {
     void LLVMEmitVisitor::visitFunctionStmt(Function* stmt) {
         llvm::Function* function = _module->getFunction(stmt->name());
 
+		if (_session->emitDebugInfo()) {
+			llvm::DIScope* fContext = _debugUnit;
+			llvm::DISubroutineType* subroutineType = (llvm::DISubroutineType*) (_typeEmitVisitor.getLLVMDebugType(stmt->functionType()));
+			auto startLocation = stmt->sourceRange().start;
+			llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(fContext, stmt->name(), stmt->name(), _debugUnit, startLocation.line(),
+				subroutineType, stmt->isPublic(), true, 0, llvm::DINode::FlagPrototyped, false);
+			function->setSubprogram(subProgram);
+			_debugBlocks.push_back(subProgram);
+		}
+
         // Function body
         llvm::BasicBlock* bb = llvm::BasicBlock::Create(_context, "entry", function);
         _builder.SetInsertPoint(bb);
 
         {
+			if (_session->emitDebugInfo()) {
+				emitDebugLocation((Expr*) nullptr);
+			}
             size_t i = 0;
             for (auto& arg : function->args()) {
                 llvm::Type* paramType = _typeEmitVisitor.getLLVMType(stmt->params()[i]->type());
@@ -264,6 +306,9 @@ namespace klong {
             && !_builder.GetInsertBlock()->getTerminator()) {
             _builder.CreateRet(nullptr);
         }
+		if (_session->emitDebugInfo()) {
+			_debugBlocks.pop_back();
+		}
         llvm::verifyFunction(*function);
     }
 
