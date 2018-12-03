@@ -24,11 +24,11 @@ namespace klong {
         return _source->code();
     }
 
-    uint64_t SourceLocation::column() const {
+    uint32_t SourceLocation::column() const {
         return _column;
     }
 
-    uint64_t SourceLocation::line() const {
+    uint32_t SourceLocation::line() const {
         return _line;
     }
 

@@ -88,12 +88,20 @@ namespace klong {
 		if (emitDebug) {
 			switch (type->type()) {
 			case PrimitiveTypeKind::VOID:
+			    if (!_outerTypes.empty() && _outerTypes.back() == TypeKind::FUNCTION) {
+			        _valueOfLastDebugType = nullptr;
+			        break;
+			    }
 				_valueOfLastDebugType = _debugInfoBuilder->createUnspecifiedType("void");
 				break;
 			case PrimitiveTypeKind::BOOL:
 				_valueOfLastDebugType = _debugInfoBuilder->createBasicType("bool", 8, llvm::dwarf::DW_ATE_boolean);
 				break;
 			case PrimitiveTypeKind::I8:
+                if (!_outerTypes.empty() && _outerTypes.back() == TypeKind::POINTER) {
+                    _valueOfLastDebugType = _debugInfoBuilder->createBasicType("i8", 8, llvm::dwarf::DW_ATE_signed_char);
+                    break;
+                }
 				_valueOfLastDebugType = _debugInfoBuilder->createBasicType("i8", 8, llvm::dwarf::DW_ATE_signed);
 				break;
 			case PrimitiveTypeKind::U8:

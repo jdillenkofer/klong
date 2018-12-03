@@ -20,15 +20,15 @@ namespace klong {
         std::string absolutepath() const;
         std::string filename() const;
         std::string code() const;
-        uint64_t column() const;
-        uint64_t line() const;
+        uint32_t column() const;
+        uint32_t line() const;
         uint64_t charPos() const;
         bool valid() const;
 
     private:
         std::shared_ptr<SourceFile> _source;
-        uint64_t _line = 1;
-        uint64_t _column = 1;
+        uint32_t _line = 1;
+        uint32_t _column = 1;
         uint64_t _charPos = 0;
         bool _valid;
     };

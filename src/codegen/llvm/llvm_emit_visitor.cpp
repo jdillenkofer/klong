@@ -202,11 +202,17 @@ namespace klong {
     void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), _context);
 		if (_session->emitDebugInfo()) {
-			// TODO: SWITCH THIS false FLAG TO true
+            // Add the current debug info version into the module.
+            _module->addModuleFlag(llvm::Module::Warning, "Debug Info Version",
+                                     llvm::DEBUG_METADATA_VERSION);
+
+            // TODO: SWITCH THIS false FLAG TO true
 			_debugInfoBuilder = std::make_unique<llvm::DIBuilder>(*_module, false);
 			_typeEmitVisitor.setDebugInfoBuilder(_debugInfoBuilder.get());
-			_debugUnit = _debugInfoBuilder->createFile(module->filename(), module->absolutepath());
-			_debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugUnit, "Klong Compiler", false, "", 0);
+			_debugUnit = _debugInfoBuilder->createFile(module->filename(), module->parentpath());
+			_debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugUnit, "Klong Compiler", false, "", 0,
+			        module->filenameWithoutExtension()+".pdb", llvm::DICompileUnit::DebugEmissionKind::FullDebug,
+                    0, true);
 		}
 
         for (auto& stmt : module->statements()) {
