@@ -202,6 +202,16 @@ namespace klong {
     void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), _context);
 		if (_session->emitDebugInfo()) {
+			// TODO: ADD DEBUG TYPE FLAG
+			if (false) {
+				// We actually want the latest version when there are conflicts.
+				// We can change from Warning to Latest if such mode is supported.
+				_module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 2);
+			}
+			if (true) {
+				// Indicate that we want CodeView in the metadata.
+				_module->addModuleFlag(llvm::Module::Warning, "CodeView", 1);
+			}
             // Add the current debug info version into the module.
             _module->addModuleFlag(llvm::Module::Warning, "Debug Info Version",
                                      llvm::DEBUG_METADATA_VERSION);
