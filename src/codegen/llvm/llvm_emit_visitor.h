@@ -7,6 +7,7 @@
 #include "ast/visitor.h"
 
 #include "llvm_type_emit_visitor.h"
+#include "llvm_debug_type_emit_visitor.h"
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/DIBuilder.h"
@@ -91,6 +92,7 @@ namespace klong {
 		std::vector<llvm::DIScope*> _debugBlocks;
         
 		LLVMTypeEmitVisitor _typeEmitVisitor;
+		LLVMDebugTypeEmitVisitor _debugTypeEmitVisitor;
 
         std::unique_ptr<llvm::Module> _module;
 

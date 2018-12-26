@@ -11,14 +11,17 @@ def listdir_fullpath(d):
 def isKlongSource(path):
     return os.path.isfile(path) and path.endswith(".kg")
 
+def isDebugInfo(path):
+    return os.path.isfile(path) and path.endswith(".pdb")
+
 def isObjectFile(path):
     return os.path.isfile(path) and path.endswith(".o")
 
 def isExecutable(path):
     return os.path.isfile(path) and path.endswith(".exe")
 
-def isBuildArtefact(path):
-    return isObjectFile(path) or isExecutable(path)
+def isBuildArtifact(path):
+    return isDebugInfo(path) or isObjectFile(path) or isExecutable(path)
 
 def isDir(path):
     return os.path.isdir(path)
@@ -31,9 +34,9 @@ def getFileType(baseDir, fileTypeFilter):
     return files
 
 def removeBuildArtifacts(path):
-    buildArtefacts = getFileType(path, isBuildArtefact)
-    for buildArtefact in buildArtefacts:
-        os.remove(buildArtefact)
+    buildArtifacts = getFileType(path, isBuildArtifact)
+    for buildArtifact in buildArtifacts:
+        os.remove(buildArtifact)
 
 def compile(path_to_compiler, testfile):
     return subprocess.call([path_to_compiler, testfile], stdout=subprocess.PIPE)

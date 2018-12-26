@@ -68,6 +68,7 @@ set(SOURCE_FILES
     src/codegen/llvm/llvm_emitter.cpp
     src/codegen/llvm/llvm_emit_visitor.cpp
     src/codegen/llvm/llvm_type_emit_visitor.cpp
+	src/codegen/llvm/llvm_debug_type_emit_visitor.cpp
     src/graphviz/dotfile_visitor.cpp
     src/graphviz/dotfile_emitter.cpp
 	src/common/compilation_session.cpp)
@@ -102,6 +103,7 @@ set(HEADER_FILES
     src/codegen/llvm/llvm_emit_visitor.h
     src/codegen/llvm/llvm_emitter.h
     src/codegen/llvm/llvm_type_emit_visitor.h
+	src/codegen/llvm/llvm_debug_type_emit_visitor.h
     src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
     src/common/compilation_session.h
