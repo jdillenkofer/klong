@@ -38,6 +38,10 @@ namespace klong {
 			return _emitDebugInfo;
 		}
 
+		bool emitDwarf() const {
+			return _emitDwarf;
+		}
+
     private:
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
         std::map<std::string, SymbolInfo> _globalScope;
@@ -46,5 +50,6 @@ namespace klong {
         std::set<std::string> _typecheckedModules;
         CompilationResult _result;
 		bool _emitDebugInfo = true; // TODO: CREATE A FLAG FOR THIS
+		bool _emitDwarf = false; // TODO: CREATE A FLAG FOR THIS
     };
 }

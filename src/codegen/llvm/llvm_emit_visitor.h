@@ -79,7 +79,7 @@ namespace klong {
 		std::shared_ptr<ExternalDeclaration> translateToExternalDeclaration(Stmt* stmt);
 
 		void emitDebugLocation(Stmt* stmt);
-		void emitDebugLocation(Expr* expr);
+		llvm::DIScope* getDebugScope();
     private:
         llvm::LLVMContext _context;
 

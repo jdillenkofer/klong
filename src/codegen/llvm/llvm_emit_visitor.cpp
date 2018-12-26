@@ -32,9 +32,6 @@ namespace klong {
     llvm::Value* LLVMEmitVisitor::emitCodeL(Expr* expr) {
         _isCodeL = true;
         _valueOfLastExpr = nullptr;
-		if (_session->emitDebugInfo()) {
-			emitDebugLocation(expr);
-		}
         expr->accept(this);
         return _valueOfLastExpr;
     }
@@ -42,9 +39,6 @@ namespace klong {
     llvm::Value* LLVMEmitVisitor::emitCodeR(Expr *expr) {
         _isCodeL = false;
         _valueOfLastExpr = nullptr;
-		if (_session->emitDebugInfo()) {
-			emitDebugLocation(expr);
-		}
 		expr->accept(this);
         return _valueOfLastExpr;
     }
@@ -62,7 +56,7 @@ namespace klong {
 		if (_eliminateDeadCodeInCurrentBlock) {
 			return;
 		}
-        stmt->accept(this);
+		stmt->accept(this);
     }
 
     void LLVMEmitVisitor::emitBlock(const std::vector<Stmt*>& statements) {
@@ -173,42 +167,28 @@ namespace klong {
 	void LLVMEmitVisitor::emitDebugLocation(Stmt* stmt) {
 		if (!stmt)
 			return _builder.SetCurrentDebugLocation(llvm::DebugLoc());
-		llvm::DIScope *scope;
-		if (_debugBlocks.empty()) {
-			scope = _debugUnit;
-		} else {
-			scope = _debugBlocks.back();
-		}
+		llvm::DIScope *scope = getDebugScope();
 		auto startLocation = stmt->sourceRange().start;
 		_builder.SetCurrentDebugLocation(
-			llvm::DebugLoc::get(startLocation.line(), startLocation.column(), scope));
+			llvm::DebugLoc::get(startLocation.line(), 0, scope));
 	}
 
-	void LLVMEmitVisitor::emitDebugLocation(Expr* expr) {
-		if (!expr)
-			return _builder.SetCurrentDebugLocation(llvm::DebugLoc());
-		llvm::DIScope *scope;
-		if (_debugBlocks.empty()) {
-			scope = _debugUnit;
-		}
-		else {
+	llvm::DIScope* LLVMEmitVisitor::getDebugScope() {
+		llvm::DIScope* scope = _debugUnit;
+		if (!_debugBlocks.empty()) {
 			scope = _debugBlocks.back();
 		}
-		auto startLocation = expr->sourceRange().start;
-		_builder.SetCurrentDebugLocation(
-			llvm::DebugLoc::get(startLocation.line(), startLocation.column(), scope));
+		return scope;
 	}
 
     void LLVMEmitVisitor::visitModule(Module* module) {
         _module = llvm::make_unique<llvm::Module>(module->filename(), _context);
 		if (_session->emitDebugInfo()) {
-			// TODO: ADD DEBUG TYPE FLAG
-			if (false) {
+			if (_session->emitDwarf()) {
 				// We actually want the latest version when there are conflicts.
 				// We can change from Warning to Latest if such mode is supported.
 				_module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 2);
-			}
-			if (true) {
+			} else {
 				// Indicate that we want CodeView in the metadata.
 				_module->addModuleFlag(llvm::Module::Warning, "CodeView", 1);
 			}
@@ -216,8 +196,7 @@ namespace klong {
             _module->addModuleFlag(llvm::Module::Warning, "Debug Info Version",
                                      llvm::DEBUG_METADATA_VERSION);
 
-            // TODO: SWITCH THIS false FLAG TO true
-			_debugInfoBuilder = std::make_unique<llvm::DIBuilder>(*_module, false);
+			_debugInfoBuilder = std::make_unique<llvm::DIBuilder>(*_module);
 			_typeEmitVisitor.setDebugInfoBuilder(_debugInfoBuilder.get());
 			_debugUnit = _debugInfoBuilder->createFile(module->filename(), module->parentpath());
 			_debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugUnit, "Klong Compiler", false, "", 0,
@@ -302,7 +281,7 @@ namespace klong {
 
         {
 			if (_session->emitDebugInfo()) {
-				emitDebugLocation((Expr*) nullptr);
+				emitDebugLocation((Stmt*) nullptr);
 			}
             size_t i = 0;
             for (auto& arg : function->args()) {
@@ -382,20 +361,41 @@ namespace klong {
     void LLVMEmitVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
         auto type = _typeEmitVisitor.getLLVMType(stmt->type());
 
+		auto startLocation = stmt->sourceRange().start;
+
         if (stmt->isGlobal()) {
             _module->getOrInsertGlobal(stmt->name(), type);
             auto global = _module->getNamedGlobal(stmt->name());
             auto linkage = stmt->isPublic() ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::InternalLinkage;
             global->setLinkage(linkage);
+			if (_session->emitDebugInfo()) {
+				llvm::DIScope *scope = getDebugScope();
+				llvm::DIGlobalVariableExpression* debugDescriptor = _debugInfoBuilder->createGlobalVariableExpression(scope, stmt->name(), stmt->name(), _debugUnit,
+					startLocation.line(), _typeEmitVisitor.getLLVMDebugType(stmt->type()), !stmt->isPublic());
+
+				// TODO: how to insert globals?
+			}
+
             if (stmt->isConst()) {
                 global->setConstant(true);
             }
             if (stmt->initializer()) {
                 global->setInitializer((llvm::Constant*) emitCodeR(stmt->initializer()));
             }
+
             _namedValues[stmt] = global;
         } else {
-            auto stackPtr = _builder.CreateAlloca(type);
+			auto stackPtr = _builder.CreateAlloca(type);
+
+			if (_session->emitDebugInfo()) {
+				llvm::DIScope *scope = getDebugScope();
+				llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createAutoVariable(scope, stmt->name(), _debugUnit,
+					startLocation.line(), _typeEmitVisitor.getLLVMDebugType(stmt->type()), true);
+
+				_debugInfoBuilder->insertDeclare(stackPtr, debugDescriptor, _debugInfoBuilder->createExpression(),
+					llvm::DebugLoc::get(startLocation.line(), 0, scope),
+					_builder.GetInsertBlock());
+			}
             _namedValues[stmt] = stackPtr;
             if (stmt->initializer()) {
                 auto value = emitCodeR(stmt->initializer());

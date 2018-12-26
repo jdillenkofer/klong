@@ -162,6 +162,8 @@ namespace klong {
             return;
         }
 
+		// TODO: emit debug information for custom types
+
         _outerTypes.push_back(TypeKind::CUSTOM);
         auto typeDeclaration = type->resolvesTo();
         switch(typeDeclaration->typeDeclarationKind()) {
