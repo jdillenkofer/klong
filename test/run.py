@@ -74,8 +74,8 @@ def link(objfile, executable):
 def run(executable):
     return subprocess.call([os.path.join(".", executable)], stdout=subprocess.PIPE)
 
-def runTests(path_to_compiler, tests):
-    test_results = []
+def runTests(path_to_compiler, tests, successCallback, errorCallback):
+    containsError = False
     for test in tests:
         newPath = os.path.dirname(test)
         os.chdir(newPath)
@@ -95,12 +95,14 @@ def runTests(path_to_compiler, tests):
         except:
             pass
 
+        test_path = os.path.join(newPath, test)
         if (compile_result and link_result and run_result):
-            test_results.append((".", None))
+            successCallback(test_path)
         else:
-            test_results.append((None, str.format("Test \"{}\" failed! Compile: {} Link: {} Run: {}", os.path.join(newPath, test), compile_result, link_result, run_result)))        
+            errorCallback(test_path, compile_result, link_result, run_result)
+            containsError = True        
         os.chdir("..")
-    return test_results
+    return containsError
 
 def main(argc, argv):
     test_path = os.path.dirname(argv[0])
@@ -115,15 +117,16 @@ def main(argc, argv):
         path_to_compiler = os.path.join(project_root, path_to_compiler)
     
     tests = getFileType(test_path, isKlongSource)
-    test_results = runTests(path_to_compiler, tests)
     
-    containsError = False
-    for test_result in test_results:
-        if (test_result[0] != None):
-            print(test_result[0], end="")
-        else:
-            containsError = True
-            print(test_result[1])
+    def successCallback(name): 
+        print(".", end="")
+        sys.stdout.flush()
+    
+    def errorCallback(name, compile_result, link_result, run_result):
+        print(str.format("Test \"{}\" failed! Compile: {} Link: {} Run: {}", name, compile_result, link_result, run_result))
+        sys.stdout.flush()
+    
+    containsError = runTests(path_to_compiler, tests, successCallback, errorCallback)
     
     removeBuildArtifacts(test_path)
 

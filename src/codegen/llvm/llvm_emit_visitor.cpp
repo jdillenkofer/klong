@@ -271,7 +271,7 @@ namespace klong {
 			llvm::DISubroutineType* subroutineType = (llvm::DISubroutineType*) (_debugTypeEmitVisitor.getLLVMDebugType(stmt->functionType()));
 			auto startLocation = stmt->sourceRange().start;
 			llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(fContext, stmt->name(), stmt->name(), _debugFile, startLocation.line(),
-				subroutineType, stmt->isPublic(), true, 0, llvm::DINode::FlagPrototyped, false);
+				subroutineType, !stmt->isPublic(), true, startLocation.line(), llvm::DINode::FlagZero, false);
 			function->setSubprogram(subProgram);
 			_debugBlocks.push_back(subProgram);
 			// unset the location for the prologue emission
