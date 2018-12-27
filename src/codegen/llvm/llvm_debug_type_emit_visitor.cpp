@@ -5,39 +5,32 @@
 namespace klong {
 
 	llvm::DIType* LLVMDebugTypeEmitVisitor::getLLVMDebugType(Type* type) {
+		assert(_debugInfoBuilder != nullptr);
 		type->accept(this);
 		return _valueOfLastDebugType;
 	}
 
 	void LLVMDebugTypeEmitVisitor::visitFunctionType(FunctionType* type) {
-		bool emitDebug = _debugInfoBuilder != nullptr;
-
+		assert(_debugInfoBuilder != nullptr);
 		llvm::SmallVector<llvm::Metadata*, 8> paramDebugTypes;
 
 		_outerTypes.push_back(TypeKind::FUNCTION);
 
-		if (emitDebug) {
-			llvm::DIType* returnDebugType = getLLVMDebugType(type->returnType());
-			paramDebugTypes.push_back(returnDebugType);
-		}
+		llvm::DIType* returnDebugType = getLLVMDebugType(type->returnType());
+		paramDebugTypes.push_back(returnDebugType);
 
 		for (auto& paramType : type->paramTypes()) {
-			if (emitDebug) {
-				paramDebugTypes.push_back(getLLVMDebugType(paramType));
-			}
+			paramDebugTypes.push_back(getLLVMDebugType(paramType));
 		}
 
 		_outerTypes.pop_back();
-		if (emitDebug) {
-			auto typeArray = _debugInfoBuilder->getOrCreateTypeArray(paramDebugTypes);
-			_valueOfLastDebugType = _debugInfoBuilder->createSubroutineType(typeArray);
-		}
+		auto typeArray = _debugInfoBuilder->getOrCreateTypeArray(paramDebugTypes);
+		_valueOfLastDebugType = _debugInfoBuilder->createSubroutineType(typeArray);
 	}
 
 	void LLVMDebugTypeEmitVisitor::visitPrimitiveType(PrimitiveType* type) {
-		bool emitDebug = _debugInfoBuilder != nullptr;
-		if (emitDebug) {
-			switch (type->type()) {
+		assert(_debugInfoBuilder != nullptr);
+		switch (type->type()) {
 			case PrimitiveTypeKind::VOID:
 				if (!_outerTypes.empty() && _outerTypes.back() == TypeKind::FUNCTION) {
 					_valueOfLastDebugType = nullptr;
@@ -84,26 +77,109 @@ namespace klong {
 				break;
 			default:
 				assert(false);
-			}
 		}
 	}
 
 	void LLVMDebugTypeEmitVisitor::visitPointerType(PointerType* type) {
-		bool emitDebug = _debugInfoBuilder != nullptr;
+		assert(_debugInfoBuilder != nullptr);
 		_outerTypes.push_back(TypeKind::POINTER);
-		auto innerType = getLLVMDebugType(type->pointsTo());
-		auto innerDebugType = _valueOfLastDebugType;
+		auto innerDebugType = getLLVMDebugType(type->pointsTo());
 		_outerTypes.pop_back();
-		if (emitDebug) {
-			_valueOfLastDebugType = _debugInfoBuilder->createPointerType(innerDebugType, _dataLayout.getPointerSizeInBits());
-		}
+		_valueOfLastDebugType = _debugInfoBuilder->createPointerType(innerDebugType, _dataLayout.getPointerSizeInBits());
 	}
 
 	void LLVMDebugTypeEmitVisitor::visitCustomType(CustomType* type) {
-		// TODO: implement custom debug types
+		assert(_debugInfoBuilder != nullptr);
+		
+		// TODO: emit debug information for custom types
+		// Note: STRUCT IS STILL VERY BUGGY!!!
+		auto it = _customTypeCache.find(type->name());
+		if (it != _customTypeCache.end()) {
+			_valueOfLastDebugType = (*it).second;
+			return;
+		}
+
+		auto debugFile = _debugScopeManager->getDebugFile();
+		auto scope = _debugScopeManager->getDebugScope();
+		auto line = type->sourceRange().start.line();
+
+		_outerTypes.push_back(TypeKind::CUSTOM);
+		auto typeDeclaration = type->resolvesTo();
+		switch (typeDeclaration->typeDeclarationKind()) {
+		case TypeDeclarationKind::STRUCT:
+		{
+			auto structDeclaration = dynamic_cast<StructDeclaration*>(typeDeclaration);
+			assert(structDeclaration);
+
+			if (_outerTypes.size() > 1u) {
+				auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
+				if (previousOuterType == TypeKind::POINTER
+					&& structDeclaration->isSelfReferential()) {
+					// this emits an opaque struct type
+					_valueOfLastDebugType = _debugInfoBuilder->createForwardDecl(llvm::dwarf::DW_TAG_structure_type, type->name(), scope, debugFile, line);
+					return;
+				}
+			}
+
+			std::vector<llvm::Metadata*> elements;
+			uint64_t structSizeInBits = 0;
+			for (auto& value : structDeclaration->members()) {
+				auto actualDebugType = getLLVMDebugType(value->type());
+				auto memberDebugType = _debugInfoBuilder->createMemberType(scope, value->name(), debugFile, value->sourceRange().start.line(), 
+					actualDebugType->getSizeInBits(), actualDebugType->getAlignInBits(), actualDebugType->getOffsetInBits(), llvm::DINode::DIFlags::FlagZero, actualDebugType);
+				structSizeInBits += actualDebugType->getSizeInBits();
+				elements.push_back(actualDebugType);
+			}
+
+			llvm::DINodeArray members = _debugInfoBuilder->getOrCreateArray(elements);
+
+			_valueOfLastDebugType = _debugInfoBuilder->createStructType(scope, type->name(), 
+				debugFile, line, structSizeInBits, _dataLayout.getPointerPrefAlignment(), 
+				llvm::DINode::DIFlags::FlagZero, nullptr, members);
+			_customTypeCache[type->name()] = _valueOfLastDebugType;
+			break;
+		}
+		case TypeDeclarationKind::UNION:
+		{
+			auto unionDeclaration = dynamic_cast<UnionDeclaration*>(typeDeclaration);
+			assert(unionDeclaration);
+
+			if (_outerTypes.size() > 1u) {
+				auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
+				if (previousOuterType == TypeKind::POINTER
+					&& unionDeclaration->isSelfReferential()) {
+					// this emits an opaque union type
+					// _valueOfLastDebugType = _debugInfoBuilder->createForwardDecl(llvm::dwarf::DW_TAG_union_type, type->name(),)
+					return;
+				}
+			}
+
+			std::vector<llvm::DIType*> members;
+			for (auto& value : unionDeclaration->members()) {
+				members.push_back(getLLVMDebugType(value->type()));
+			}
+
+			// _valueOfLastDebugType = _debugInfoBuilder->createUnionType(scope, type->name(), _debugFile, );
+			_customTypeCache[type->name()] = _valueOfLastDebugType;
+			break;
+		}
+		case TypeDeclarationKind::ENUM:
+		{
+			// _valueOfLastDebugType = _debugInfoBuilder->createEnumerationType(scope, type->name(), debugFile, line, );
+			break;
+		}
+		default:
+			assert(false);
+			break;
+		}
+		_outerTypes.pop_back();
 	}
 
 	void LLVMDebugTypeEmitVisitor::setDebugInfoBuilder(llvm::DIBuilder* debugInfoBuilder) {
 		_debugInfoBuilder = debugInfoBuilder;
+	}
+
+	void LLVMDebugTypeEmitVisitor::setDebugScopeManager(LLVMDebugScopeManager* debugScopeManager) {
+		_debugScopeManager = debugScopeManager;
 	}
 }

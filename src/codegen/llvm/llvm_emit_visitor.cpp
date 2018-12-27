@@ -168,18 +168,10 @@ namespace klong {
 	void LLVMEmitVisitor::emitDebugLocation(Stmt* stmt) {
 		if (!stmt)
 			return _builder.SetCurrentDebugLocation(llvm::DebugLoc());
-		llvm::DIScope *scope = getDebugScope();
+		llvm::DIScope *scope = _debugScopeManager.getDebugScope();
 		auto startLocation = stmt->sourceRange().start;
 		_builder.SetCurrentDebugLocation(
 			llvm::DebugLoc::get(startLocation.line(), 0, scope));
-	}
-
-	llvm::DIScope* LLVMEmitVisitor::getDebugScope() {
-		llvm::DIScope* scope = _debugFile;
-		if (!_debugBlocks.empty()) {
-			scope = _debugBlocks.back();
-		}
-		return scope;
 	}
 
     void LLVMEmitVisitor::visitModule(Module* module) {
@@ -199,8 +191,12 @@ namespace klong {
 
 			_debugInfoBuilder = std::make_unique<llvm::DIBuilder>(*_module);
 			_debugTypeEmitVisitor.setDebugInfoBuilder(_debugInfoBuilder.get());
-			_debugFile = _debugInfoBuilder->createFile(module->filename(), module->parentpath());
-			_debugCompilationUnit = _debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugFile, "Klong Compiler", false, "", 0,
+			_debugTypeEmitVisitor.setDebugScopeManager(&_debugScopeManager);
+			
+			auto debugFile = _debugInfoBuilder->createFile(module->filename(), module->parentpath());
+			_debugScopeManager.setDebugFile(debugFile);
+
+			_debugCompilationUnit = _debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, debugFile, "Klong Compiler", false, "", 0,
 			        module->filenameWithoutExtension()+".pdb", llvm::DICompileUnit::DebugEmissionKind::FullDebug,
                     0, true);
 		}
@@ -267,13 +263,13 @@ namespace klong {
         llvm::Function* function = _module->getFunction(stmt->name());
 
 		if (_session->emitDebugInfo()) {
-			llvm::DIScope* fContext = _debugFile;
+			llvm::DIFile* debugFile= _debugScopeManager.getDebugFile();
 			llvm::DISubroutineType* subroutineType = (llvm::DISubroutineType*) (_debugTypeEmitVisitor.getLLVMDebugType(stmt->functionType()));
 			auto startLocation = stmt->sourceRange().start;
-			llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(fContext, stmt->name(), stmt->name(), _debugFile, startLocation.line(),
+			llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(debugFile, stmt->name(), stmt->name(), debugFile, startLocation.line(),
 				subroutineType, !stmt->isPublic(), true, startLocation.line(), llvm::DINode::FlagZero, false);
 			function->setSubprogram(subProgram);
-			_debugBlocks.push_back(subProgram);
+			_debugScopeManager.push(subProgram);
 			// unset the location for the prologue emission
 			emitDebugLocation((Stmt*) nullptr);
 		}
@@ -294,11 +290,11 @@ namespace klong {
 				
 				if (_session->emitDebugInfo()) {
 					auto startLocation = param->sourceRange().start;
-					llvm::DIScope *scope = getDebugScope();
+					llvm::DIScope *scope = _debugScopeManager.getDebugScope();
 					
 					auto paramLLVMDebugType = _debugTypeEmitVisitor.getLLVMDebugType(paramType);
 
-					llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createParameterVariable(scope, param->name(), argNo, _debugFile,
+					llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createParameterVariable(scope, param->name(), argNo, _debugScopeManager.getDebugFile(),
 						startLocation.line(), paramLLVMDebugType, true);
 
 					_debugInfoBuilder->insertDeclare(paramAlloc, debugDescriptor, _debugInfoBuilder->createExpression(),
@@ -320,7 +316,7 @@ namespace klong {
             _builder.CreateRet(nullptr);
         }
 		if (_session->emitDebugInfo()) {
-			_debugBlocks.pop_back();
+			_debugScopeManager.pop();
 		}
         llvm::verifyFunction(*function);
     }
@@ -387,8 +383,9 @@ namespace klong {
             auto linkage = stmt->isPublic() ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::InternalLinkage;
             global->setLinkage(linkage);
 			if (_session->emitDebugInfo()) {
-				llvm::DIScope *scope = getDebugScope();
-				llvm::DIGlobalVariableExpression* debugDescriptor = _debugInfoBuilder->createGlobalVariableExpression(scope, stmt->name(), stmt->name(), _debugFile,
+				auto debugFile = _debugScopeManager.getDebugFile();
+				auto scope = _debugScopeManager.getDebugScope();
+				llvm::DIGlobalVariableExpression* debugDescriptor = _debugInfoBuilder->createGlobalVariableExpression(scope, stmt->name(), stmt->name(), debugFile,
 					startLocation.line(), _debugTypeEmitVisitor.getLLVMDebugType(stmt->type()), !stmt->isPublic());
 
 				auto prevGlobals = _debugCompilationUnit->getGlobalVariables();
@@ -407,8 +404,9 @@ namespace klong {
 			auto stackPtr = _builder.CreateAlloca(type);
 
 			if (_session->emitDebugInfo()) {
-				llvm::DIScope *scope = getDebugScope();
-				llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createAutoVariable(scope, stmt->name(), _debugFile,
+				auto debugFile = _debugScopeManager.getDebugFile();
+				auto scope = _debugScopeManager.getDebugScope();
+				llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createAutoVariable(scope, stmt->name(), debugFile,
 					startLocation.line(), _debugTypeEmitVisitor.getLLVMDebugType(stmt->type()), true);
 
 				_debugInfoBuilder->insertDeclare(stackPtr, debugDescriptor, _debugInfoBuilder->createExpression(),

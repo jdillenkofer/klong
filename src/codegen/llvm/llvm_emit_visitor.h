@@ -6,6 +6,7 @@
 #include "ast/stmt.h"
 #include "ast/visitor.h"
 
+#include "llvm_debug_scope_manager.h"
 #include "llvm_type_emit_visitor.h"
 #include "llvm_debug_type_emit_visitor.h"
 
@@ -80,17 +81,15 @@ namespace klong {
 		std::shared_ptr<ExternalDeclaration> translateToExternalDeclaration(Stmt* stmt);
 
 		void emitDebugLocation(Stmt* stmt);
-		llvm::DIScope* getDebugScope();
     private:
         llvm::LLVMContext _context;
 
         llvm::IRBuilder<> _builder;
 
 		// DEBUG INFO
-		llvm::DIFile* _debugFile;
 		llvm::DICompileUnit* _debugCompilationUnit;
 		std::unique_ptr<llvm::DIBuilder> _debugInfoBuilder;
-		std::vector<llvm::DIScope*> _debugBlocks;
+		LLVMDebugScopeManager _debugScopeManager;
         
 		LLVMTypeEmitVisitor _typeEmitVisitor;
 		LLVMDebugTypeEmitVisitor _debugTypeEmitVisitor;
