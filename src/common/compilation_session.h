@@ -34,14 +34,8 @@ namespace klong {
         void completeTypechecked(const std::string& modulepath);
         bool isTypechecked(const std::string& modulepath);
 
-		bool emitDebugInfo() const {
-			return _emitDebugInfo;
-		}
-
-		bool emitDwarf() const {
-			return _emitDwarf;
-		}
-
+		bool emitDebugInfo() const;
+		bool emitDwarf() const;
     private:
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
         std::map<std::string, SymbolInfo> _globalScope;
@@ -49,7 +43,7 @@ namespace klong {
         std::set<std::string> _resolvedModules;
         std::set<std::string> _typecheckedModules;
         CompilationResult _result;
-		bool _emitDebugInfo = true; // TODO: CREATE A FLAG FOR THIS
-		bool _emitDwarf = false; // TODO: CREATE A FLAG FOR THIS
+		bool _emitDebugInfo = false; // TODO: CREATE A FLAG FOR THIS
+		bool _emitDwarf = true; // TODO: CREATE A FLAG FOR THIS
     };
 }

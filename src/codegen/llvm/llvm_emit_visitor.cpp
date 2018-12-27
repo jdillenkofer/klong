@@ -274,6 +274,8 @@ namespace klong {
 				subroutineType, stmt->isPublic(), true, 0, llvm::DINode::FlagPrototyped, false);
 			function->setSubprogram(subProgram);
 			_debugBlocks.push_back(subProgram);
+			// unset the location for the prologue emission
+			emitDebugLocation((Stmt*) nullptr);
 		}
 
         // Function body
@@ -281,16 +283,31 @@ namespace klong {
         _builder.SetInsertPoint(bb);
 
         {
-			if (_session->emitDebugInfo()) {
-				emitDebugLocation((Stmt*) nullptr);
-			}
-            size_t i = 0;
+            size_t argNo = 0;
             for (auto& arg : function->args()) {
-                llvm::Type* paramType = _typeEmitVisitor.getLLVMType(stmt->params()[i]->type());
-                auto param = _builder.CreateAlloca(paramType);
-                _builder.CreateStore(&arg, param);
-                _namedValues[stmt->params()[i]] = param;
-                i++;
+				auto param = stmt->params()[argNo++];
+				auto paramType = param->type();
+
+				auto paramLLVMType = _typeEmitVisitor.getLLVMType(paramType);
+                
+				auto paramAlloc = _builder.CreateAlloca(paramLLVMType);
+				
+				if (_session->emitDebugInfo()) {
+					auto startLocation = param->sourceRange().start;
+					llvm::DIScope *scope = getDebugScope();
+					
+					auto paramLLVMDebugType = _debugTypeEmitVisitor.getLLVMDebugType(paramType);
+
+					llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createParameterVariable(scope, param->name(), argNo, _debugFile,
+						startLocation.line(), paramLLVMDebugType, true);
+
+					_debugInfoBuilder->insertDeclare(paramAlloc, debugDescriptor, _debugInfoBuilder->createExpression(),
+						llvm::DebugLoc::get(startLocation.line(), 0, scope),
+						_builder.GetInsertBlock());
+				}
+
+                _builder.CreateStore(&arg, paramAlloc);
+                _namedValues[param] = paramAlloc;
             }
         }
 

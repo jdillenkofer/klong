@@ -14,6 +14,9 @@ def isKlongSource(path):
 def isDebugInfo(path):
     return os.path.isfile(path) and path.endswith(".pdb")
 
+def isIncrementalLinkerFile(path):
+    return os.path.isfile(path) and path.endswith(".ilk")
+
 def isObjectFile(path):
     return os.path.isfile(path) and path.endswith(".o")
 
@@ -21,7 +24,7 @@ def isExecutable(path):
     return os.path.isfile(path) and path.endswith(".exe")
 
 def isBuildArtifact(path):
-    return isDebugInfo(path) or isObjectFile(path) or isExecutable(path)
+    return isDebugInfo(path) or isIncrementalLinkerFile(path) or isObjectFile(path) or isExecutable(path)
 
 def isDir(path):
     return os.path.isdir(path)
@@ -47,7 +50,7 @@ def link(objfile, executable):
         result = subprocess.call([
             "link.exe", 
             "/NOLOGO",
-            #"/DEBUG", # This generates pdb files
+            "/DEBUG", # This generates pdb files
             "/SUBSYSTEM:CONSOLE", 
             "/MACHINE:x64", 
             "/DEFAULTLIB:libcmt", 

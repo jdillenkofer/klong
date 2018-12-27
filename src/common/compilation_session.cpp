@@ -92,4 +92,12 @@ namespace klong {
     bool CompilationSession::isTypechecked(const std::string& modulepath) {
         return std::find(_typecheckedModules.begin(), _typecheckedModules.end(), modulepath) != _typecheckedModules.end();
     }
+
+	bool CompilationSession::emitDebugInfo() const {
+		return _emitDebugInfo;
+	}
+
+	bool CompilationSession::emitDwarf() const {
+		return _emitDwarf;
+	}
 }
