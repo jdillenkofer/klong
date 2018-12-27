@@ -87,7 +87,8 @@ namespace klong {
         llvm::IRBuilder<> _builder;
 
 		// DEBUG INFO
-		llvm::DIFile* _debugUnit;
+		llvm::DIFile* _debugFile;
+		llvm::DICompileUnit* _debugCompilationUnit;
 		std::unique_ptr<llvm::DIBuilder> _debugInfoBuilder;
 		std::vector<llvm::DIScope*> _debugBlocks;
         

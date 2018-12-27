@@ -175,7 +175,7 @@ namespace klong {
 	}
 
 	llvm::DIScope* LLVMEmitVisitor::getDebugScope() {
-		llvm::DIScope* scope = _debugUnit;
+		llvm::DIScope* scope = _debugFile;
 		if (!_debugBlocks.empty()) {
 			scope = _debugBlocks.back();
 		}
@@ -199,8 +199,8 @@ namespace klong {
 
 			_debugInfoBuilder = std::make_unique<llvm::DIBuilder>(*_module);
 			_debugTypeEmitVisitor.setDebugInfoBuilder(_debugInfoBuilder.get());
-			_debugUnit = _debugInfoBuilder->createFile(module->filename(), module->parentpath());
-			_debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugUnit, "Klong Compiler", false, "", 0,
+			_debugFile = _debugInfoBuilder->createFile(module->filename(), module->parentpath());
+			_debugCompilationUnit = _debugInfoBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, _debugFile, "Klong Compiler", false, "", 0,
 			        module->filenameWithoutExtension()+".pdb", llvm::DICompileUnit::DebugEmissionKind::FullDebug,
                     0, true);
 		}
@@ -267,10 +267,10 @@ namespace klong {
         llvm::Function* function = _module->getFunction(stmt->name());
 
 		if (_session->emitDebugInfo()) {
-			llvm::DIScope* fContext = _debugUnit;
+			llvm::DIScope* fContext = _debugFile;
 			llvm::DISubroutineType* subroutineType = (llvm::DISubroutineType*) (_debugTypeEmitVisitor.getLLVMDebugType(stmt->functionType()));
 			auto startLocation = stmt->sourceRange().start;
-			llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(fContext, stmt->name(), stmt->name(), _debugUnit, startLocation.line(),
+			llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(fContext, stmt->name(), stmt->name(), _debugFile, startLocation.line(),
 				subroutineType, stmt->isPublic(), true, 0, llvm::DINode::FlagPrototyped, false);
 			function->setSubprogram(subProgram);
 			_debugBlocks.push_back(subProgram);
@@ -371,10 +371,11 @@ namespace klong {
             global->setLinkage(linkage);
 			if (_session->emitDebugInfo()) {
 				llvm::DIScope *scope = getDebugScope();
-				llvm::DIGlobalVariableExpression* debugDescriptor = _debugInfoBuilder->createGlobalVariableExpression(scope, stmt->name(), stmt->name(), _debugUnit,
+				llvm::DIGlobalVariableExpression* debugDescriptor = _debugInfoBuilder->createGlobalVariableExpression(scope, stmt->name(), stmt->name(), _debugFile,
 					startLocation.line(), _debugTypeEmitVisitor.getLLVMDebugType(stmt->type()), !stmt->isPublic());
 
-				// TODO: how to insert globals?
+				auto prevGlobals = _debugCompilationUnit->getGlobalVariables();
+				_debugCompilationUnit->replaceGlobalVariables(llvm::DIGlobalVariableExpressionArray(prevGlobals, debugDescriptor));
 			}
 
             if (stmt->isConst()) {
@@ -390,7 +391,7 @@ namespace klong {
 
 			if (_session->emitDebugInfo()) {
 				llvm::DIScope *scope = getDebugScope();
-				llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createAutoVariable(scope, stmt->name(), _debugUnit,
+				llvm::DILocalVariable* debugDescriptor = _debugInfoBuilder->createAutoVariable(scope, stmt->name(), _debugFile,
 					startLocation.line(), _debugTypeEmitVisitor.getLLVMDebugType(stmt->type()), true);
 
 				_debugInfoBuilder->insertDeclare(stackPtr, debugDescriptor, _debugInfoBuilder->createExpression(),
