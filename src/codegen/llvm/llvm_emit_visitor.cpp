@@ -22,7 +22,7 @@ namespace klong {
         _context(),
         _builder(_context),
         _typeEmitVisitor(_context, dataLayout),
-		_debugTypeEmitVisitor(_context, dataLayout) {
+		_debugTypeEmitVisitor(_context, dataLayout, &_debugScopeManager) {
 
     }
 
@@ -191,7 +191,6 @@ namespace klong {
 
 			_debugInfoBuilder = std::make_unique<llvm::DIBuilder>(*_module);
 			_debugTypeEmitVisitor.setDebugInfoBuilder(_debugInfoBuilder.get());
-			_debugTypeEmitVisitor.setDebugScopeManager(&_debugScopeManager);
 			
 			auto debugFile = _debugInfoBuilder->createFile(module->filename(), module->parentpath());
 			_debugScopeManager.setDebugFile(debugFile);

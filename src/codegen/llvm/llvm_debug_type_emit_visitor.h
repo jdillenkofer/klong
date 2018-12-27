@@ -13,10 +13,11 @@
 namespace klong {
 	class LLVMDebugTypeEmitVisitor : public TypeVisitor {
 	public:
-		LLVMDebugTypeEmitVisitor(llvm::LLVMContext& context, const llvm::DataLayout dataLayout) :
+		LLVMDebugTypeEmitVisitor(llvm::LLVMContext& context, const llvm::DataLayout dataLayout, LLVMDebugScopeManager* debugScopeManager) :
 			_context(context),
 			_dataLayout(dataLayout),
-			_debugInfoBuilder(nullptr) {
+			_debugInfoBuilder(nullptr),
+			_debugScopeManager(debugScopeManager) {
 
 		}
 
@@ -29,7 +30,6 @@ namespace klong {
 		void visitCustomType(CustomType *type) override;
 
 		void setDebugInfoBuilder(llvm::DIBuilder* debugInfoBuilder);
-		void setDebugScopeManager(LLVMDebugScopeManager* debugScopeManager);
 	private:
 		std::map<std::string, llvm::DIType*> _customTypeCache;
 		llvm::DIType* _valueOfLastDebugType = nullptr;

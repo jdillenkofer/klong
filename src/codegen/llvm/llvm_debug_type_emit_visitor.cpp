@@ -128,7 +128,7 @@ namespace klong {
 				auto memberDebugType = _debugInfoBuilder->createMemberType(scope, value->name(), debugFile, value->sourceRange().start.line(), 
 					actualDebugType->getSizeInBits(), actualDebugType->getAlignInBits(), actualDebugType->getOffsetInBits(), llvm::DINode::DIFlags::FlagZero, actualDebugType);
 				structSizeInBits += actualDebugType->getSizeInBits();
-				elements.push_back(actualDebugType);
+				elements.push_back(memberDebugType);
 			}
 
 			llvm::DINodeArray members = _debugInfoBuilder->getOrCreateArray(elements);
@@ -177,9 +177,5 @@ namespace klong {
 
 	void LLVMDebugTypeEmitVisitor::setDebugInfoBuilder(llvm::DIBuilder* debugInfoBuilder) {
 		_debugInfoBuilder = debugInfoBuilder;
-	}
-
-	void LLVMDebugTypeEmitVisitor::setDebugScopeManager(LLVMDebugScopeManager* debugScopeManager) {
-		_debugScopeManager = debugScopeManager;
 	}
 }
