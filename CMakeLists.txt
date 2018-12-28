@@ -107,6 +107,7 @@ set(HEADER_FILES
     src/codegen/llvm/llvm_type_emit_visitor.h
 	src/codegen/llvm/llvm_debug_scope_manager.h
 	src/codegen/llvm/llvm_debug_type_emit_visitor.h
+	src/linker/microsoft_craziness.h
 	src/linker/linker.h
     src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
