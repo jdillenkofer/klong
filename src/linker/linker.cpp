@@ -50,12 +50,10 @@ namespace klong {
 		command += "\"";
 #elif defined(__unix__) || defined(__unix)
 		// FOR APPLE USE THESE: || (defined(__APPLE__) && defined(__MACH__))
-		command += "\"";
 		command += "gcc -o \"" + executableName + "\" ";
 		for (auto& objfile : objfiles) {
 			command += "\"" + objfile + "\" ";
 		}
-		command += "\"";
 #endif
 		system(command.c_str());
 	}
