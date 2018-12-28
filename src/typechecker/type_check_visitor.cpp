@@ -512,6 +512,9 @@ namespace klong {
         }
 
         auto declarationType = customType->resolvesTo();
+		if (declarationType == nullptr) {
+			return;
+		}
         switch(declarationType->typeDeclarationKind()) {
             case TypeDeclarationKind::STRUCT: 
 			case TypeDeclarationKind::UNION: {

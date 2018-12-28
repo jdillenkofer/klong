@@ -72,8 +72,12 @@ namespace klong {
             if (i == 0 && sourceRange.valid()) {
                 std::cout << "ERROR - file: " << sourceRange.start.filename() << std::endl;
             }
-            std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
-            std::cout << sourceRange.getRelevantSourceText() << std::flush;
+			if (sourceRange.valid()) {
+				std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
+				std::cout << sourceRange.getRelevantSourceText() << std::flush;
+			} else {
+				std::cout << error.what() << std::endl;
+			}
         }
     }
 

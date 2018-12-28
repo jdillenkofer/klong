@@ -380,20 +380,20 @@ namespace klong {
         Token pathToken = consume(TokenType::STRING_LITERAL, "Expect path string.");
         Token semicolonToken = consume(TokenType::SEMICOLON, "Expect ';' after import stmt.");
 
-        auto absolutePath = std::filesystem::absolute(pathToken.value).string();
+        auto importPath = pathToken.value;
 
         // try as relative path
-        auto filename = std::filesystem::path(pathToken.value).filename().string();
-        auto relativeBasePath = std::filesystem::path(_lexer->absolutepath()).remove_filename().string();
+		auto relativeBasePath = std::filesystem::path(_lexer->absolutepath()).remove_filename().string();
 
-        auto sourceFile = std::make_shared<SourceFile>(relativeBasePath + filename);
+        auto sourceFile = std::make_shared<SourceFile>(relativeBasePath + importPath);
         auto result = sourceFile->loadFromFile();
         if (!result) {
             // try as absolute path
-            sourceFile = std::make_shared<SourceFile>(absolutePath);
+            sourceFile = std::make_shared<SourceFile>(importPath);
             result = sourceFile->loadFromFile();
             if (!result) {
-                _session->getResult().addError(CompilationError(pathToken.sourceRange,
+				auto filename = std::filesystem::path(pathToken.value).filename().string();
+				_session->getResult().addError(CompilationError(pathToken.sourceRange,
                         "Cannot find imported source file " + filename + " in " + _lexer->filename() + "."));
                 return nullptr;
             }

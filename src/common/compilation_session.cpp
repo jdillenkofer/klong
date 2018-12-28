@@ -70,7 +70,11 @@ namespace klong {
     }
 
     TypeDeclaration* CompilationSession::findTypeDeclaration(std::string name) {
-        return (*_typeDeclarations.find(name)).second;
+		auto typeDecl = _typeDeclarations.find(name);
+		if (typeDecl != _typeDeclarations.end()) {
+			return (*typeDecl).second;
+		}
+		return nullptr;
     }
 
     void CompilationSession::completeResolved(const std::string& modulepath) {

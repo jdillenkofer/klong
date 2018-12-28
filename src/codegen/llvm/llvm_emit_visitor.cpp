@@ -168,6 +168,12 @@ namespace klong {
 	void LLVMEmitVisitor::emitDebugLocation(Stmt* stmt) {
 		if (!stmt)
 			return _builder.SetCurrentDebugLocation(llvm::DebugLoc());
+
+		// don't emit DebugLocation for comments
+		if (stmt->kind() == StatementKind::COMMENT) {
+			return;
+		}
+
 		llvm::DIScope *scope = _debugScopeManager.getDebugScope();
 		auto startLocation = stmt->sourceRange().start;
 		_builder.SetCurrentDebugLocation(

@@ -1,0 +1,9 @@
+import "D:/dev/c++/klong/examples/imports/vec3.kg";
+
+pub fun main() -> i32 {
+    let v : Vec3;
+    v.x = 5.0;
+    v.y = 2.0;
+    v.z = 0.0;
+    return cast<i32> v.z;
+}
