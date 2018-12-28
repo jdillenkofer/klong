@@ -10,6 +10,7 @@
 #include "parser/parser.h"
 #include "resolver/resolver.h"
 #include "typechecker/typechecker.h"
+#include "linker/linker.h"
 #include "graphviz/dotfile_emitter.h"
 
 namespace klong {
@@ -170,11 +171,6 @@ namespace klong {
                                   std::chrono::duration_cast<std::chrono::milliseconds>(
                                           llvmEmissionEnd - llvmEmissionStart).count() <<
                                   "ms" << std::endl;
-
-                        std::cout << "overall time: " <<
-                                  std::chrono::duration_cast<std::chrono::milliseconds>(
-                                          llvmEmissionEnd - parseStart).count() <<
-                                  "ms" << std::endl;
                     }
             );
 
@@ -205,6 +201,35 @@ namespace klong {
                 }
             }
         }
+
+		/* LINKING */
+		{
+			auto linkStart = std::chrono::high_resolution_clock::now();
+			defer(
+				if (_option.verbose) {
+					auto linkEnd = std::chrono::high_resolution_clock::now();
+					std::cout << "Link time: " <<
+						std::chrono::duration_cast<std::chrono::milliseconds>(
+							linkEnd - linkStart).count() <<
+						"ms" << std::endl;
+
+					std::cout << "overall time: " <<
+						std::chrono::duration_cast<std::chrono::milliseconds>(
+							linkEnd - parseStart).count() <<
+						"ms" << std::endl;
+				}
+			);
+			if (!_option.disableLinking) {
+				std::vector<std::string> objPaths;
+				auto modules = _session.modules();
+				for (auto& module : modules) {
+					objPaths.push_back(module->filenameWithoutExtension() + ".o");
+				}
+
+				Linker linker;
+				linker.link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out");
+			}
+		}
 
         /* GRAPHVIZ */
         if (_option.emitDotFile) {

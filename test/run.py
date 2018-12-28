@@ -42,7 +42,7 @@ def removeBuildArtifacts(path):
         os.remove(buildArtifact)
 
 def compile(path_to_compiler, testfile):
-    return subprocess.call([path_to_compiler, testfile], stdout=subprocess.PIPE)
+    return subprocess.call([path_to_compiler, "-c", testfile], stdout=subprocess.PIPE)
 
 def link(objfile, executable):
     system = platform.system()
@@ -69,7 +69,6 @@ def link(objfile, executable):
             objfile
         ], stdout=subprocess.PIPE)
     return result
-        
 
 def run(executable):
     return subprocess.call([os.path.join(".", executable)], stdout=subprocess.PIPE)
