@@ -48,7 +48,8 @@ namespace klong {
 		command += "/LIBPATH:\"" + umPath + "\" ";
 		command += "/LIBPATH:\"" + ucrtPath + "\"";
 		command += "\"";
-#elif UNIX
+#elif defined(__unix__) || defined(__unix)
+		// FOR APPLE USE THESE: || (defined(__APPLE__) && defined(__MACH__))
 		command += "\"";
 		command += "gcc -o \"" + executableName + "\" ";
 		for (auto& objfile : objfiles) {
