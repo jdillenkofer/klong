@@ -39,7 +39,7 @@ namespace klong {
 		if (emitDebugInfo) {
 			command += "/DEBUG ";
 		}
-		command += "/SUBSYSTEM:CONSOLE ";
+		// command += "/SUBSYSTEM:CONSOLE ";
 		command += "/MACHINE:x64 ";
 		command += "/DEFAULTLIB:libcmt ";
 		for (auto& objfile : objfiles) {

@@ -44,10 +44,14 @@ namespace klong {
     bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType) {
         llvmEmitter.emit(module, &_session);
 
+		std::filesystem::create_directory("obj");
+
         auto filename = module->filenameWithoutExtension();
         if (_option.disableLinking && _option.useCustomOutputPath) {
             filename = _option.customOutputPath;
-        }
+		} else {
+			filename = _session.registerAndReturnUniqueObjectFilepath(filename);
+		}
 
         llvmEmitter.writeToFile(filename, outputFileType);
         return true;
@@ -174,10 +178,10 @@ namespace klong {
                     }
             );
 
-            std::mutex printLock;
+            std::mutex printIRLock;
             std::vector<std::shared_future<bool>> compileFutures;
             for (auto& module : _session.modules()) {
-                auto compileFuture = std::async([this, &printLock, targetTriple, module]() mutable {
+                auto compileFuture = std::async([this, &printIRLock, targetTriple, module]() mutable {
                     LLVMEmitter llvmEmitter(targetTriple);
                     auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
                     if (!codegen(module, llvmEmitter, outputFileType)) {
@@ -185,7 +189,7 @@ namespace klong {
                     }
 
                     if (_option.printIR) {
-                        std::unique_lock<std::mutex> lock(printLock);
+                        std::unique_lock<std::mutex> lock(printIRLock);
                         llvmEmitter.printIR();
                     }
                     return true;
@@ -220,12 +224,8 @@ namespace klong {
 				}
 			);
 			if (!_option.disableLinking) {
-				std::vector<std::string> objPaths;
-				auto modules = _session.modules();
-				for (auto& module : modules) {
-					objPaths.push_back(module->filenameWithoutExtension() + ".o");
-				}
 
+				auto objPaths = _session.getObjectFilenames();
 				Linker linker;
 				linker.link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo);
 			}

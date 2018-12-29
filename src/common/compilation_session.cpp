@@ -97,6 +97,28 @@ namespace klong {
         return std::find(_typecheckedModules.begin(), _typecheckedModules.end(), modulepath) != _typecheckedModules.end();
     }
 
+	std::string CompilationSession::registerAndReturnUniqueObjectFilepath(std::string prefixname) {
+		std::string prefixPath = "obj/" + prefixname;
+		std::string fileExtension = ".o";
+		std::string uniqueObjectFilepath = prefixPath + fileExtension;
+		
+		std::unique_lock<std::mutex> lock(*_objectFilenamingLock);
+		uint32_t numberSuffix = 1;
+		while (
+			// std::filesystem::exists(uniqueObjectFilepath) || 
+			std::find(_objectFilenames.begin(), _objectFilenames.end(), uniqueObjectFilepath) != _objectFilenames.end()) {
+			uniqueObjectFilepath = prefixPath + "_" + std::to_string(numberSuffix) + fileExtension;
+			numberSuffix++;
+		}
+		_objectFilenames.push_back(uniqueObjectFilepath);
+		// remove the .o fileExtension
+		return uniqueObjectFilepath.substr(0, uniqueObjectFilepath.size() - fileExtension.size());
+	}
+
+	std::vector<std::string> CompilationSession::getObjectFilenames() {
+		return _objectFilenames;
+	}
+
 	bool CompilationSession::emitDebugInfo() const {
 		return _emitDebugInfo;
 	}

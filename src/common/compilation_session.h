@@ -5,6 +5,7 @@
 #include "common/symbol_info.h"
 
 #include <map>
+#include <mutex>
 #include <set>
 #include <memory>
 #include <algorithm>
@@ -37,6 +38,9 @@ namespace klong {
         void completeTypechecked(const std::string& modulepath);
         bool isTypechecked(const std::string& modulepath);
 
+		std::string registerAndReturnUniqueObjectFilepath(std::string prefixname);
+		std::vector<std::string> getObjectFilenames();
+
 		bool emitDebugInfo() const;
 		bool emitDwarf() const;
     private:
@@ -45,6 +49,13 @@ namespace klong {
         std::map<std::string, std::shared_ptr<Module>> _allModules;
         std::set<std::string> _resolvedModules;
         std::set<std::string> _typecheckedModules;
+
+		std::vector<std::string> _objectFilenames;
+
+		// we use a pointer to a mutex here, 
+		// because otherwise the move operator is deleted
+		std::shared_ptr<std::mutex> _objectFilenamingLock = std::make_shared<std::mutex>();
+
         CompilationResult _result;
 		bool _emitDebugInfo;
 		bool _emitDwarf;
