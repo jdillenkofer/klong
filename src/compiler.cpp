@@ -44,8 +44,6 @@ namespace klong {
     bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType) {
         llvmEmitter.emit(module, &_session);
 
-		std::filesystem::create_directory("obj");
-
         auto filename = module->filenameWithoutExtension();
         if (_option.disableLinking && _option.useCustomOutputPath) {
             filename = _option.customOutputPath;
@@ -177,6 +175,10 @@ namespace klong {
                                   "ms" << std::endl;
                     }
             );
+
+            if (!(_option.disableLinking && _option.useCustomOutputPath)) {
+                std::filesystem::create_directory("obj");
+            }
 
             std::mutex printIRLock;
             std::vector<std::shared_future<bool>> compileFutures;
