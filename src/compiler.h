@@ -24,7 +24,7 @@ namespace klong {
     private:
         void printResult(CompilationResult &result);
     private:
-        CompilationSession _session;
         Option _option;
+        CompilationSession _session;
     };
 }

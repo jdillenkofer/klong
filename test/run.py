@@ -42,7 +42,7 @@ def removeBuildArtifacts(path):
         os.remove(buildArtifact)
 
 def compile(path_to_compiler, testfile):
-    return subprocess.call([path_to_compiler, "-o", testfile[:-3] , testfile], stdout=subprocess.PIPE)
+    return subprocess.call([path_to_compiler, "-o", testfile[:-3] + ".exe" , testfile], stdout=subprocess.PIPE)
 
 def run(executable):
     return subprocess.call([os.path.join(".", executable)], stdout=subprocess.PIPE)
@@ -60,7 +60,8 @@ def runTests(path_to_compiler, tests, successCallback, errorCallback):
         try:
             compile_result = compile(path_to_compiler, test) == 0
             if (compile_result):
-                run_result = run(test[:-3] + ".exe") == 0
+                executable = test[:-3] + ".exe"
+                run_result = run(executable) == 0
         except:
             pass
 

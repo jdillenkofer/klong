@@ -31,8 +31,6 @@ namespace klong {
 		std::string ucrtPath = ToNarrow(result.windows_sdk_ucrt_library_path);
 		free_resources(&result);
 
-		executableName += ".exe";
-
 		command += "\"";
 		command += "\"" + vsExePath + "\\link.exe\" ";
 		command += "/NOLOGO ";
@@ -52,7 +50,11 @@ namespace klong {
 		command += "\"";
 #elif defined(__unix__) || defined(__unix)
 		// FOR APPLE USE THESE: || (defined(__APPLE__) && defined(__MACH__))
-		command += "gcc -o \"" + executableName + "\" ";
+		command += "gcc ";
+        if (emitDebugInfo) {
+            command += "-g ";
+        }
+        command += "-o \"" + executableName + "\" ";
 		for (auto& objfile : objfiles) {
 			command += "\"" + objfile + "\" ";
 		}
