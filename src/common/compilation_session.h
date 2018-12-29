@@ -12,6 +12,9 @@
 namespace klong {
     class CompilationSession {
     public:
+		explicit CompilationSession(bool emitDebugInfo, bool emitDwarf):
+			_emitDebugInfo(emitDebugInfo), _emitDwarf(emitDwarf) {
+		}
 
         CompilationResult& getResult();
 
@@ -43,7 +46,7 @@ namespace klong {
         std::set<std::string> _resolvedModules;
         std::set<std::string> _typecheckedModules;
         CompilationResult _result;
-		bool _emitDebugInfo = false; // TODO: CREATE A FLAG FOR THIS
-		bool _emitDwarf = true; // TODO: CREATE A FLAG FOR THIS
+		bool _emitDebugInfo;
+		bool _emitDwarf;
     };
 }

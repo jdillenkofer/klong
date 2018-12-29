@@ -21,7 +21,7 @@ std::string ToNarrow(const wchar_t *s, char dfault = '?', const std::locale& loc
 #endif
 
 namespace klong {
-	void Linker::link(const std::vector<std::string>& objfiles, std::string executableName) {
+	void Linker::link(const std::vector<std::string>& objfiles, std::string executableName, bool emitDebugInfo) {
 		std::string command = "";
 #ifdef WIN32
 		Find_Result result = find_visual_studio_and_windows_sdk();
@@ -36,7 +36,9 @@ namespace klong {
 		command += "\"";
 		command += "\"" + vsExePath + "\\link.exe\" ";
 		command += "/NOLOGO ";
-		command += "/DEBUG ";
+		if (emitDebugInfo) {
+			command += "/DEBUG ";
+		}
 		command += "/SUBSYSTEM:CONSOLE ";
 		command += "/MACHINE:x64 ";
 		command += "/DEFAULTLIB:libcmt ";

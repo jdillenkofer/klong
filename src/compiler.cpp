@@ -184,7 +184,7 @@ namespace klong {
                         return false;
                     }
 
-                    if (_option.verbose) {
+                    if (_option.printIR) {
                         std::unique_lock<std::mutex> lock(printLock);
                         llvmEmitter.printIR();
                     }
@@ -227,7 +227,7 @@ namespace klong {
 				}
 
 				Linker linker;
-				linker.link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out");
+				linker.link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo);
 			}
 		}
 

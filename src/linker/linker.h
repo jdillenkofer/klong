@@ -6,6 +6,6 @@
 namespace klong {
 	class Linker {
 	public:
-		void link(const std::vector<std::string>& objfiles, std::string executableName);
+		void link(const std::vector<std::string>& objfiles, std::string executableName, bool emitDebugInfo);
 	};
 }
