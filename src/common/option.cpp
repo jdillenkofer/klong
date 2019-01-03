@@ -5,7 +5,7 @@ namespace klong {
         Result<Option, std::string> optionResult;
         Option option;
         int c;
-        while ((c = getopt(argc, argv, "hvcso:b:d")) != -1)
+        while ((c = getopt(argc, argv, "hvcgdso:b:ip")) != -1)
         {
             switch (c) {
                 case 'v':
@@ -14,8 +14,15 @@ namespace klong {
                 case 'c':
                     option.disableLinking = true;
                     break;
+				case 'g':
+					option.emitDebugInfo = true;
+					break;
+				case 'd':
+					option.emitDwarf = false;
+					break;
                 case 's':
                     option.emitAssemblyFile = true;
+					option.disableLinking = true;
                     break;
                 case 'o':
                     option.useCustomOutputPath = true;
@@ -25,7 +32,10 @@ namespace klong {
                     option.isCustomTarget = true;
                     option.customTarget = std::string(optarg);
                     break;
-                case 'd':
+				case 'i':
+					option.printIR = true;
+					break;
+                case 'p':
                     option.emitDotFile = true;
                     break;
                 case 'h':

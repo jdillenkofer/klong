@@ -70,6 +70,7 @@ set(SOURCE_FILES
     src/codegen/llvm/llvm_type_emit_visitor.cpp
 	src/codegen/llvm/llvm_debug_scope_manager.cpp
 	src/codegen/llvm/llvm_debug_type_emit_visitor.cpp
+	src/linker/linker.cpp
     src/graphviz/dotfile_visitor.cpp
     src/graphviz/dotfile_emitter.cpp
 	src/common/compilation_session.cpp)
@@ -106,6 +107,8 @@ set(HEADER_FILES
     src/codegen/llvm/llvm_type_emit_visitor.h
 	src/codegen/llvm/llvm_debug_scope_manager.h
 	src/codegen/llvm/llvm_debug_type_emit_visitor.h
+	src/linker/microsoft_craziness.h
+	src/linker/linker.h
     src/graphviz/dotfile_visitor.h
 	src/graphviz/dotfile_emitter.h
     src/common/compilation_session.h

@@ -12,7 +12,8 @@ namespace klong {
     class Compiler {
     public:
         explicit Compiler(Option option) :
-            _option(std::move(option)) {
+            _option(std::move(option)), 
+			_session(_option.emitDebugInfo, _option.emitDwarf) {
         }
 
         bool parse(ModulePtr& module, std::shared_ptr<SourceFile> sourceFile);
@@ -23,7 +24,7 @@ namespace klong {
     private:
         void printResult(CompilationResult &result);
     private:
-        CompilationSession _session;
         Option _option;
+        CompilationSession _session;
     };
 }

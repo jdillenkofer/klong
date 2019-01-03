@@ -284,7 +284,7 @@ namespace klong {
         _builder.SetInsertPoint(bb);
 
         {
-            size_t argNo = 0;
+            uint32_t argNo = 0;
             for (auto& arg : function->args()) {
 				auto param = stmt->params()[argNo++];
 				auto paramType = param->type();

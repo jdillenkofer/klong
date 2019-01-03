@@ -10,6 +10,7 @@
 #include "parser/parser.h"
 #include "resolver/resolver.h"
 #include "typechecker/typechecker.h"
+#include "linker/linker.h"
 #include "graphviz/dotfile_emitter.h"
 
 namespace klong {
@@ -46,7 +47,9 @@ namespace klong {
         auto filename = module->filenameWithoutExtension();
         if (_option.disableLinking && _option.useCustomOutputPath) {
             filename = _option.customOutputPath;
-        }
+		} else {
+			filename = _session.registerAndReturnUniqueObjectFilepath(filename);
+		}
 
         llvmEmitter.writeToFile(filename, outputFileType);
         return true;
@@ -170,26 +173,25 @@ namespace klong {
                                   std::chrono::duration_cast<std::chrono::milliseconds>(
                                           llvmEmissionEnd - llvmEmissionStart).count() <<
                                   "ms" << std::endl;
-
-                        std::cout << "overall time: " <<
-                                  std::chrono::duration_cast<std::chrono::milliseconds>(
-                                          llvmEmissionEnd - parseStart).count() <<
-                                  "ms" << std::endl;
                     }
             );
 
-            std::mutex printLock;
+            if (!(_option.disableLinking && _option.useCustomOutputPath)) {
+                std::filesystem::create_directory("obj");
+            }
+
+            std::mutex printIRLock;
             std::vector<std::shared_future<bool>> compileFutures;
             for (auto& module : _session.modules()) {
-                auto compileFuture = std::async([this, &printLock, targetTriple, module]() mutable {
+                auto compileFuture = std::async([this, &printIRLock, targetTriple, module]() mutable {
                     LLVMEmitter llvmEmitter(targetTriple);
                     auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
                     if (!codegen(module, llvmEmitter, outputFileType)) {
                         return false;
                     }
 
-                    if (_option.verbose) {
-                        std::unique_lock<std::mutex> lock(printLock);
+                    if (_option.printIR) {
+                        std::unique_lock<std::mutex> lock(printIRLock);
                         llvmEmitter.printIR();
                     }
                     return true;
@@ -205,6 +207,31 @@ namespace klong {
                 }
             }
         }
+
+		/* LINKING */
+		{
+			auto linkStart = std::chrono::high_resolution_clock::now();
+			defer(
+				if (_option.verbose) {
+					auto linkEnd = std::chrono::high_resolution_clock::now();
+					std::cout << "Link time: " <<
+						std::chrono::duration_cast<std::chrono::milliseconds>(
+							linkEnd - linkStart).count() <<
+						"ms" << std::endl;
+
+					std::cout << "overall time: " <<
+						std::chrono::duration_cast<std::chrono::milliseconds>(
+							linkEnd - parseStart).count() <<
+						"ms" << std::endl;
+				}
+			);
+			if (!_option.disableLinking) {
+
+				auto objPaths = _session.getObjectFilenames();
+				Linker linker;
+				linker.link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo);
+			}
+		}
 
         /* GRAPHVIZ */
         if (_option.emitDotFile) {
