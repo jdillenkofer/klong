@@ -69,8 +69,7 @@ namespace klong {
 
     void LLVMEmitter::destroy() {
         if (_initialized) {
-            // TODO: this segfaults sometimes!
-            // llvm::llvm_shutdown();
+            llvm::llvm_shutdown();
             _initialized = false;
         }
     }
