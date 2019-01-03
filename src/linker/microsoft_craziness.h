@@ -379,7 +379,7 @@ void find_windows_kit_root(Find_Result *result) {
 }
 
 
-void find_visual_studio_by_fighting_through_microsoft_craziness(Find_Result *result) {
+bool find_visual_studio_by_fighting_through_microsoft_craziness(Find_Result *result) {
 	// The name of this procedure is kind of cryptic. Its purpose is
 	// to fight through Microsoft craziness. The things that the fine
 	// Visual Studio team want you to do, JUST TO FIND A SINGLE FOLDER
@@ -395,22 +395,23 @@ void find_visual_studio_by_fighting_through_microsoft_craziness(Find_Result *res
 	// If all this COM object instantiation, enumeration, and querying doesn't give us
 	// a useful result, we drop back to the registry-checking method.
 
-	auto rc = CoInitialize(NULL);
+	auto rc = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+	defer{ CoUninitialize(); };
 	// "Subsequent valid calls return false." So ignore false.
 	// if rc != S_OK  return false;
 
 	GUID my_uid = { 0x42843719, 0xDB4C, 0x46C2, {0x8E, 0x7C, 0x64, 0xF1, 0x81, 0x6E, 0xFD, 0x5B} };
 	GUID CLSID_SetupConfiguration = { 0x177F0C4A, 0x1CD3, 0x4DE7, {0xA3, 0x2C, 0x71, 0xDB, 0xBB, 0x9F, 0xA3, 0x6D} };
-
-	ISetupConfiguration *config = NULL;
-	auto hr = CoCreateInstance(CLSID_SetupConfiguration, NULL, CLSCTX_INPROC_SERVER, my_uid, (void **)&config);
-	if (hr != 0)  return;
+	
+	ISetupConfiguration* config = NULL;
+	auto hr = CoCreateInstance(CLSID_SetupConfiguration, NULL, CLSCTX_INPROC_SERVER, my_uid, (void **) &config);
+	if (hr != 0) return false;
 	defer{ config->Release(); };
 
 	IEnumSetupInstances *instances = NULL;
 	hr = config->EnumInstances(&instances);
-	if (hr != 0)     return;
-	if (!instances)  return;
+	if (hr != 0)     return false;
+	if (!instances)  return false;
 	defer{ instances->Release(); };
 
 	while (1) {
@@ -457,7 +458,7 @@ void find_visual_studio_by_fighting_through_microsoft_craziness(Find_Result *res
 			auto link_exe_path = concat(bstr_inst_path, L"\\VC\\Tools\\MSVC\\", version, L"\\bin\\Hostx64\\x64");
 			result->vs_exe_path = link_exe_path;
 			result->vs_library_path = library_path;
-			return;
+			return true;
 		}
 
 		/*
@@ -474,7 +475,7 @@ void find_visual_studio_by_fighting_through_microsoft_craziness(Find_Result *res
 	HKEY vs7_key;
 	rc = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\VisualStudio\\SxS\\VS7", 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &vs7_key);
 
-	if (rc != S_OK)  return;
+	if (rc != S_OK)  return false;
 	defer{ RegCloseKey(vs7_key); };
 
 	// Hardcoded search for 4 prior Visual Studio versions. Is there something better to do here?
@@ -493,7 +494,7 @@ void find_visual_studio_by_fighting_through_microsoft_craziness(Find_Result *res
 		}
 
 		auto buffer = (wchar_t *)malloc(cb_data);
-		if (!buffer)  return;
+		if (!buffer)  return false;
 		defer{ free(buffer); };
 
 		rc = RegQueryValueExW(vs7_key, v, NULL, NULL, (LPBYTE)buffer, &cb_data);
@@ -510,13 +511,14 @@ void find_visual_studio_by_fighting_through_microsoft_craziness(Find_Result *res
 		if (os_file_exists(vcruntime_filename)) {
 			result->vs_exe_path = concat(buffer, L"VC\\bin");
 			result->vs_library_path = lib_path;
-			return;
+			return true;
 		}
 
 		free(lib_path);
 	}
 
 	// If we get here, we failed to find anything.
+	return false;
 }
 
 
@@ -530,7 +532,9 @@ Find_Result find_visual_studio_and_windows_sdk() {
 		result.windows_sdk_ucrt_library_path = concat(result.windows_sdk_root, L"\\ucrt\\x64");
 	}
 
-	find_visual_studio_by_fighting_through_microsoft_craziness(&result);
+	const uint32_t MAX_RETRIES = 5;
+	uint32_t tries = 0;
+	while (!find_visual_studio_by_fighting_through_microsoft_craziness(&result) && tries++ < MAX_RETRIES);
 
 	return result;
 }
