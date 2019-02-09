@@ -56,31 +56,79 @@ namespace klong {
     }
 
     void Compiler::printResult(CompilationResult &result) {
-        auto warnings = result.getWarnings();
-        // TODO: fix warnings from multiple files
-        for (uint64_t i = 0; i < warnings.size(); i++) {
-            auto& error = warnings[i];
-            auto sourceRange = error.sourceRange();
-            if (i == 0 && sourceRange.valid()) {
-                std::cout << "WARNING - file: " << sourceRange.start.filename() << std::endl;
+        // print warnings
+        {
+            auto warnings = result.getWarnings();
+            std::sort(warnings.begin(), warnings.end(), [](const CompilationWarning& a, const CompilationWarning& b) {
+                const auto& aSourceRange = a.sourceRange();
+                const auto& bSourceRange = b.sourceRange();
+                if (aSourceRange.valid() && bSourceRange.valid()) {
+                    std::string aFilename = aSourceRange.start.filename();
+                    std::string bFilename = bSourceRange.start.filename();
+                    auto aLine = aSourceRange.start.line();
+                    auto bLine = bSourceRange.start.line();
+                    return (aFilename < bFilename) || ((aFilename == bFilename) && (aLine < bLine));
+                } else if (bSourceRange.valid()) {
+                    return true;
+                } else if (aSourceRange.valid()) {
+                    return false;
+                } else {
+                    return &a < &b;
+                }
+            });
+
+            std::string prevFilename = "";
+            for (uint64_t i = 0; i < warnings.size(); i++) {
+                auto& warning = warnings[i];
+                auto sourceRange = warning.sourceRange();
+                if (sourceRange.valid() && prevFilename != sourceRange.start.filename()) {
+                    std::cout << "WARNING - file: " << sourceRange.start.filename() << std::endl;
+                }
+                if (sourceRange.valid()) {
+                    std::cout << "line " << sourceRange.start.line() << ": " << warning.what() << std::endl;
+                    std::cout << sourceRange.getRelevantSourceText() << std::flush;
+                } else {
+                    std::cout << warning.what() << std::endl;
+                }
+                prevFilename = sourceRange.valid() ? sourceRange.start.filename() : "";
             }
-            std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
-            std::cout << sourceRange.getRelevantSourceText() << std::flush;
         }
-        auto errors = result.getErrors();
-        // TODO: fix error messages from multiple files
-        for (uint64_t i = 0; i < errors.size(); i++) {
-            auto& error = errors[i];
-            auto sourceRange = error.sourceRange();
-            if (i == 0 && sourceRange.valid()) {
-                std::cout << "ERROR - file: " << sourceRange.start.filename() << std::endl;
+        // print errors
+        {
+            auto errors = result.getErrors();
+            std::sort(errors.begin(), errors.end(), [](const CompilationError& a, const CompilationError& b) {
+                const auto& aSourceRange = a.sourceRange();
+                const auto& bSourceRange = b.sourceRange();
+                if (aSourceRange.valid() && bSourceRange.valid()) {
+                    std::string aFilename = aSourceRange.start.filename();
+                    std::string bFilename = bSourceRange.start.filename();
+                    auto aLine = aSourceRange.start.line();
+                    auto bLine = bSourceRange.start.line();
+                    return (aFilename < bFilename) || ((aFilename == bFilename) && (aLine < bLine));
+                } else if (bSourceRange.valid()) {
+                    return true;
+                } else if (aSourceRange.valid()) {
+                    return false;
+                } else {
+                    return &a < &b;
+                }
+            });
+
+            std::string prevFilename = "";
+            for (uint64_t i = 0; i < errors.size(); i++) {
+                auto& error = errors[i];
+                auto sourceRange = error.sourceRange();
+                if (sourceRange.valid() && prevFilename != sourceRange.start.filename()) {
+                    std::cout << "ERROR - file: " << sourceRange.start.filename() << std::endl;
+                }
+                if (sourceRange.valid()) {
+                    std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
+                    std::cout << sourceRange.getRelevantSourceText() << std::flush;
+                } else {
+                    std::cout << error.what() << std::endl;
+                }
+                prevFilename = sourceRange.valid() ? sourceRange.start.filename() : "";
             }
-			if (sourceRange.valid()) {
-				std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
-				std::cout << sourceRange.getRelevantSourceText() << std::flush;
-			} else {
-				std::cout << error.what() << std::endl;
-			}
         }
     }
 
