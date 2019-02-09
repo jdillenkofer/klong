@@ -42,11 +42,36 @@ namespace klong {
                 return true;
             }
         }
+
+        // check if we find a public symbol in the session
         auto symbolInfoOptional = _session->findSymbol(variable->name());
         if (symbolInfoOptional.has_value()) {
             variable->resolvesTo(symbolInfoOptional.value().declarationStmt);
             return true;
         }
+
+        // check if we find a private symbol in the session that matches our searched symbol
+        // if so we can print a better error message for the user
+        auto privateSymbols = _session->hasPrivateSymbols(variable->name());
+        if (privateSymbols.size() == 1) {
+            _session->getResult().addError(CompilationError(variable->sourceRange(), 
+                "Couldn't resolve variable '" + variable->name() + "'. But found a private definition in " + privateSymbols[0].declarationStmt->sourceRange().start.absolutepath()));
+            return false;
+        }
+        if (privateSymbols.size() > 1) {
+            std::string paths = "";
+            for (auto it = privateSymbols.begin(); it != privateSymbols.end(); ++it) {
+                auto& symbol = (*it);
+                paths += symbol.declarationStmt->sourceRange().start.absolutepath();
+                if (std::next(it) != privateSymbols.end()) {
+                    paths += "\n";
+                }
+            }
+            _session->getResult().addError(CompilationError(variable->sourceRange(),
+                "Couldn't resolve variable '" + variable->name() + "'. But found multiple private definitions in:\n" + paths));
+            return false;
+        }
+
         _session->getResult().addError(
                 CompilationError(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() + "'."));
         return false;
@@ -66,10 +91,15 @@ namespace klong {
         }
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
         auto symbolInfo = SymbolInfo { declarationStmt, declarationType, false };
-        if (!_isInsideFunction && isPublic) {
-            if (!_session->declareSymbol(name, symbolInfo)) {
-                _session->getResult().addError(CompilationError(declarationStmt->sourceRange(),
-                        "Symbol with name '" + name + "' already declared in global scope"));
+        if (!_isInsideFunction) {
+            if (isPublic) {
+                if (!_session->declareSymbol(name, symbolInfo)) {
+                    _session->getResult().addError(CompilationError(declarationStmt->sourceRange(),
+                            "Symbol with name '" + name + "' already declared in global scope"));
+                }
+            } else {
+                // add private symbols to the session for debug purposes
+                _session->declarePrivateSymbol(name, symbolInfo);
             }
         }
         if (scope.find(name) != scope.end()) {

@@ -53,12 +53,25 @@ namespace klong {
         return {};
     }
 
+    std::vector<SymbolInfo> CompilationSession::hasPrivateSymbols(const std::string& name) {
+        auto privateSymbolRange = _privateSymbols.equal_range(name);
+        std::vector<SymbolInfo> privateSymbol;
+        for (auto it = privateSymbolRange.first; it != privateSymbolRange.second; it++) {
+            privateSymbol.push_back(it->second);
+        }
+        return privateSymbol;
+    }
+
     bool CompilationSession::declareSymbol(std::string name, SymbolInfo symbolInfo) {
         auto unused = _globalScope.find(name) == _globalScope.end();
         if (unused) {
             _globalScope.insert(std::pair(name, symbolInfo));
         }
         return unused;
+    }
+
+    void CompilationSession::declarePrivateSymbol(std::string name, SymbolInfo symbolInfo) {
+        _privateSymbols.insert(std::pair(name, symbolInfo));
     }
 
     bool CompilationSession::declareType(std::string name, TypeDeclaration* typeDeclaration) {

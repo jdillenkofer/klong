@@ -28,7 +28,9 @@ namespace klong {
         std::vector<ModulePtr> modules();
 
         std::optional<SymbolInfo> findSymbol(const std::string &name);
+        std::vector<SymbolInfo> hasPrivateSymbols(const std::string& name);
         bool declareSymbol(std::string name, SymbolInfo symbolInfo);
+        void declarePrivateSymbol(std::string name, SymbolInfo symbolInfo);
 
         bool declareType(std::string name, TypeDeclaration* typeDeclaration);
         TypeDeclaration* findTypeDeclaration(std::string name);
@@ -46,6 +48,7 @@ namespace klong {
     private:
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
         std::map<std::string, SymbolInfo> _globalScope;
+        std::multimap<std::string, SymbolInfo> _privateSymbols;
         std::map<std::string, std::shared_ptr<Module>> _allModules;
         std::set<std::string> _resolvedModules;
         std::set<std::string> _typecheckedModules;
