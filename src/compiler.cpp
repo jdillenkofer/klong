@@ -55,27 +55,30 @@ namespace klong {
         return true;
     }
 
+    template <typename T> bool compareWarningsOrErrors(const T& a, const T& b) {
+        const auto& aSourceRange = a.sourceRange();
+        const auto& bSourceRange = b.sourceRange();
+        // if both sourceRanges are valid, first order by filename then order by line
+        if (aSourceRange.valid() && bSourceRange.valid()) {
+            std::string aFilename = aSourceRange.start.filename();
+            std::string bFilename = bSourceRange.start.filename();
+            auto aLine = aSourceRange.start.line();
+            auto bLine = bSourceRange.start.line();
+            return (aFilename < bFilename) || ((aFilename == bFilename) && (aLine < bLine));
+        } else if (bSourceRange.valid()) {
+            return true;
+        } else if (aSourceRange.valid()) {
+            return false;
+        }
+        // if both sourceranges are invalid order by pointer value (arbitrary)
+        return &a < &b;
+    }
+
     void Compiler::printResult(CompilationResult &result) {
         // print warnings
         {
             auto warnings = result.getWarnings();
-            std::sort(warnings.begin(), warnings.end(), [](const CompilationWarning& a, const CompilationWarning& b) {
-                const auto& aSourceRange = a.sourceRange();
-                const auto& bSourceRange = b.sourceRange();
-                if (aSourceRange.valid() && bSourceRange.valid()) {
-                    std::string aFilename = aSourceRange.start.filename();
-                    std::string bFilename = bSourceRange.start.filename();
-                    auto aLine = aSourceRange.start.line();
-                    auto bLine = bSourceRange.start.line();
-                    return (aFilename < bFilename) || ((aFilename == bFilename) && (aLine < bLine));
-                } else if (bSourceRange.valid()) {
-                    return true;
-                } else if (aSourceRange.valid()) {
-                    return false;
-                } else {
-                    return &a < &b;
-                }
-            });
+            std::sort(warnings.begin(), warnings.end(), compareWarningsOrErrors<CompilationWarning>);
 
             std::string prevFilename = "";
             for (uint64_t i = 0; i < warnings.size(); i++) {
@@ -96,23 +99,7 @@ namespace klong {
         // print errors
         {
             auto errors = result.getErrors();
-            std::sort(errors.begin(), errors.end(), [](const CompilationError& a, const CompilationError& b) {
-                const auto& aSourceRange = a.sourceRange();
-                const auto& bSourceRange = b.sourceRange();
-                if (aSourceRange.valid() && bSourceRange.valid()) {
-                    std::string aFilename = aSourceRange.start.filename();
-                    std::string bFilename = bSourceRange.start.filename();
-                    auto aLine = aSourceRange.start.line();
-                    auto bLine = bSourceRange.start.line();
-                    return (aFilename < bFilename) || ((aFilename == bFilename) && (aLine < bLine));
-                } else if (bSourceRange.valid()) {
-                    return true;
-                } else if (aSourceRange.valid()) {
-                    return false;
-                } else {
-                    return &a < &b;
-                }
-            });
+            std::sort(errors.begin(), errors.end(), compareWarningsOrErrors<CompilationError>);
 
             std::string prevFilename = "";
             for (uint64_t i = 0; i < errors.size(); i++) {
