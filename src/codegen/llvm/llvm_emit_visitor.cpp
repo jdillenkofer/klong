@@ -169,8 +169,8 @@ namespace klong {
 		if (!stmt)
 			return _builder.SetCurrentDebugLocation(llvm::DebugLoc());
 
-		// don't emit DebugLocation for comments
-		if (stmt->kind() == StatementKind::COMMENT) {
+		// don't emit DebugLocation for comments and external declarations
+		if (stmt->kind() == StatementKind::COMMENT || stmt->kind() == StatementKind::EXT_DECL) {
 			return;
 		}
 
@@ -369,6 +369,9 @@ namespace klong {
 
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
         emitAllDefers();
+        if (_session->emitDebugInfo()) {
+            emitDebugLocation(stmt);
+        }
         _valueOfLastExpr = nullptr;
         if (stmt->value() != nullptr) {
             emitCodeR(stmt->value());
