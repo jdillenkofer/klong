@@ -33,7 +33,7 @@ void printHelp() {
     std::cout << "Options:" << std::endl;
     std::cout << "\t-c disable linking" << std::endl;
 	std::cout << "\t-g Emit debug information" << std::endl;
-	std::cout << "\t-d Emit codeview debug information (for windows msvc)";
+	std::cout << "\t-d Emit codeview debug information (for windows msvc)" << std::endl;
     std::cout << "\t-o [file] Emits the output in the specified file." << std::endl;
     std::cout << "\t-s Emit the assembly source instead of a binary objectfile." << std::endl;
     std::cout << "\t-b targetTriple" << std::endl;
