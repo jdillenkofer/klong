@@ -1,11 +1,12 @@
 pub fun main() -> i32 {
-    let i = 5;
-    defer i = 0;
+    let i = 0;
     defer i = 1;
-    if (i == 5) {
+    defer i = 2;
+    if (i == 0) {
         defer {
             i = 3;
         }
+        // i is evaluated before the defers are emitted
         return i;
     }
     return 1;

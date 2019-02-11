@@ -368,15 +368,16 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitReturnStmt(Return* stmt) {
-        emitAllDefers();
-        if (_session->emitDebugInfo()) {
-            emitDebugLocation(stmt);
-        }
         _valueOfLastExpr = nullptr;
         if (stmt->value() != nullptr) {
             emitCodeR(stmt->value());
         }
-        _builder.CreateRet(_valueOfLastExpr);
+        auto retVal = _valueOfLastExpr;
+        emitAllDefers();
+        if (_session->emitDebugInfo()) {
+            emitDebugLocation(stmt);
+        }
+        _builder.CreateRet(retVal);
 		_eliminateDeadCodeInCurrentBlock = true;
     }
 
