@@ -107,7 +107,7 @@ namespace klong {
 
         bool isEqual(const Type* other) const override {
             if (other->kind() == TypeKind::FUNCTION) {
-                auto otherFunctionType = dynamic_cast<const FunctionType*>(other);
+                auto otherFunctionType = static_cast<const FunctionType*>(other);
                 if (this->_paramTypes.size() != otherFunctionType->_paramTypes.size()) {
                     return false;
                 }
@@ -168,7 +168,7 @@ namespace klong {
 
         bool isEqual(const Type* other) const override {
             if (other && other->kind() == TypeKind::PRIMITIVE) {
-                auto otherPrimitiveType = dynamic_cast<const PrimitiveType*>(other);
+                auto otherPrimitiveType = static_cast<const PrimitiveType*>(other);
                 return this->type() == otherPrimitiveType->type();
             }
             return false;
@@ -269,7 +269,7 @@ namespace klong {
 
         bool isEqual(const Type* other) const override {
             if (other->kind() == TypeKind::POINTER) {
-                auto otherPointerType = dynamic_cast<const PointerType*>(other);
+                auto otherPointerType = static_cast<const PointerType*>(other);
                 auto innerTypesEqual = this->pointsTo()->isEqual(otherPointerType->pointsTo());
                 if (this->isArray()
                     && otherPointerType->isArray()
@@ -323,7 +323,7 @@ namespace klong {
 
         bool isEqual(const Type* other) const override {
             if (other->kind() == TypeKind::CUSTOM) {
-                auto otherCustomType = dynamic_cast<const CustomType*>(other);
+                auto otherCustomType = static_cast<const CustomType*>(other);
                 return this->name() == otherCustomType->name();
             }
             return false;

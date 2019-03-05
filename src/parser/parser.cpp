@@ -231,7 +231,7 @@ namespace klong {
                                 type));
 
                 if (type->kind() == TypeKind::PRIMITIVE) {
-                    auto primitiveType = dynamic_cast<PrimitiveType*>(type.get());
+                    auto primitiveType = static_cast<PrimitiveType*>(type.get());
                     if (primitiveType->type() == PrimitiveTypeKind::VOID) {
                         throw CompilationError(primitiveType->sourceRange(), "Illegal type 'void' in argument list.");
                     }

@@ -89,8 +89,7 @@ namespace klong {
         switch(typeDeclaration->typeDeclarationKind()) {
             case TypeDeclarationKind::STRUCT:
             {
-                auto structDeclaration = dynamic_cast<StructDeclaration*>(typeDeclaration);
-                assert(structDeclaration);
+                auto structDeclaration = static_cast<StructDeclaration*>(typeDeclaration);
 
                 if (_outerTypes.size() > 1u) {
                     auto previousOuterType = _outerTypes[_outerTypes.size() - 2];
@@ -113,8 +112,7 @@ namespace klong {
             }
             case TypeDeclarationKind::UNION:
             {
-                auto unionDeclaration = dynamic_cast<UnionDeclaration*>(typeDeclaration);
-                assert(unionDeclaration);
+                auto unionDeclaration = static_cast<UnionDeclaration*>(typeDeclaration);
 
                 if (_outerTypes.size() > 1u) {
                     auto previousOuterType = _outerTypes[_outerTypes.size() - 2];

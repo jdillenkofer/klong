@@ -982,9 +982,9 @@ namespace klong {
                         value = _namedValues[asExternalDecl.get()];
                     }
                     if (expr->resolvesTo()->kind() == StatementKind::VAR_DECL) {
-                        auto varDecl = dynamic_cast<VariableDeclaration*>(expr->resolvesTo());
+                        auto varDecl = static_cast<VariableDeclaration*>(expr->resolvesTo());
                         if (Type::isPointer(varDecl->type())) {
-                            auto pointerType = dynamic_cast<PointerType*>(varDecl->type());
+                            auto pointerType = static_cast<PointerType*>(varDecl->type());
                             if (pointerType->isArray()) {
                                 llvm::Value* zero = llvm::ConstantInt::get(_context, llvm::APInt(64, (uint64_t) 0, true));
                                 _valueOfLastExpr = _builder.CreateGEP(value, zero);

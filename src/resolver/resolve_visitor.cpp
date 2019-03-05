@@ -22,7 +22,7 @@ namespace klong {
     void ResolveVisitor::resolve(const std::vector<Stmt*>& statements) {
         for (const auto& statement : statements) {
             if (statement->kind() == StatementKind::FUNCTION) {
-                auto stmt = dynamic_cast<Function*>(statement);
+                auto stmt = static_cast<Function*>(statement);
                 declare(stmt, stmt->name(), DeclarationType::FUNCTION, stmt->isPublic());
                 define(stmt->name());
             }
@@ -214,7 +214,7 @@ namespace klong {
         if (stmt->type()
         && (stmt->type()->kind() == TypeKind::CUSTOM
         || (stmt->type()->kind() == TypeKind::POINTER
-            && dynamic_cast<PointerType*>(stmt->type())->isArray()))) {
+            && static_cast<PointerType*>(stmt->type())->isArray()))) {
             // TODO: should custom types always be auto resolved?
             define(stmt->name());
         }
@@ -280,7 +280,7 @@ namespace klong {
             auto isResolved = resolveLocal(expr->target());
             auto varDeclRes = expr->target()->resolvesTo();
             if (isResolved && varDeclRes->kind() == StatementKind::VAR_DECL) {
-                auto varDecl = dynamic_cast<VariableDeclaration*>(varDeclRes);
+                auto varDecl = static_cast<VariableDeclaration*>(varDeclRes);
                 if (varDecl->isConst()) {
                     _session->getResult().addError(
                             CompilationError(expr->sourceRange(), "Cannot reassign 'const'."));

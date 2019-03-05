@@ -416,16 +416,18 @@ namespace klong {
             // check if this type is self referential
             _isSelfReferential = false;
             for (auto& member : _members) {
-                auto pointerType = dynamic_cast<PointerType*>(member->type());
-                while (pointerType) {
+                bool isPointerType = member->type()->kind() == TypeKind::POINTER;
+                auto pointerType = static_cast<PointerType*>(member->type());
+                while (isPointerType) {
                     if (pointerType->pointsTo()->kind() == TypeKind::CUSTOM) {
-                        auto customType = dynamic_cast<CustomType*>(pointerType->pointsTo());
+                        auto customType = static_cast<CustomType*>(pointerType->pointsTo());
                         if (customType && this->name() == customType->name()) {
                             _isSelfReferential = true;
                             break;
                         }
                     }
-                    pointerType = dynamic_cast<PointerType*>(pointerType->pointsTo());
+                    pointerType = static_cast<PointerType*>(pointerType->pointsTo());
+                    isPointerType = pointerType->kind() == TypeKind::POINTER;
                 }
             }
 		}

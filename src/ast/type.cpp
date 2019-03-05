@@ -3,7 +3,7 @@
 namespace klong {
     bool Type::isBoolean(Type* type) {
         if (type && type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
+            auto primitiveType = static_cast<PrimitiveType*>(type);
             return primitiveType->isBoolean();
         }
         return false;
@@ -11,7 +11,7 @@ namespace klong {
 
     bool Type::isFloat(Type* type) {
         if (type && type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
+            auto primitiveType = static_cast<PrimitiveType*>(type);
             return primitiveType->isFloat();
         }
         return false;
@@ -19,7 +19,7 @@ namespace klong {
 
     bool Type::isInteger(Type* type) {
         if (type && type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
+            auto primitiveType = static_cast<PrimitiveType*>(type);
             return primitiveType->isInteger();
         }
         return false;
@@ -27,7 +27,7 @@ namespace klong {
 
     bool Type::isPointer(Type* type) {
         if (type->kind() == TypeKind::POINTER) {
-            auto pointerType = dynamic_cast<PointerType*>(type);
+            auto pointerType = static_cast<PointerType*>(type);
             return pointerType != nullptr;
         }
         return false;
@@ -35,7 +35,7 @@ namespace klong {
 
     bool Type::isVoid(Type* type) {
         if (type && type->kind() == TypeKind::PRIMITIVE) {
-            auto primitiveType = dynamic_cast<PrimitiveType*>(type);
+            auto primitiveType = static_cast<PrimitiveType*>(type);
             return primitiveType->isVoid();
         }
         return false;

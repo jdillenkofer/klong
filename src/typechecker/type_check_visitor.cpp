@@ -60,16 +60,19 @@ namespace klong {
     }
 
     TypePtr TypeCheckVisitor::applyIntegerPromotion(Type* type) {
-        auto primitiveType = dynamic_cast<PrimitiveType*>(type);
-        if (primitiveType && primitiveType->isInteger()) {
-            if (primitiveType->isSigned()) {
-                return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::I64);
-            } else {
-                return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::U64);
+        if (type->kind() == TypeKind::PRIMITIVE) {
+            auto primitiveType = static_cast<PrimitiveType*>(type);
+            if (primitiveType->isInteger()) {
+                if (primitiveType->isSigned()) {
+                    return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::I64);
+                }
+                else {
+                    return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::U64);
+                }
             }
-        }
-        if (primitiveType && primitiveType->isFloat()) {
-            return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::F64);
+            if (primitiveType->isFloat()) {
+                return std::make_shared<PrimitiveType>(type->sourceRange(), PrimitiveTypeKind::F64);
+            }
         }
         return nullptr;
     }
@@ -101,7 +104,7 @@ namespace klong {
     void TypeCheckVisitor::visitModule(Module* module) {
         for (const auto& statement : module->statements()) {
             if (statement->kind() == StatementKind::TYPE_DECL) {
-                auto stmt = dynamic_cast<TypeDeclaration*>(statement);
+                auto stmt = static_cast<TypeDeclaration*>(statement);
                 declareType(stmt);
             }
         }
@@ -141,7 +144,7 @@ namespace klong {
             check(param);
         }
         check(stmt->body());
-        auto primType = dynamic_cast<PrimitiveType*>(stmt->functionType()->returnType());
+        auto primType = static_cast<PrimitiveType*>(stmt->functionType()->returnType());
         if (!_returnsValue && primType != nullptr && !primType->isVoid()) {
             _session->getResult().addError(
                     CompilationError(stmt->sourceRange(),
@@ -157,7 +160,7 @@ namespace klong {
                     CompilationError(stmt->sourceRange(), "Parameters of type functionType are not allowed."));
         }
         if (stmt->type()->kind() == TypeKind::POINTER) {
-            auto pointerType = dynamic_cast<PointerType*>(stmt->type());
+            auto pointerType = static_cast<PointerType*>(stmt->type());
             if (pointerType->isArray()) {
                 _session->getResult().addError(
                     CompilationError(stmt->sourceRange(), "Parameters of type array are not allowed."));
@@ -236,11 +239,15 @@ namespace klong {
 	void TypeCheckVisitor::checkMemberTypeDeclStmt(MemberTypeDeclaration* stmt) {
 		for (auto& value : stmt->members()) {
 			check(value);
-			auto memberTypeAsCustomType = dynamic_cast<CustomType*>(value->type());
-			if (memberTypeAsCustomType && memberTypeAsCustomType->name() == stmt->name()) {
-				_session->getResult().addError(
+
+            bool isCustomType = value->type()->kind() == TypeKind::CUSTOM;
+            if (isCustomType) {
+                auto customType = static_cast<CustomType*>(value->type());
+                if (customType && customType->name() == stmt->name()) {
+                    _session->getResult().addError(
                         CompilationError(value->sourceRange(), "Self referential member definitions are not allowed."));
-			}
+                }
+            }
 		}
 	}
 
@@ -385,7 +392,7 @@ namespace klong {
 			case BinaryOperation::INEQUALITY:
 			{
 				if (Type::isCustom(leftType) && Type::isCustom(rightType)
-					&& dynamic_cast<CustomType*>(leftType)->resolvesTo()->typeDeclarationKind() == TypeDeclarationKind::ENUM
+					&& static_cast<CustomType*>(leftType)->resolvesTo()->typeDeclarationKind() == TypeDeclarationKind::ENUM
 					&& leftType->isEqual(rightType)) {
 					expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
 					break;
@@ -450,18 +457,19 @@ namespace klong {
         }
         auto calleeType = expr->callee()->type();
         if (calleeType->kind() == TypeKind::POINTER) {
-            auto calleePointer = dynamic_cast<PointerType*>(calleeType);
-            auto functionType = dynamic_cast<FunctionType*>(calleePointer->pointsTo());
-            if (functionType != nullptr) {
+            auto calleePointer = static_cast<PointerType*>(calleeType);
+            auto pointsToFunction = calleePointer->pointsTo()->kind() == TypeKind::FUNCTION;
+            if (pointsToFunction) {
+                auto functionType = static_cast<FunctionType*>(calleePointer->pointsTo());
                 if (functionType->isVariadic()) {
-                    // only check the known arguments for variadic functions
-                    while (functionType->paramTypes().size() < callParamTypes.size()) {
-                        callParamTypes.pop_back();
-                    }
+                        // only check the known arguments for variadic functions
+                        while (functionType->paramTypes().size() < callParamTypes.size()) {
+                            callParamTypes.pop_back();
+                        }
                 }
                 if (!functionType->matchesSignature(callParamTypes)) {
                     _session->getResult().addError(
-                            CompilationError(expr->sourceRange(), "Call Expr doesn't match function signature."));
+                        CompilationError(expr->sourceRange(), "Call Expr doesn't match function signature."));
                 }
                 expr->type(std::shared_ptr<Type>(functionType->returnType()->clone()));
                 return;
@@ -478,16 +486,22 @@ namespace klong {
 
 	void TypeCheckVisitor::visitSubscriptExpr(Subscript* expr) {
 		check(expr->target());
-		auto pointerType = dynamic_cast<PointerType*>(expr->target()->type());
-		if (!pointerType) {
-			_session->getResult().addError(
-			        CompilationError(expr->sourceRange(),
-			                "Illegal target type for subscript expr. Target has to be of type pointer."));
-			return;
-		}
+        if (expr->target()->type()->kind() != TypeKind::POINTER) {
+            _session->getResult().addError(
+                CompilationError(expr->sourceRange(),
+                    "Illegal target type for subscript expr. Target has to be of type pointer."));
+            return;
+        }
 		check(expr->index());
-		auto numberType = dynamic_cast<PrimitiveType*>(expr->index()->type());
-		if (!numberType || !numberType->isInteger()) {
+        if (expr->index()->type()->kind() != TypeKind::PRIMITIVE) {
+            _session->getResult().addError(
+                CompilationError(expr->sourceRange(),
+                    "Index of subscript operator has to be numeric."));
+            return;
+        }
+		auto pointerType = static_cast<PointerType*>(expr->target()->type());
+		auto numberType = static_cast<PrimitiveType*>(expr->index()->type());
+		if (!numberType->isInteger()) {
 			_session->getResult().addError(
 			        CompilationError(expr->sourceRange(),
 			                "Index of subscript operator has to be numeric."));
@@ -518,7 +532,7 @@ namespace klong {
         switch(declarationType->typeDeclarationKind()) {
             case TypeDeclarationKind::STRUCT: 
 			case TypeDeclarationKind::UNION: {
-                auto memberTypeDecl = dynamic_cast<MemberTypeDeclaration*>(declarationType);
+                auto memberTypeDecl = static_cast<MemberTypeDeclaration*>(declarationType);
                 auto memberPtr = memberTypeDecl->findMember(expr->value());
                 if (!memberPtr) {
                     _session->getResult().addError(
@@ -548,7 +562,7 @@ namespace klong {
 			_session->getResult().addError(
 			        CompilationError(expr->target()->sourceRange(), "Expect enum type."));
 		} else {
-			auto enumValues = dynamic_cast<EnumDeclaration*>(resolvedTypeDecl)->values();
+			auto enumValues = static_cast<EnumDeclaration*>(resolvedTypeDecl)->values();
 			auto it = std::find(enumValues.begin(), enumValues.end(), expr->value());
 			if (it == enumValues.end()) {
 				_session->getResult().addError(
@@ -604,7 +618,7 @@ namespace klong {
                         CompilationError(expr->sourceRange(), "Deref expects pointer type."));
                 return;
             }
-            auto pointerType = dynamic_cast<PointerType*>(rightType);
+            auto pointerType = static_cast<PointerType*>(rightType);
             if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
                 _session->getResult().addError(
                         CompilationError(expr->sourceRange(),
@@ -627,7 +641,7 @@ namespace klong {
                 }
 
                 if (variable->type()->kind() == TypeKind::POINTER) {
-                    auto pointerType = dynamic_cast<PointerType*>(variable->type());
+                    auto pointerType = static_cast<PointerType*>(variable->type());
                     if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
                         isFunction = true;
                     }
@@ -692,7 +706,7 @@ namespace klong {
         switch(resolvesTo->kind()) {
             case StatementKind::FUNCTION:
             {
-                auto function = dynamic_cast<Function*>(resolvesTo);
+                auto function = static_cast<Function*>(resolvesTo);
                 auto clonedFunction = std::shared_ptr<Type>(function->functionType()->clone());
                 auto pointerToClonedFunction = std::make_shared<PointerType>(clonedFunction->sourceRange(), clonedFunction);
                 expr->type(pointerToClonedFunction);
@@ -700,7 +714,7 @@ namespace klong {
             }
             case StatementKind::EXT_DECL:
             {
-                auto extDecl = dynamic_cast<ExternalDeclaration*>(resolvesTo);
+                auto extDecl = static_cast<ExternalDeclaration*>(resolvesTo);
                 auto clonedType = std::shared_ptr<Type>(extDecl->type()->clone());
                 if (clonedType->kind() == TypeKind::FUNCTION) {
                     clonedType = std::make_shared<PointerType>(clonedType->sourceRange(), clonedType);
@@ -710,21 +724,23 @@ namespace klong {
             }
             case StatementKind::VAR_DECL:
             {
-                auto varDecl = dynamic_cast<VariableDeclaration*>(resolvesTo);
+                auto varDecl = static_cast<VariableDeclaration*>(resolvesTo);
                 auto clonedVarDeclType = std::shared_ptr<Type>(varDecl->type()->clone());
                 // propagate array type meta info
-                auto varDeclAsPointerType = dynamic_cast<PointerType*>(varDecl->type());
-                if (varDeclAsPointerType && varDeclAsPointerType->isArray()) {
-                    auto clonedVarDeclTypeAsPtr = dynamic_cast<PointerType*>(clonedVarDeclType.get());
-                    clonedVarDeclTypeAsPtr->isArray(true);
-                    clonedVarDeclTypeAsPtr->size(varDeclAsPointerType->size());
+                if (varDecl->type()->kind() == TypeKind::POINTER) {
+                    auto varDeclAsPointerType = static_cast<PointerType*>(varDecl->type());
+                    if (varDeclAsPointerType->isArray()) {
+                        auto clonedVarDeclTypeAsPtr = static_cast<PointerType*>(clonedVarDeclType.get());
+                        clonedVarDeclTypeAsPtr->isArray(true);
+                        clonedVarDeclTypeAsPtr->size(varDeclAsPointerType->size());
+                    }
                 }
                 expr->type(clonedVarDeclType);
                 break;
             }
             case StatementKind::PARAMETER:
             {
-                auto paramStmt = dynamic_cast<Parameter*>(resolvesTo);
+                auto paramStmt = static_cast<Parameter*>(resolvesTo);
                 expr->type(std::shared_ptr<Type>(paramStmt->type()->clone()));
                 break;
             }
