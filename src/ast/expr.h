@@ -309,27 +309,20 @@ namespace klong {
     public:
         NumberLiteral(SourceRange sourceRange, double value):
             Literal(std::move(sourceRange),
-                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::F32 : PrimitiveTypeKind::F64)),
-                    _primitiveTypeKind(canBe32Bit(value) ? PrimitiveTypeKind::F32 : PrimitiveTypeKind::F64) {
+                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::F32 : PrimitiveTypeKind::F64)) {
             _value.f = value;
         }
 
         NumberLiteral(SourceRange sourceRange, int64_t value):
             Literal(std::move(sourceRange),
-                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::I32 : PrimitiveTypeKind::I64)),
-                    _primitiveTypeKind(canBe32Bit(value) ? PrimitiveTypeKind::I32 : PrimitiveTypeKind::I64){
+                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::I32 : PrimitiveTypeKind::I64)) {
             _value.i = value;
         }
 
         NumberLiteral(SourceRange sourceRange, uint64_t value):
             Literal(std::move(sourceRange),
-                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::U32 : PrimitiveTypeKind::U64)),
-                    _primitiveTypeKind(canBe32Bit(value) ? PrimitiveTypeKind::U32 : PrimitiveTypeKind::U64) {
+                    std::make_shared<PrimitiveType>(canBe32Bit(value) ? PrimitiveTypeKind::U32 : PrimitiveTypeKind::U64)) {
             _value.u = value;
-        }
-
-        PrimitiveTypeKind typeKind() const {
-            return _primitiveTypeKind;
         }
 
         float f32() const {
@@ -377,7 +370,6 @@ namespace klong {
             int64_t i;
             uint64_t u;
         } _value;
-        PrimitiveTypeKind _primitiveTypeKind;
     };
 
     class BoolLiteral: public Literal {

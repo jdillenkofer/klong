@@ -255,7 +255,10 @@ namespace klong {
             llvm::Function::Create((llvm::FunctionType*) type, llvm::Function::ExternalLinkage, stmt->name(), _module.get());
             _namedValues[stmt] = _module->getFunction(stmt->name());
         } else {
-            _namedValues[stmt] = _module->getOrInsertGlobal(stmt->name(), type);
+            _module->getOrInsertGlobal(stmt->name(), type);
+            auto global = _module->getNamedGlobal(stmt->name());
+            global->setLinkage(llvm::GlobalValue::ExternalLinkage);
+            _namedValues[stmt] = global;
         }
     }
 
@@ -694,22 +697,22 @@ namespace klong {
         if (leftType && targetType && Type::isFloat(expr->castToType()) && targetType->isBoolean()) {
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
-                    _valueOfLastExpr = _builder.CreateFCmpUEQ(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpOEQ(left, right);
                     break;
                 case BinaryOperation::INEQUALITY:
-                    _valueOfLastExpr = _builder.CreateFCmpUNE(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpONE(left, right);
                     break;
                 case BinaryOperation::LESS_THAN:
-                    _valueOfLastExpr = _builder.CreateFCmpULT(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpOLT(left, right);
                     break;
                 case BinaryOperation::LESS_EQUAL:
-                    _valueOfLastExpr = _builder.CreateFCmpULE(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpOLE(left, right);
                     break;
                 case BinaryOperation::GREATER_THAN:
-                    _valueOfLastExpr = _builder.CreateFCmpUGT(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpOGT(left, right);
                     break;
                 case BinaryOperation::GREATER_EQUAL:
-                    _valueOfLastExpr = _builder.CreateFCmpUGE(left, right);
+                    _valueOfLastExpr = _builder.CreateFCmpOGE(left, right);
                     break;
                 default:
                     assert(false);
@@ -1012,7 +1015,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitNumberLiteral(NumberLiteral* expr) {
-        switch (expr->typeKind()) {
+        switch (static_cast<PrimitiveType*>(expr->type())->type()) {
             case PrimitiveTypeKind::I32:
                 _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t) expr->i32(), true));
                 break;
