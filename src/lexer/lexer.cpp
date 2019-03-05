@@ -227,7 +227,7 @@ namespace klong {
     };
     
     Token Lexer::next() {
-        skipWhitespace(_currentPosition);
+        skipWhitespace();
         updateLocation();
 
         if (_currentPosition >= _code.length()) {
@@ -290,9 +290,9 @@ namespace klong {
         }
     }
 
-    void Lexer::skipWhitespace(size_t& position) const {
-        while (isWhitespace(_code[position])) {
-            position++;
+    void Lexer::skipWhitespace() {
+        while (isWhitespace(_code[_currentPosition])) {
+            _currentPosition++;
         }
     }
 

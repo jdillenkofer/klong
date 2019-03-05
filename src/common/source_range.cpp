@@ -35,7 +35,7 @@ namespace klong {
             do {
                 std::getline(strStream, line);
                 relevantSourceStream << line << std::endl;
-            } while (line.empty());
+            } while (!line.empty());
             return relevantSourceStream.str();
         }
         return code.substr(start.charPos(), end.charPos() - start.charPos());

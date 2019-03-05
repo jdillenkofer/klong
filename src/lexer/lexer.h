@@ -32,7 +32,7 @@ namespace klong {
 
     private:
         void updateLocation();
-        void skipWhitespace(size_t& position) const;
+        void skipWhitespace();
         char read(bool advancePosition = true);
         bool isWhitespace(char c) const;
         bool isAlpha(char c) const;

@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <chrono>
-#include <future>
 
 #include "common/defer.h"
 #include "common/source_file.h"
@@ -192,7 +191,6 @@ namespace klong {
 
         /* CODEGEN */
         LLVMEmitter::init();
-        defer(LLVMEmitter::destroy());
 
         auto targetTriple = LLVMEmitter::getDefaultTargetTriple();
         if (_option.isCustomTarget) {
@@ -215,30 +213,15 @@ namespace klong {
                 std::filesystem::create_directory("obj");
             }
 
-            std::mutex printIRLock;
-            std::vector<std::shared_future<bool>> compileFutures;
             for (auto& module : _session.modules()) {
-                auto compileFuture = std::async([this, &printIRLock, targetTriple, module]() mutable {
-                    LLVMEmitter llvmEmitter(targetTriple);
-                    auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
-                    if (!codegen(module, llvmEmitter, outputFileType)) {
-                        return false;
-                    }
-
-                    if (_option.printIR) {
-                        std::unique_lock<std::mutex> lock(printIRLock);
-                        llvmEmitter.printIR();
-                    }
-                    return true;
-                });
-                compileFutures.emplace_back(compileFuture.share());
-            }
-
-            for (auto& future : compileFutures) {
-                future.wait();
-                
-                if (!future.get()) {
+                LLVMEmitter llvmEmitter(targetTriple);
+                auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
+                if (!codegen(module, llvmEmitter, outputFileType)) {
                     return false;
+                }
+
+                if (_option.printIR) {
+                    llvmEmitter.printIR();
                 }
             }
         }
@@ -273,6 +256,11 @@ namespace klong {
             DotfileEmitter graphvizDotFileEmitter;
             graphvizDotFileEmitter.emit(rootModule->filenameWithoutExtension() + ".dot", rootModule);
         }
+
+        // @Robustness: Something is weird with llvms memory management.
+        // If I call llvm::shutdown while llvm stuff is still around it crashes
+        // For now we never call llvm::llvm_shutdown and let the operating system free the memory
+        LLVMEmitter::destroy();
         return true;
     }
 }

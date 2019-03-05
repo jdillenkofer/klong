@@ -87,6 +87,9 @@ namespace klong {
     }
 
     llvm::Value* LLVMEmitVisitor::emitCast(llvm::Value *value, Type *from, Type *to) {
+        if (from == to) {
+            return value;
+        }
         auto targetType = _typeEmitVisitor.getLLVMType(to);
         auto myPrimSourceType = dynamic_cast<PrimitiveType*>(from);
         auto myPrimTargetType = dynamic_cast<PrimitiveType*>(to);
