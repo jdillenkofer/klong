@@ -257,7 +257,7 @@ wchar_t *find_windows_kit_root(HKEY key, wchar_t *version) {
 	if (rc != 0)  return NULL;
 
 	DWORD length = required_length + 2;  // The +2 is for the maybe optional zero later on. Probably we are over-allocating.
-	wchar_t *value = (wchar_t *)malloc(length);
+	wchar_t *value = (wchar_t *)malloc(length + 2);
 	if (!value) return NULL;
 
 	rc = RegQueryValueExW(key, version, NULL, NULL, (LPBYTE)value, &length);  // We know that version is zero-terminated...
@@ -266,8 +266,9 @@ wchar_t *find_windows_kit_root(HKEY key, wchar_t *version) {
 	// The documentation says that if the string for some reason was not stored
 	// with zero-termination, we need to manually terminate it. Sigh!!
 
-	if (value[length]) {
-		value[length + 1] = 0;
+    auto num_wchars = length / 2;
+	if (value[num_wchars]) {
+		value[num_wchars + 1] = 0;
 	}
 
 	return value;
