@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 project(klong)
 
-find_package(LLVM 7.0.0 REQUIRED CONFIG)
+find_package(LLVM 8.0.0 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -193,6 +193,18 @@ llvm_map_components_to_libnames(llvm_libs
 	AArch64Info
 	AArch64AsmPrinter
 	AArch64Utils
+    msp430asmparser
+    msp430asmprinter
+    msp430codegen
+    msp430desc
+    msp430disassembler
+    msp430info
+    webassemblyasmparser
+    webassemblyasmprinter
+    webassemblycodegen
+    webassemblydesc
+    webassemblydisassembler
+    webassemblyinfo
 	Symbolize
 	DebugInfoPDB
 	DebugInfoDWARF

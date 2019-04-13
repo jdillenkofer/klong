@@ -55,10 +55,6 @@ namespace klong {
 
 		std::vector<std::string> _objectFilenames;
 
-		// we use a pointer to a mutex here, 
-		// because otherwise the move operator is deleted
-		std::shared_ptr<std::mutex> _objectFilenamingLock = std::make_shared<std::mutex>();
-
         CompilationResult _result;
 		bool _emitDebugInfo;
 		bool _emitDwarf;

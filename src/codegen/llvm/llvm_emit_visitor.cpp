@@ -272,13 +272,12 @@ namespace klong {
 
     void LLVMEmitVisitor::visitFunctionStmt(Function* stmt) {
         llvm::Function* function = _module->getFunction(stmt->name());
-
-		if (_session->emitDebugInfo()) {
+        if (_session->emitDebugInfo()) {
 			llvm::DIFile* debugFile= _debugScopeManager.getDebugFile();
 			llvm::DISubroutineType* subroutineType = (llvm::DISubroutineType*) (_debugTypeEmitVisitor.getLLVMDebugType(stmt->functionType()));
 			auto startLocation = stmt->sourceRange().start;
 			llvm::DISubprogram* subProgram = _debugInfoBuilder->createFunction(debugFile, stmt->name(), stmt->name(), debugFile, startLocation.line(),
-				subroutineType, !stmt->isPublic(), true, startLocation.line(), llvm::DINode::FlagZero, false);
+				subroutineType, startLocation.line());
 			function->setSubprogram(subProgram);
 			_debugScopeManager.push(subProgram);
 			// unset the location for the prologue emission

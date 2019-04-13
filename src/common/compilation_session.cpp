@@ -115,7 +115,6 @@ namespace klong {
 		std::string fileExtension = ".o";
 		std::string uniqueObjectFilepath = prefixPath + fileExtension;
 		
-		std::unique_lock<std::mutex> lock(*_objectFilenamingLock);
 		uint32_t numberSuffix = 1;
 		while (
 			// std::filesystem::exists(uniqueObjectFilepath) || 
