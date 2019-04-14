@@ -98,6 +98,7 @@ namespace klong {
         void define(std::string name);
 
     private:
+        Module* _module;
         std::deque<std::map<std::string, SymbolInfo>> _scopes;
         bool _isInsideFunction = false;
         CompilationSession* _session;

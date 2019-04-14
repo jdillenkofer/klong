@@ -65,6 +65,15 @@ namespace klong {
             return _dependencies;
         }
 
+        bool hasDependency(std::string absoluteModulePath) {
+            for (auto& dependency : _dependencies) {
+                if (dependency->absolutepath() == absoluteModulePath) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         void addDependency(std::shared_ptr<Module> module) {
             _dependencies.emplace_back(module);
         }

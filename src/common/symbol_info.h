@@ -11,6 +11,7 @@ namespace klong {
     };
 
     struct SymbolInfo {
+        std::string owningModulepath;
         Stmt* declarationStmt;
         DeclarationType declarationType;
         bool initialized = false;

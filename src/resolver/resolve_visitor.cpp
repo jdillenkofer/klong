@@ -46,6 +46,12 @@ namespace klong {
         // check if we find a public symbol in the session
         auto symbolInfoOptional = _session->findSymbol(variable->name());
         if (symbolInfoOptional.has_value()) {
+            auto& symbolInfo = symbolInfoOptional.value();
+            if (!_module->hasDependency(symbolInfo.owningModulepath)) {
+                _session->getResult().addError(CompilationError(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() +
+                    "'. But found a fitting definition in this other module " + symbolInfo.owningModulepath));
+                return false;
+            }
             variable->resolvesTo(symbolInfoOptional.value().declarationStmt);
             return true;
         }
@@ -90,7 +96,8 @@ namespace klong {
             return;
         }
         std::map<std::string, SymbolInfo>& scope = _scopes.back();
-        auto symbolInfo = SymbolInfo { declarationStmt, declarationType, false };
+        auto owningModulepath = _module->absolutepath();
+        auto symbolInfo = SymbolInfo { owningModulepath, declarationStmt, declarationType, false };
         if (!_isInsideFunction) {
             if (isPublic) {
                 if (!_session->declareSymbol(name, symbolInfo)) {
@@ -139,6 +146,7 @@ namespace klong {
             }
         }
         enterScope();
+        _module = module;
         resolve(module->statements());
         exitScope();
     }
