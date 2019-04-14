@@ -190,9 +190,13 @@ namespace klong {
     void TypeCheckVisitor::visitReturnStmt(Return* stmt) {
         check(stmt->value());
         if (stmt->value() != nullptr) {
-            if (!currentFunction->functionType()->returnType()->isEqual(stmt->value()->type())) {
-                _session->addError(
+            auto functionReturnType = currentFunction->functionType()->returnType();
+            auto valueType = stmt->value()->type();
+            if (!functionReturnType->isEqual(valueType)) {
+                if (!Type::isVoidPtrCast(stmt->value(), functionReturnType)) {
+                    _session->addError(
                         CompilationError(stmt->sourceRange(), "Expect return statement type to match the function returnType."));
+                }
             }
             _returnsValue = true;
         }
@@ -223,12 +227,16 @@ namespace klong {
             auto stmtAsPointerType = dynamic_cast<PointerType*>(stmt->type());
             if (stmtAsPointerType && stmtAsPointerType->isArray()
                 && stmt->initializer() && stmt->initializer()->kind() != ExprKind::LITERAL) {
-                _session->addError(
+                if (!Type::isVoidPtrCast(stmt->initializer(), stmt->type())) {
+                    _session->addError(
                         CompilationError(stmt->sourceRange(), "initializer of arrays can only contain array literals."));
+                }
             }
             if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type())) {
-                _session->addError(
+                if (!Type::isVoidPtrCast(stmt->initializer(), stmt->type())) {
+                    _session->addError(
                         CompilationError(stmt->sourceRange(), "initializerType doesn't match declaration type."));
+                }
             }
         }
     }
@@ -320,8 +328,10 @@ namespace klong {
         }
 
         if (!targetType->isEqual(expr->value()->type())) {
-            _session->addError(
+            if (!Type::isVoidPtrCast(expr, targetType)) {
+                _session->addError(
                     CompilationError(expr->value()->sourceRange(), "Expect valid type in assignment."));
+            }
         }
 
         if (expr->value()->type()) {
@@ -421,8 +431,7 @@ namespace klong {
             case BinaryOperation::XOR:
             case BinaryOperation::OR:
             {
-                if (Type::isInteger(leftType) && Type::isInteger(rightType)
-                    && leftType->isEqual(rightType)) {
+                if (Type::isInteger(leftType) && Type::isInteger(rightType) && leftType->isEqual(rightType)) { // @Robustness: does the types really have to match here?
                     expr->type(resultType);
                     break;
                 }

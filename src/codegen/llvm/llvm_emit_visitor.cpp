@@ -430,6 +430,9 @@ namespace klong {
             _namedValues[stmt] = stackPtr;
             if (stmt->initializer()) {
                 auto value = emitCodeR(stmt->initializer());
+                if (stmt->initializer()->castToType() != nullptr) {
+                    value = emitCast(value, stmt->initializer()->type(), stmt->initializer()->castToType());
+                }
                 _builder.CreateStore(value, stackPtr);
             }
         }

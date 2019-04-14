@@ -31,6 +31,8 @@ namespace klong {
         F64
     };
 
+    class Expr;
+
     class Type {
     public:
         Type(TypeKind kind, SourceRange sourceRange):
@@ -63,7 +65,8 @@ namespace klong {
         static bool isPointer(Type* type);
         static bool isVoid(Type* type);
 		static bool isCustom(Type* type);
-
+        
+        static bool isVoidPtrCast(Expr* exprToModifiy, Type* otherType);
 
     private:
         TypeKind _kind;

@@ -1,4 +1,5 @@
 #include "type.h"
+#include "expr.h"
 
 namespace klong {
     bool Type::isBoolean(Type* type) {
@@ -47,4 +48,17 @@ namespace klong {
 		}
 		return false;
 	}
+
+    bool Type::isVoidPtrCast(Expr* exprToModifiy, Type* otherType) {
+        if (Type::isPointer(exprToModifiy->type())) {
+            auto exprPointerType = static_cast<PointerType*>(exprToModifiy->type());
+            if (Type::isVoid(exprPointerType->pointsTo())) {
+                if (Type::isPointer(otherType)) {
+                    exprToModifiy->castToType(std::shared_ptr<Type>(otherType->clone()));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
