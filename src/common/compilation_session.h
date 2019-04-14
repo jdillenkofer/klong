@@ -18,6 +18,8 @@ namespace klong {
 		}
 
         CompilationResult& getResult();
+        void addError(CompilationError&& error);
+        void addWarning(CompilationWarning&& warning);
 
         bool hasModule(const std::string& modulepath);
         void reserveModule(std::string modulepath);

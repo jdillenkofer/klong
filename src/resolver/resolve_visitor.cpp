@@ -48,7 +48,7 @@ namespace klong {
         if (symbolInfoOptional.has_value()) {
             auto& symbolInfo = symbolInfoOptional.value();
             if (!_module->hasDependency(symbolInfo.owningModulepath)) {
-                _session->getResult().addError(CompilationError(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() +
+                _session->addError(CompilationError(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() +
                     "'. But found a fitting definition in this other module " + symbolInfo.owningModulepath));
                 return false;
             }
@@ -60,7 +60,7 @@ namespace klong {
         // if so we can print a better error message for the user
         auto privateSymbols = _session->hasPrivateSymbols(variable->name());
         if (privateSymbols.size() == 1) {
-            _session->getResult().addError(CompilationError(variable->sourceRange(), 
+            _session->addError(CompilationError(variable->sourceRange(), 
                 "Couldn't resolve variable '" + variable->name() + "'. But found a private definition in " + privateSymbols[0].declarationStmt->sourceRange().start.absolutepath()));
             return false;
         }
@@ -73,12 +73,12 @@ namespace klong {
                     paths += "\n";
                 }
             }
-            _session->getResult().addError(CompilationError(variable->sourceRange(),
+            _session->addError(CompilationError(variable->sourceRange(),
                 "Couldn't resolve variable '" + variable->name() + "'. But found multiple private definitions in:\n" + paths));
             return false;
         }
 
-        _session->getResult().addError(
+        _session->addError(
                 CompilationError(variable->sourceRange(), "Couldn't resolve variable '" + variable->name() + "'."));
         return false;
     }
@@ -101,7 +101,7 @@ namespace klong {
         if (!_isInsideFunction) {
             if (isPublic) {
                 if (!_session->declareSymbol(name, symbolInfo)) {
-                    _session->getResult().addError(CompilationError(declarationStmt->sourceRange(),
+                    _session->addError(CompilationError(declarationStmt->sourceRange(),
                             "Symbol with name '" + name + "' already declared in global scope"));
                 }
             } else {
@@ -110,7 +110,7 @@ namespace klong {
             }
         }
         if (scope.find(name) != scope.end()) {
-            _session->getResult().addError(CompilationError(declarationStmt->sourceRange(),
+            _session->addError(CompilationError(declarationStmt->sourceRange(),
                     "Symbol with name '" + name + "' already declared in this scope"));
         }
         scope.insert(std::pair<std::string, SymbolInfo>(name, symbolInfo));
@@ -134,7 +134,7 @@ namespace klong {
                 && stmt->kind() != StatementKind::EXT_DECL
 				&& stmt->kind() != StatementKind::IMPORT
                 && stmt->kind() != StatementKind::COMMENT) {
-                _session->getResult().addError(
+                _session->addError(
                         CompilationError(stmt->sourceRange(), "Illegal top level statement."));
             }
         }
@@ -145,10 +145,12 @@ namespace klong {
                 _session->completeResolved(dependency->absolutepath());
             }
         }
-        enterScope();
+
         _module = module;
+        enterScope();
         resolve(module->statements());
         exitScope();
+        _module = nullptr;
     }
 
     // Stmt
@@ -204,8 +206,7 @@ namespace klong {
 
     void ResolveVisitor::visitReturnStmt(Return* stmt) {
         if (!_isInsideFunction) {
-            _session->getResult().addError(
-                    CompilationError(stmt->sourceRange(), "Cannot return from top-level code."));
+            _session->addError(CompilationError(stmt->sourceRange(), "Cannot return from top-level code."));
         }
         resolve(stmt->value());
     }
@@ -291,8 +292,7 @@ namespace klong {
             if (isResolved && varDeclRes->kind() == StatementKind::VAR_DECL) {
                 auto varDecl = static_cast<VariableDeclaration*>(varDeclRes);
                 if (varDecl->isConst()) {
-                    _session->getResult().addError(
-                        CompilationError(expr->sourceRange(), "Cannot reassign 'const'."));
+                    _session->addError(CompilationError(expr->sourceRange(), "Cannot reassign 'const'."));
                 }
             }
         } else {
@@ -353,8 +353,7 @@ namespace klong {
         if (scope.find(expr->name()) != scope.end()) {
             auto& symbol = (*scope.find(expr->name())).second;
             if (!symbol.initialized) {
-                _session->getResult().addError(
-                        CompilationError(expr->sourceRange(), "Cannot read local variable in its own initializer."));
+                _session->addError(CompilationError(expr->sourceRange(), "Cannot read local variable in its own initializer."));
             }
         }
         resolveLocal(expr);

@@ -6,6 +6,14 @@ namespace klong {
         return _result;
     }
 
+    void CompilationSession::addError(CompilationError&& error) {
+        _result.addError(std::move(error));
+    }
+
+    void CompilationSession::addWarning(CompilationWarning&& warning) {
+        _result.addWarning(std::move(warning));
+    }
+
     bool CompilationSession::hasModule(const std::string& modulepath) {
         return _allModules.find(modulepath) != _allModules.end();
     }

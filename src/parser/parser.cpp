@@ -193,7 +193,7 @@ namespace klong {
 
             return statement();
         } catch(CompilationError& error) {
-            _session->getResult().addError(std::move(error));
+            _session->addError(std::move(error));
             synchronize();
             return nullptr;
         }
@@ -393,7 +393,7 @@ namespace klong {
             result = sourceFile->loadFromFile();
             if (!result) {
 				auto filename = std::filesystem::path(pathToken.value).filename().string();
-				_session->getResult().addError(CompilationError(pathToken.sourceRange,
+				_session->addError(CompilationError(pathToken.sourceRange,
                         "Cannot find imported source file " + filename + " in " + _lexer->filename() + "."));
                 return nullptr;
             }
@@ -412,7 +412,7 @@ namespace klong {
             }
         } else {
             if (_session->isCyclicDependency(sourceFile->absolutepath())) {
-                _session->getResult().addError(CompilationError(pathToken.sourceRange, "Found cyclic dependency!"));
+                _session->addError(CompilationError(pathToken.sourceRange, "Found cyclic dependency!"));
             }
             dependency = _session->getModule(sourceFile->absolutepath());
         }
