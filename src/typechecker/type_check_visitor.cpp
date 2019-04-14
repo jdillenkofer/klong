@@ -311,16 +311,9 @@ namespace klong {
     // Expr
     void TypeCheckVisitor::visitAssignExpr(Assign* expr) {
         check(expr->target());
-        check(expr->targetExpr());
         check(expr->value());
 
-        Type* targetType = nullptr;
-
-        if (expr->isTargetVariable()) {
-            targetType = expr->target()->type();
-        } else {
-            targetType = expr->targetExpr()->type();
-        }
+        Type* targetType = expr->target()->type();
 
         if (!targetType || !expr->value()->type()) {
             return;

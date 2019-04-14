@@ -249,12 +249,6 @@ namespace klong {
 			appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(targetId) + " [ label=\"target\" ]");
 		}
 
-		if (expr->targetExpr()) {
-			expr->targetExpr()->accept(this);
-			auto targetExprId = getExprId(expr->targetExpr());
-			appendLine(std::to_string(assignmentExprId) + " -> " + std::to_string(targetExprId) + " [ label=\"targetExpr\" ]");
-		}
-
         // visit value
         expr->value()->accept(this);
         auto valueExprId = getExprId(expr->value());

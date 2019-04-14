@@ -21,7 +21,7 @@ std::string ToNarrow(const wchar_t *s, char dfault = '?', const std::locale& loc
 #endif
 
 namespace klong {
-	void Linker::link(const std::vector<std::string>& objfiles, std::string executableName, bool emitDebugInfo) {
+	bool link(const std::vector<std::string>& objfiles, std::string executableName, bool emitDebugInfo) {
 		std::string command = "";
 #ifdef WIN32
 		Find_Result result = find_visual_studio_and_windows_sdk();
@@ -59,6 +59,6 @@ namespace klong {
 			command += "\"" + objfile + "\" ";
 		}
 #endif
-		system(command.c_str());
+		return system(command.c_str()) == 0;
 	}
 }

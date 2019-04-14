@@ -562,12 +562,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitAssignExpr(Assign* expr) {
-        llvm::Value* address = nullptr;
-        if (expr->isTargetVariable()) {
-            address = emitCodeL(expr->target());
-        } else {
-            address = emitCodeL(expr->targetExpr());
-        }
+        llvm::Value* address = emitCodeL(expr->target());
         auto value = emitCodeR(expr->value());
         _builder.CreateStore(value, address);
         _valueOfLastExpr = value;

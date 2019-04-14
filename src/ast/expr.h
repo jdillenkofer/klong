@@ -70,30 +70,17 @@ namespace klong {
 
     class Assign : public Expr {
     public:
-        Assign(SourceRange sourceRange, std::shared_ptr<Variable> target, ExprPtr value):
-            Expr(ExprKind::ASSIGN, std::move(sourceRange)),
-            _target(std::move(target)), _value(std::move(value)) {
-        }
-
         Assign(SourceRange sourceRange, std::shared_ptr<Expr> target, ExprPtr value):
                 Expr(ExprKind::ASSIGN, std::move(sourceRange)),
-                _targetExpr(std::move(target)), _value(std::move(value)) {
+                _target(std::move(target)), _value(std::move(value)) {
         }
 
         void accept(ExprVisitor* visitor) override {
             visitor->visitAssignExpr(this);
         }
 
-        Variable* target() const {
+        Expr* target() const {
             return _target.get();
-        }
-
-        Expr* targetExpr() const {
-            return _targetExpr.get();
-        }
-
-        bool isTargetVariable() const {
-            return _target != nullptr;
         }
 
         Expr* value() const {
@@ -101,8 +88,7 @@ namespace klong {
         }
 
     private:
-        std::shared_ptr<Variable> _target = nullptr;
-        std::shared_ptr<Expr> _targetExpr = nullptr;
+        std::shared_ptr<Expr> _target = nullptr;
         ExprPtr _value;
     };
 

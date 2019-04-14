@@ -189,8 +189,21 @@ namespace klong {
             }
         }
 
+        /* GRAPHVIZ */
+        if (_option.emitDotFile) {
+            DotfileEmitter graphvizDotFileEmitter;
+            graphvizDotFileEmitter.emit(rootModule->filenameWithoutExtension() + ".dot", rootModule);
+        }
+
         /* CODEGEN */
         LLVMEmitter::init();
+        defer(
+            // @Robustness: Something is weird with llvms memory management.
+            // If I call llvm::shutdown while llvm stuff is still around it crashes
+            // For now we never call llvm::llvm_shutdown and let the operating system free the memory
+            // THIS COULDN'T GET REPRODUCED WITH LLVM 8, MAYBE IT'S FIXED NOW
+            LLVMEmitter::destroy();
+        );
 
         auto targetTriple = LLVMEmitter::getDefaultTargetTriple();
         if (_option.isCustomTarget) {
@@ -243,24 +256,16 @@ namespace klong {
 						"ms" << std::endl;
 				}
 			);
-			if (!_option.disableLinking) {
 
+            if (!_option.disableLinking) {
 				auto objPaths = _session.getObjectFilenames();
-				Linker linker;
-				linker.link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo);
+                if (!link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo)) {
+                    std::cout << "Linking failed.";
+                    return false;
+                }
 			}
 		}
 
-        /* GRAPHVIZ */
-        if (_option.emitDotFile) {
-            DotfileEmitter graphvizDotFileEmitter;
-            graphvizDotFileEmitter.emit(rootModule->filenameWithoutExtension() + ".dot", rootModule);
-        }
-
-        // @Robustness: Something is weird with llvms memory management.
-        // If I call llvm::shutdown while llvm stuff is still around it crashes
-        // For now we never call llvm::llvm_shutdown and let the operating system free the memory
-        LLVMEmitter::destroy();
         return true;
     }
 }
