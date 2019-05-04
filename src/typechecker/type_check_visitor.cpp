@@ -759,18 +759,24 @@ namespace klong {
     }
 
     void TypeCheckVisitor::visitBoolLiteral(BoolLiteral* expr) {
-        TypePtr type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::BOOL);
+        auto type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::BOOL);
         expr->type(type);
     }
 
+    void TypeCheckVisitor::visitNullLiteral(NullLiteral* expr) {
+        auto voidType = std::make_shared<PrimitiveType>(PrimitiveTypeKind::VOID);
+        auto voidPtrType = std::make_shared<PointerType>(expr->sourceRange(), voidType);
+        expr->type(voidPtrType);
+    }
+
     void TypeCheckVisitor::visitStringLiteral(StringLiteral* expr) {
-        TypePtr type = std::make_shared<PointerType>(expr->sourceRange(),
+        auto type = std::make_shared<PointerType>(expr->sourceRange(),
                 std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::I8));
         expr->type(type);
     }
 
     void TypeCheckVisitor::visitCharacterLiteral(CharacterLiteral* expr) {
-        TypePtr type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::I8);
+        auto type = std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::I8);
         expr->type(type);
     }
 

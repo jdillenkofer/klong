@@ -132,6 +132,8 @@ namespace klong {
         {'l', std::bind(&Lexer::letKeyword, std::placeholders::_1, std::placeholders::_2)},
         {'c', std::bind(&Lexer::constKeyword, std::placeholders::_1, std::placeholders::_2)},
 
+        { 'N', std::bind(&Lexer::nullKeyword, std::placeholders::_1, std::placeholders::_2) },
+
         // types
         {'p', std::bind(&Lexer::ptrType, std::placeholders::_1, std::placeholders::_2)},
         {'v', std::bind(&Lexer::voidType, std::placeholders::_1, std::placeholders::_2)},
@@ -625,6 +627,10 @@ namespace klong {
 
     bool Lexer::constKeyword(Token& token) {
         return matchesKeyword(token, "const", TokenType::CONST);
+    }
+
+    bool Lexer::nullKeyword(Token& token) {
+        return matchesKeyword(token, "NULL", TokenType::NULL_KEYWORD);
     }
 
     bool Lexer::arrow(Token& token) {

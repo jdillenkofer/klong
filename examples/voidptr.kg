@@ -1,0 +1,9 @@
+
+pub fun main() -> void {
+    let i : ptr<i32> = NULL;
+    let t : ptr<void> = NULL;
+    if (i == cast<ptr<i32>>t) {
+        return;
+    }
+    return;
+}

@@ -370,6 +370,11 @@ namespace klong {
         (void) expr;
     }
 
+    void ResolveVisitor::visitNullLiteral(NullLiteral* expr) {
+        // nothing to do here
+        (void)expr;
+    }
+
     void ResolveVisitor::visitStringLiteral(StringLiteral* expr) {
         // nothing to do here
         (void) expr;

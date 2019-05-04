@@ -51,6 +51,8 @@ namespace klong {
         // Declarators
         LET,
         CONST,
+
+        NULL_KEYWORD,
         
         ARROW,
         PLUS,

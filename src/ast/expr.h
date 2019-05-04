@@ -383,6 +383,18 @@ namespace klong {
         bool _value;
     };
 
+    class NullLiteral : public Literal {
+    public:
+        NullLiteral(SourceRange sourceRange) : 
+            Literal(std::move(sourceRange), 
+                std::make_shared<PointerType>(std::make_shared<PrimitiveType>(PrimitiveTypeKind::VOID))) {
+        }
+
+        void accept(ExprVisitor* visitor) override {
+            visitor->visitNullLiteral(this);
+        };
+    };
+
     class StringLiteral: public Literal {
     public:
         StringLiteral(SourceRange sourceRange, std::string value):

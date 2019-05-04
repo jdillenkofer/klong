@@ -76,6 +76,8 @@ namespace klong {
         bool letKeyword(Token& token);
         bool constKeyword(Token& token);
 
+        bool nullKeyword(Token& token);
+
         bool arrow(Token& token);
         bool plus(Token& token);
         bool bang(Token& token);

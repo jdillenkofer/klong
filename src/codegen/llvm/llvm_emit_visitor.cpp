@@ -1044,6 +1044,11 @@ namespace klong {
         _valueOfLastExpr = llvm::ConstantInt::get(_context, llvm::APInt(1, (uint64_t) expr->value()));
     }
 
+    void LLVMEmitVisitor::visitNullLiteral(NullLiteral* expr) {
+        auto voidPointerType = static_cast<llvm::PointerType*>(_typeEmitVisitor.getLLVMType(expr->type()));
+        _valueOfLastExpr = llvm::ConstantPointerNull::get(voidPointerType);
+    }
+
     void LLVMEmitVisitor::visitStringLiteral(StringLiteral* expr) {
         _valueOfLastExpr = _builder.CreateGlobalStringPtr(expr->value(), "globalString");
     }

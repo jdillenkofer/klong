@@ -1071,6 +1071,10 @@ namespace klong {
             return std::make_shared<BoolLiteral>(literalToken.sourceRange, literalToken.type == TokenType::TRUE_KEYWORD);
         }
 
+        if (match(TokenType::NULL_KEYWORD)) {
+            return std::make_shared<NullLiteral>(literalToken.sourceRange);
+        }
+
         if (match(TokenType::NUMBER_LITERAL)) {
             // TODO: enhance conversion _result error handling
             switch (literalToken.numberType) {

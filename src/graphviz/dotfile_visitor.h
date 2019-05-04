@@ -49,6 +49,7 @@ namespace klong {
         // Literals
         void visitNumberLiteral(NumberLiteral* expr) override;
         void visitBoolLiteral(BoolLiteral* expr) override;
+        void visitNullLiteral(NullLiteral* expr) override;
         void visitStringLiteral(StringLiteral* expr) override;
         void visitCharacterLiteral(CharacterLiteral* expr) override;
         void visitArrayLiteral(ArrayLiteral* expr) override;

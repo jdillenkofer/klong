@@ -69,6 +69,7 @@ namespace klong {
     // Literals
     class NumberLiteral;
     class BoolLiteral;
+    class NullLiteral;
     class StringLiteral;
     class CharacterLiteral;
     class ArrayLiteral;
@@ -93,6 +94,7 @@ namespace klong {
         // Literals
         virtual void visitNumberLiteral(NumberLiteral* expr) = 0;
         virtual void visitBoolLiteral(BoolLiteral* expr) = 0;
+        virtual void visitNullLiteral(NullLiteral* expr) = 0;
         virtual void visitStringLiteral(StringLiteral* expr) = 0;
         virtual void visitCharacterLiteral(CharacterLiteral* expr) = 0;
         virtual void visitArrayLiteral(ArrayLiteral* expr) = 0;

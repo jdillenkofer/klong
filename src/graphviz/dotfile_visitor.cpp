@@ -412,6 +412,13 @@ namespace klong {
         + getType(expr->type())+ "\"]");
     }
 
+    void DotfileVisitor::visitNullLiteral(NullLiteral* expr) {
+        auto nullLiteralId = getExprId(expr);
+        appendLine(std::to_string(nullLiteralId) + " [label=\"NullLiteral\\n"
+        + getType(expr->type()) + "\"]");
+
+    }
+
     void DotfileVisitor::visitStringLiteral(StringLiteral* expr) {
         auto stringLiteralId = getExprId(expr);
         appendLine(std::to_string(stringLiteralId) + " [label=\"StringLiteral\\n"
