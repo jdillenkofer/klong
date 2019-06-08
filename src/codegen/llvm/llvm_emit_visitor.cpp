@@ -576,12 +576,12 @@ namespace klong {
         auto right = emitCodeR(expr->right());
         auto leftType = dynamic_cast<PrimitiveType*>(expr->left()->type());
         auto targetType = dynamic_cast<PrimitiveType*>(expr->type());
-		if (expr->castToType()) {
-			left = emitCast(left, expr->left()->type(), expr->castToType());
-			right = emitCast(right, expr->right()->type(), expr->castToType());
-		}
 
         if (targetType && targetType->isInteger()) {
+            if (expr->castToType()) {
+                left = emitCast(left, expr->left()->type(), expr->castToType());
+                right = emitCast(right, expr->right()->type(), expr->castToType());
+            }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = _builder.CreateAdd(left, right);
@@ -631,6 +631,10 @@ namespace klong {
             return;
         }
         if (targetType && targetType->isFloat()) {
+            if (expr->castToType()) {
+                left = emitCast(left, expr->left()->type(), expr->castToType());
+                right = emitCast(right, expr->right()->type(), expr->castToType());
+            }
             switch (expr->op()) {
                 case BinaryOperation::PLUS:
                     _valueOfLastExpr = _builder.CreateFAdd(left, right);
@@ -654,6 +658,10 @@ namespace klong {
             return;
         }
         if (leftType && targetType && Type::isInteger(expr->castToType()) && targetType->isBoolean()) {
+            if (expr->castToType()) {
+                left = emitCast(left, expr->left()->type(), expr->castToType());
+                right = emitCast(right, expr->right()->type(), expr->castToType());
+            }
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateICmpEQ(left, right);
@@ -695,6 +703,10 @@ namespace klong {
             }
         }
         if (leftType && targetType && Type::isFloat(expr->castToType()) && targetType->isBoolean()) {
+            if (expr->castToType()) {
+                left = emitCast(left, expr->left()->type(), expr->castToType());
+                right = emitCast(right, expr->right()->type(), expr->castToType());
+            }
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateFCmpOEQ(left, right);
@@ -736,6 +748,12 @@ namespace klong {
         }
         auto rightPointerType = dynamic_cast<PointerType*>(expr->right()->type());
         if (leftPointerType && rightPointerType) {
+            if (Type::isVoid(leftPointerType->pointsTo())) {
+                right = emitCast(right, rightPointerType, leftPointerType);
+            }
+            if (Type::isVoid(rightPointerType->pointsTo())) {
+                left = emitCast(left, leftPointerType, rightPointerType);
+            }
             switch (expr->op()) {
                 case BinaryOperation::EQUALITY:
                     _valueOfLastExpr = _builder.CreateICmpEQ(left, right);

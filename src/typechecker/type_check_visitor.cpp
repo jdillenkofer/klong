@@ -328,7 +328,7 @@ namespace klong {
         }
 
         if (!targetType->isEqual(expr->value()->type())) {
-            if (!Type::isVoidPtrCast(expr, targetType)) {
+            if (!Type::isVoidPtrCast(expr->value(), targetType)) {
                 _session->addError(
                     CompilationError(expr->value()->sourceRange(), "Expect valid type in assignment."));
             }
@@ -414,8 +414,12 @@ namespace klong {
                     expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
                     break;
                 }
-                if (Type::isPointer(leftType) && Type::isPointer(rightType) && leftType->isEqual(rightType)) {
-                    expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
+                if (Type::isPointer(leftType) && Type::isPointer(rightType)) {
+                    auto leftPointerType = static_cast<PointerType*>(leftType);
+                    auto rightPointerType = static_cast<PointerType*>(rightType);
+                    if (leftType->isEqual(rightType) || Type::isVoid(leftPointerType->pointsTo()) || Type::isVoid(rightPointerType->pointsTo())) {
+                        expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
+                    }
                     break;
                 }
 
