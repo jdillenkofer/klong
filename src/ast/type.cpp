@@ -109,7 +109,7 @@ namespace klong {
 
     bool FunctionType::matchesSignature(std::vector<Expr*>& arguments) const {
         auto& expectedTypes = _paramTypes;
-        if (expectedTypes.size() != arguments.size()) {
+        if (!isVariadic() && expectedTypes.size() != arguments.size()) {
             return false;
         }
         for (size_t i = 0; i < expectedTypes.size(); i++) {

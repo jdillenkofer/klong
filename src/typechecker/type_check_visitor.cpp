@@ -451,11 +451,6 @@ namespace klong {
         std::vector<Type*> callParamTypes;
         for (const auto& arg : expr->args()) {
             check(arg);
-            auto argType = arg->type();
-            if (!argType) {
-                return;
-            }
-            callParamTypes.push_back(argType);
         }
         auto calleeType = expr->callee()->type();
         if (calleeType->kind() == TypeKind::POINTER) {
@@ -463,12 +458,6 @@ namespace klong {
             auto pointsToFunction = calleePointer->pointsTo()->kind() == TypeKind::FUNCTION;
             if (pointsToFunction) {
                 auto functionType = static_cast<FunctionType*>(calleePointer->pointsTo());
-                if (functionType->isVariadic()) {
-                        // only check the known arguments for variadic functions
-                        while (functionType->paramTypes().size() < callParamTypes.size()) {
-                            callParamTypes.pop_back();
-                        }
-                }
                 if (!functionType->matchesSignature(expr->args())) {
                     _session->addError(
                         CompilationError(expr->sourceRange(), "Call Expr doesn't match function signature."));
