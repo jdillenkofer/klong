@@ -2,8 +2,13 @@
 pub fun main() -> void {
     let i : ptr<i32> = NULL;
     let t : ptr<void> = NULL;
+    test(i);
     if (i == cast<ptr<i32>>t) {
         return;
     }
     return;
+}
+
+fun test(a: ptr<void>) {
+    let i: ptr<i32> = a;
 }

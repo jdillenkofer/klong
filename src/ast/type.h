@@ -108,42 +108,13 @@ namespace klong {
             return _isVariadic;
         }
 
-        bool isEqual(const Type* other) const override {
-            if (other->kind() == TypeKind::FUNCTION) {
-                auto otherFunctionType = static_cast<const FunctionType*>(other);
-                if (this->_paramTypes.size() != otherFunctionType->_paramTypes.size()) {
-                    return false;
-                }
+        bool isEqual(const Type* other) const override;
 
-                if (this->_isVariadic != otherFunctionType->_isVariadic) {
-                    return false;
-                }
+        Type* clone() const override;
 
-                if (!this->_returnType->isEqual(otherFunctionType->_returnType.get())) {
-                    return false;
-                }
+        bool matchesSignature(const std::vector<Type*>& callSignature) const;
 
-                return matchesSignature(otherFunctionType->paramTypes());
-            }
-            return false;
-        }
-
-        Type* clone() const override {
-            return new FunctionType(SourceRange(), std::vector<TypePtr>(this->_paramTypes),
-                    std::shared_ptr<Type>(this->_returnType->clone()), _isVariadic);
-        }
-
-        bool matchesSignature(const std::vector<Type*>& callSignature) const {
-            if (this->_paramTypes.size() != callSignature.size()) {
-                return false;
-            }
-            for (size_t i = 0; i < this->_paramTypes.size(); i++) {
-                if (!this->_paramTypes[i]->isEqual(callSignature[i])) {
-                    return false;
-                }
-            }
-            return true;
-        }
+        bool matchesSignature(std::vector<Expr*>& arguments) const;
 
     private:
         std::vector<TypePtr> _paramTypes;

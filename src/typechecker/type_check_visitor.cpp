@@ -469,7 +469,7 @@ namespace klong {
                             callParamTypes.pop_back();
                         }
                 }
-                if (!functionType->matchesSignature(callParamTypes)) {
+                if (!functionType->matchesSignature(expr->args())) {
                     _session->addError(
                         CompilationError(expr->sourceRange(), "Call Expr doesn't match function signature."));
                 }

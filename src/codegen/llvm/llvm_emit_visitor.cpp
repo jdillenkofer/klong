@@ -783,7 +783,11 @@ namespace klong {
         auto calleeF = emitCodeR(expr->callee());
         std::vector<llvm::Value*> argsV;
         for (auto& arg : expr->args()) {
-            argsV.push_back(emitCodeR(arg));
+            auto value = emitCodeR(arg);
+            if (arg->castToType()) {
+                value = emitCast(value, arg->type(), arg->castToType());
+            }
+            argsV.push_back(value);
         }
         _valueOfLastExpr = _builder.CreateCall(calleeF, argsV);
     }
