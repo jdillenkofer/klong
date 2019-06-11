@@ -462,7 +462,8 @@ namespace klong {
             auto pointsToFunction = calleePointer->pointsTo()->kind() == TypeKind::FUNCTION;
             if (pointsToFunction) {
                 auto functionType = static_cast<FunctionType*>(calleePointer->pointsTo());
-                if (!functionType->matchesSignature(expr->args())) {
+                auto arguments = expr->args();
+                if (!functionType->matchesSignature(arguments)) {
                     _session->addError(
                         CompilationError(expr->sourceRange(), "Call Expr doesn't match function signature."));
                 }

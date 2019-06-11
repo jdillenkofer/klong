@@ -17,7 +17,7 @@ cache:
 
 install:
     - ./get-deps.sh
-    - sudo cp -rs $(pwd)/deps/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-14.04/* /usr/local
+    - sudo cp -rs $(pwd)/deps/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-14.04/* /usr/local
 
 before_script:
   - mkdir build
