@@ -27,11 +27,12 @@ namespace klong {
         assert(start.absolutepath() == end.absolutepath());
 
         auto code = start.code();
+        std::stringstream relevantSourceStream;
+
         if (start.line() == end.line()) {
             
             uint64_t currentLineStart = getStartIndexOfLine(start.charPos());
             
-            std::stringstream relevantSourceStream;
             std::stringstream strStream(code.substr(currentLineStart));
             std::string line;
 
@@ -43,12 +44,13 @@ namespace klong {
                 relevantSourceStream << line << std::endl;
                 ++lineCount;
             } while (!line.empty() && (lineCount < lineCountMax) && !strStream.eofbit);
-            
-            // insert a empty line behind the sourceline
-            relevantSourceStream << std::endl;
-            
-            return relevantSourceStream.str();
+        } else {
+            relevantSourceStream << code.substr(start.charPos(), end.charPos() - start.charPos());
         }
-        return code.substr(start.charPos(), end.charPos() - start.charPos());
+            
+        // insert a empty line behind the sourceline
+        relevantSourceStream << std::endl;
+            
+        return relevantSourceStream.str();
     }
 }
