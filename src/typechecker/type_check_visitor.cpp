@@ -143,6 +143,7 @@ namespace klong {
         for (auto& param : stmt->params()) {
             check(param);
         }
+        _returnsValue = false;
         check(stmt->body());
         auto primType = static_cast<PrimitiveType*>(stmt->functionType()->returnType());
         if (!_returnsValue && primType != nullptr && !primType->isVoid()) {
