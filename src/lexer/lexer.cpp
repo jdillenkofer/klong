@@ -406,6 +406,9 @@ namespace klong {
             case 'v':
                 escaped = 0x0b;
                 break;
+            case '0':
+                escaped = 0x00;
+                break;
             default:
                 escaped = -1;
         }
