@@ -32,14 +32,47 @@ namespace klong {
 
     private:
         void updateLocation();
-        void skipWhitespace();
-        char read(bool advancePosition = true);
-        bool isWhitespace(char c) const;
-        bool isAlpha(char c) const;
-        bool isAlphanumeric(char c) const;
-        bool isDigit(char c) const;
-        bool isHexDigit(char c) const;
-        bool readSingleLineToken(Token& token, TokenType type);
+
+        inline void skipWhitespace() {
+            while (isWhitespace(_code[_currentPosition])) {
+                _currentPosition++;
+            }
+        }
+
+        inline char peek() {
+            if (_currentPosition == _code.length()) {
+                return '\0';
+            }
+            return _code[_currentPosition];
+        }
+
+        inline char advance() {
+            char character = peek();
+            _currentPosition++;
+            return character;
+        }
+
+        inline bool isWhitespace(char c) const {
+            return c == ' ' || c == '\t' || c == '\n';
+        }
+
+        inline bool isAlpha(char c) const {
+            return isalpha(c);
+        }
+
+        inline bool isAlphanumeric(char c) const {
+            return isalnum(c);
+        }
+
+        inline bool isDigit(char c) const {
+            return isdigit(c);
+        }
+
+        inline bool isHexDigit(char c) const {
+            return isxdigit(c);
+        }
+
+        bool readSingleCharacterToken(Token& token, TokenType type);
         bool matches(const std::string& str);
         bool matchesKeyword(Token& token, const std::string& keyword, TokenType type);
         char getEscapedValue(char valueToEscape);

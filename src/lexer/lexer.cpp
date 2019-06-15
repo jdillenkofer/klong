@@ -237,7 +237,7 @@ namespace klong {
             return Token { { _sourceLocation, _sourceLocation }, TokenType::END_OF_FILE };
         }
 
-        auto ch = read(false);
+        auto ch = peek();
         auto invalidSourceLocation = SourceLocation { _source };
         Token token {{invalidSourceLocation, invalidSourceLocation}, TokenType::NONE, std::string(1, ch)};
 
@@ -252,7 +252,7 @@ namespace klong {
 
         if (!hasFoundMatchingCase) {
             auto startLocation = _sourceLocation;
-            auto c = read();
+            auto c = advance();
             updateLocation();
             auto endLocation = _sourceLocation;
             token.sourceRange = { startLocation, endLocation };
@@ -292,45 +292,8 @@ namespace klong {
         }
     }
 
-    void Lexer::skipWhitespace() {
-        while (isWhitespace(_code[_currentPosition])) {
-            _currentPosition++;
-        }
-    }
-
-    char Lexer::read(bool advancePosition) {
-        if (_currentPosition == _code.length()) {
-            return '\0';
-        }
-        auto character = _code[_currentPosition];
-        if (advancePosition) {
-            _currentPosition++;
-        }
-        return character;
-    }
-
-    bool Lexer::isWhitespace(char c) const {
-        return c == ' ' || c == '\t' || c == '\n';
-    }
-
-    bool Lexer::isAlpha(char c) const {
-        return isalpha(c);
-    }
-
-    bool Lexer::isAlphanumeric(char c) const {
-        return isalnum(c);
-    }
-
-    bool Lexer::isDigit(char c) const {
-        return isdigit(c);
-    }
-
-    bool Lexer::isHexDigit(char c) const {
-        return isxdigit(c);
-    }
-
-    bool Lexer::readSingleLineToken(Token& token, TokenType type) {
-        auto c = read();
+    bool Lexer::readSingleCharacterToken(Token& token, TokenType type) {
+        auto c = advance();
         auto start = _sourceLocation;
         updateLocation();
         auto end = _sourceLocation;
@@ -344,13 +307,13 @@ namespace klong {
         size_t pos = 0;
         char c;
         while(pos < str.size()) {
-            c = read();
+            c = advance();
             if (c != str[pos]) {
                 return false;
             }
             pos++;
         }
-        c = read(false);
+        c = peek();
         return !isAlphanumeric(c) && c != '_';
     }
     
@@ -419,7 +382,7 @@ namespace klong {
         char c;
         uint8_t nibbles = 0;
 
-        while(isHexDigit(c = read(false))) {
+        while(isHexDigit(c = peek())) {
             content << c;
             _currentPosition++;
             nibbles++;
@@ -438,7 +401,7 @@ namespace klong {
         char c;
         uint8_t bits = 0;
         
-        while((c = read(false)) == '0' || c == '1') {
+        while((c = peek()) == '0' || c == '1') {
             content << c;
             _currentPosition++;
             bits++;
@@ -456,7 +419,7 @@ namespace klong {
     bool Lexer::decimalLiteral(Token& token, std::stringstream& content) {
         char c;
         bool atleastOneDigitBeforeDot = false;
-        while(isDigit(c = read(false))) {
+        while(isDigit(c = peek())) {
             content << c;
             _currentPosition++;
             atleastOneDigitBeforeDot = true;
@@ -464,11 +427,11 @@ namespace klong {
         if (!atleastOneDigitBeforeDot) {
             return false;
         }
-        if ((c = read(false)) == '.') {
+        if ((c = peek()) == '.') {
             content << c;
             _currentPosition++;
             bool atleastOneDecimal = false;
-            while(isDigit(c = read(false))) {
+            while(isDigit(c = peek())) {
                 content << c;
                 _currentPosition++;
                 atleastOneDecimal = true;
@@ -482,7 +445,7 @@ namespace klong {
 
             token.numberType = NumberType::FLOAT;
         } else {
-            if (read(false) == 'u') {
+            if (peek() == 'u') {
                 _currentPosition++;
                 token.numberType = NumberType ::UINT;
             } else {
@@ -502,21 +465,21 @@ namespace klong {
         auto startLocation = _sourceLocation;
 
         // ignore the /
-        read();
-        if (read() != '*') {
+        advance();
+        if (advance() != '*') {
             _currentPosition = commentStart;
             return false;
         }
         
         while(_currentPosition < _code.length() - 1) {
-            while(read() != '*') {
+            while(advance() != '*') {
                 if (_currentPosition == _code.length() - 1) {
                     _currentPosition = commentStart;
                     return false;
                 }
             }
 
-            if (read() == '/') {
+            if (advance() == '/') {
                 auto commentEnd = _currentPosition;
                 updateLocation();
                 auto endLocation = _sourceLocation;
@@ -536,14 +499,14 @@ namespace klong {
         auto startLocation = _sourceLocation;
 
         // ignore first /
-        read();
-        if (read() != '/') {
+        advance();
+        if (advance() != '/') {
             _currentPosition = commentStart;
             return false;
         }
 
         // read while we have not reached the end of the line or the end of the file
-        while(read(false) != '\n' && _currentPosition < _code.length()) {
+        while(peek() != '\n' && _currentPosition < _code.length()) {
             _currentPosition++;
         }
 
@@ -641,8 +604,8 @@ namespace klong {
         auto startLocation = _sourceLocation;
 
         // ignore first -
-        read();
-        if (read() != '>') {
+        advance();
+        if (advance() != '>') {
             _currentPosition = arrowStart;
             return false;
         }
@@ -657,23 +620,23 @@ namespace klong {
     }
 
     bool Lexer::plus(Token& token) {
-        return readSingleLineToken(token, TokenType::PLUS);
+        return readSingleCharacterToken(token, TokenType::PLUS);
     }
 
     bool Lexer::bang(Token& token) {
-        return readSingleLineToken(token, TokenType::BANG);
+        return readSingleCharacterToken(token, TokenType::BANG);
     }
 
     bool Lexer::pipe(Token& token) {
-        return readSingleLineToken(token, TokenType::PIPE);
+        return readSingleCharacterToken(token, TokenType::PIPE);
     }
 
     bool Lexer::orOp(Token& token) {
 		auto orStart = _currentPosition;
 		auto startLocation = _sourceLocation;
 		// ignore first |
-		read();
-		if (read() != '|') {
+		advance();
+		if (advance() != '|') {
 			_currentPosition = orStart;
 			return false;
 		}
@@ -700,51 +663,51 @@ namespace klong {
     }
 
     bool Lexer::minus(Token& token) {
-        return readSingleLineToken(token, TokenType::MINUS);
+        return readSingleCharacterToken(token, TokenType::MINUS);
     }
 
     bool Lexer::hash(Token& token) {
-        return readSingleLineToken(token, TokenType::HASH);
+        return readSingleCharacterToken(token, TokenType::HASH);
     }
 
     bool Lexer::atSign(Token& token) {
-        return readSingleLineToken(token, TokenType::AT_SIGN);
+        return readSingleCharacterToken(token, TokenType::AT_SIGN);
     }
 
     bool Lexer::dollar(Token& token) {
-        return readSingleLineToken(token, TokenType::DOLLAR);
+        return readSingleCharacterToken(token, TokenType::DOLLAR);
     }
 
     bool Lexer::backslash(Token& token) {
-        return readSingleLineToken(token, TokenType::BACKSLASH);
+        return readSingleCharacterToken(token, TokenType::BACKSLASH);
     }
 
     bool Lexer::backquote(Token& token) {
-        return readSingleLineToken(token, TokenType::BACKQUOTE);
+        return readSingleCharacterToken(token, TokenType::BACKQUOTE);
     }
 
     bool Lexer::slash(Token& token) {
-        return readSingleLineToken(token, TokenType::SLASH);
+        return readSingleCharacterToken(token, TokenType::SLASH);
     }
 
     bool Lexer::caret(Token& token) {
-        return readSingleLineToken(token, TokenType::CARET);
+        return readSingleCharacterToken(token, TokenType::CARET);
     }
 
     bool Lexer::tilde(Token& token) {
-        return readSingleLineToken(token, TokenType::TILDE);
+        return readSingleCharacterToken(token, TokenType::TILDE);
     }
 
     bool Lexer::semicolon(Token& token) {
-        return readSingleLineToken(token, TokenType::SEMICOLON);
+        return readSingleCharacterToken(token, TokenType::SEMICOLON);
     }
 
     bool Lexer::colon(Token& token) {
-        return readSingleLineToken(token, TokenType::COLON);
+        return readSingleCharacterToken(token, TokenType::COLON);
     }
 
     bool Lexer::comma(Token& token) {
-        return readSingleLineToken(token, TokenType::COMMA);
+        return readSingleCharacterToken(token, TokenType::COMMA);
     }
 
     bool Lexer::spread(Token& token) {
@@ -752,31 +715,31 @@ namespace klong {
     }
 
     bool Lexer::period(Token& token) {
-        return readSingleLineToken(token, TokenType::PERIOD);
+        return readSingleCharacterToken(token, TokenType::PERIOD);
     }
 
     bool Lexer::percent(Token& token) {
-        return readSingleLineToken(token, TokenType::PERCENT);
+        return readSingleCharacterToken(token, TokenType::PERCENT);
     }
 
     bool Lexer::question(Token& token) {
-        return readSingleLineToken(token, TokenType::QUESTION);
+        return readSingleCharacterToken(token, TokenType::QUESTION);
     }
 
     bool Lexer::asterisk(Token& token) {
-        return readSingleLineToken(token, TokenType::ASTERISK);
+        return readSingleCharacterToken(token, TokenType::ASTERISK);
     }
 
     bool Lexer::ampersand(Token& token) {
-        return readSingleLineToken(token, TokenType::AMPERSAND);
+        return readSingleCharacterToken(token, TokenType::AMPERSAND);
     }
 
     bool Lexer::andOp(Token& token) {
 		auto andStart = _currentPosition;
 		auto startLocation = _sourceLocation;
 		// ignore first &
-		read();
-		if (read() != '&') {
+		advance();
+		if (advance() != '&') {
 			_currentPosition = andStart;
 			return false;
 		}
@@ -791,15 +754,15 @@ namespace klong {
     }
 
     bool Lexer::assignOp(Token& token) {
-        return readSingleLineToken(token, TokenType::ASSIGN_OP);
+        return readSingleCharacterToken(token, TokenType::ASSIGN_OP);
     }
 
     bool Lexer::equal(Token& token) {
         auto equalStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first =
-        read();
-        if (read() != '=') {
+        advance();
+        if (advance() != '=') {
             _currentPosition = equalStart;
             return false;
         }
@@ -817,8 +780,8 @@ namespace klong {
         auto equalStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first !
-        read();
-        if (read() != '=') {
+        advance();
+        if (advance() != '=') {
             _currentPosition = equalStart;
             return false;
         }
@@ -833,19 +796,19 @@ namespace klong {
     }
 
     bool Lexer::lessThan(Token& token) {
-        return readSingleLineToken(token, TokenType::LT_OP);
+        return readSingleCharacterToken(token, TokenType::LT_OP);
     }
 
     bool Lexer::greaterThan(Token& token) {
-        return readSingleLineToken(token, TokenType::GT_OP);
+        return readSingleCharacterToken(token, TokenType::GT_OP);
     }
 
     bool Lexer::lessThanEqual(Token& token) {
         auto lessThanEqualStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first <
-        read();
-        if (read() != '=') {
+        advance();
+        if (advance() != '=') {
             _currentPosition = lessThanEqualStart;
             return false;
         }
@@ -863,8 +826,8 @@ namespace klong {
         auto greaterThanEqualStart = _currentPosition;
         auto startLocation = _sourceLocation;
         // ignore first >
-        read();
-        if (read() != '=') {
+        advance();
+        if (advance() != '=') {
             _currentPosition = greaterThanEqualStart;
             return false;
         }
@@ -879,38 +842,38 @@ namespace klong {
     }
     
     bool Lexer::leftCurlyBrace(Token& token) {
-        return readSingleLineToken(token, TokenType::LEFT_CURLY_BRACE);
+        return readSingleCharacterToken(token, TokenType::LEFT_CURLY_BRACE);
     }
 
     bool Lexer::rightCurlyBrace(Token& token) {
-        return readSingleLineToken(token, TokenType::RIGHT_CURLY_BRACE);
+        return readSingleCharacterToken(token, TokenType::RIGHT_CURLY_BRACE);
     }
 
     bool Lexer::leftParenthesis(Token& token) {
-        return readSingleLineToken(token, TokenType::LEFT_PAR);
+        return readSingleCharacterToken(token, TokenType::LEFT_PAR);
     }
 
     bool Lexer::rightParenthesis(Token& token) {
-        return readSingleLineToken(token, TokenType::RIGHT_PAR);
+        return readSingleCharacterToken(token, TokenType::RIGHT_PAR);
     }
 
     bool Lexer::leftSquaredBracket(Token& token) {
-        return readSingleLineToken(token, TokenType::LEFT_SQUARED_BRACKET);
+        return readSingleCharacterToken(token, TokenType::LEFT_SQUARED_BRACKET);
     }
 
     bool Lexer::rightSquaredBracket(Token& token) {
-        return readSingleLineToken(token, TokenType::RIGHT_SQUARED_BRACKET);
+        return readSingleCharacterToken(token, TokenType::RIGHT_SQUARED_BRACKET);
     }
 
     bool Lexer::identifier(Token& token) {
         auto identifierStart = _currentPosition;
         auto startLocation = _sourceLocation;
-        char c = read();
+        char c = advance();
         if (!isAlpha(c) && c != '_') {
             _currentPosition = identifierStart;
             return false;
         }
-        while((c = read(false)) && (isAlphanumeric(c) || c == '_')) {
+        while((c = peek()) && (isAlphanumeric(c) || c == '_')) {
             // skip alphanumeric chars
             _currentPosition++;
         }
@@ -930,10 +893,10 @@ namespace klong {
         auto startLocation = _sourceLocation;
         char content;
         // first ' char
-        char c = read();
+        char c = advance();
         // escaped char
-        if ((c = read()) == '\\') {
-            c = read();
+        if ((c = advance()) == '\\') {
+            c = advance();
             content = getEscapedValue(c);
             // escape error
             if (content == -1) {
@@ -947,7 +910,7 @@ namespace klong {
         } else {
             content = c;
         }
-        if ((c = read()) == '\'') {
+        if ((c = advance()) == '\'') {
             updateLocation();
             auto endLocation = _sourceLocation;
             token.type = TokenType::CHARACTER_LITERAL;
@@ -965,22 +928,22 @@ namespace klong {
         std::stringstream content;
         uint8_t radix = 10;
         
-        char c = read(false);
+        char c = peek();
 
         // parse radix
         if (c == '0') {
             // skip the '0'
-            read();
-            switch(read(false)) {
+            advance();
+            switch(peek()) {
             case 'x':
             case 'X':
                 radix = 16;
-                read();
+                advance();
                 break;
             case 'b':
             case 'B':
                 radix = 2;
-                read();
+                advance();
                 break;
             default:
                 radix = 10;
@@ -1024,21 +987,21 @@ namespace klong {
         std::stringstream content;
 
         // skip first '"'
-        char c = read();
-        while((c = read(false)) != '"') {
+        char c = advance();
+        while((c = peek()) != '"') {
             if (_currentPosition == _code.length()) {
                 _currentPosition = stringLiteralStart;
                 return false;
             }
             // escaped char
-            if (read(false) == '\\') {
+            if (peek() == '\\') {
                 _currentPosition++;
                 // TODO: refactor this
                 if (_currentPosition == _code.length()) {
                     _currentPosition = stringLiteralStart;
                     return false;
                 }
-                char unescaped = read(false);
+                char unescaped = peek();
                 char escaped = getEscapedValue(unescaped);
                 // escape error
                 if (escaped == -1) {
