@@ -1,0 +1,15 @@
+// This test checks if voidptr conversions work
+// It also checks if the NULL literal can be assigned to ptr types.
+pub fun main() -> i32 {
+    let i : ptr<i32> = NULL;
+    let t : ptr<void> = NULL;
+    test(i);
+    if (i == cast<ptr<i32>>t) {
+        return 0;
+    }
+    return 1;
+}
+
+fun test(a: ptr<void>) {
+    let i: ptr<i32> = a;
+}
