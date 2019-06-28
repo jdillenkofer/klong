@@ -7,6 +7,7 @@
 #include "common/option.h"
 #include "ast/module.h"
 #include "codegen/llvm/llvm_emitter.h"
+#include "codegen/c/c_emitter.h"
 
 namespace klong {
     class Compiler {
@@ -19,7 +20,6 @@ namespace klong {
         bool parse(ModulePtr& module, std::shared_ptr<SourceFile> sourceFile);
         bool resolve(ModulePtr& module);
         bool typecheck(ModulePtr& module);
-        bool codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType);
         bool compile(std::string filepath);
     private:
         void printResult(CompilationResult &result);

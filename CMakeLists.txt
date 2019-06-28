@@ -65,6 +65,8 @@ set(SOURCE_FILES
     src/resolver/resolve_visitor.cpp
     src/typechecker/typechecker.cpp
     src/typechecker/type_check_visitor.cpp
+    src/codegen/c/c_emitter.cpp
+    src/codegen/c/c_emit_visitor.cpp
     src/codegen/llvm/llvm_emitter.cpp
     src/codegen/llvm/llvm_emit_visitor.cpp
     src/codegen/llvm/llvm_type_emit_visitor.cpp
@@ -102,6 +104,8 @@ set(HEADER_FILES
 	src/resolver/resolve_visitor.h
 	src/typechecker/typechecker.h
     src/typechecker/type_check_visitor.h
+    src/codegen/c/c_emitter.h
+    src/codegen/c/c_emit_visitor.h
     src/codegen/llvm/llvm_emit_visitor.h
     src/codegen/llvm/llvm_emitter.h
     src/codegen/llvm/llvm_type_emit_visitor.h

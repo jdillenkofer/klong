@@ -40,20 +40,6 @@ namespace klong {
         return !_session.getResult().hasErrors();
     }
 
-    bool Compiler::codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType) {
-        llvmEmitter.emit(module, &_session);
-
-        auto filename = module->filenameWithoutExtension();
-        if (_option.disableLinking && _option.useCustomOutputPath) {
-            filename = _option.customOutputPath;
-		} else {
-			filename = _session.registerAndReturnUniqueObjectFilepath(filename);
-		}
-
-        llvmEmitter.writeToFile(filename, outputFileType);
-        return true;
-    }
-
     template <typename T> bool compareWarningsOrErrors(const T& a, const T& b) {
         const auto& aSourceRange = a.sourceRange();
         const auto& bSourceRange = b.sourceRange();
@@ -196,14 +182,9 @@ namespace klong {
         }
 
         /* CODEGEN */
-        LLVMEmitter::init();
-        defer(
-            // @Robustness: Something is weird with llvms memory management.
-            // If I call llvm::shutdown while llvm stuff is still around it crashes
-            // For now we never call llvm::llvm_shutdown and let the operating system free the memory
-            // THIS COULDN'T GET REPRODUCED WITH LLVM 8, MAYBE IT'S FIXED NOW
-            LLVMEmitter::destroy();
-        );
+        if (!_option.useCBackend) {
+            LLVMEmitter::init();
+        }
 
         auto targetTriple = LLVMEmitter::getDefaultTargetTriple();
         if (_option.isCustomTarget) {
@@ -222,21 +203,41 @@ namespace klong {
                     }
             );
 
-            if (!(_option.disableLinking && _option.useCustomOutputPath)) {
+            if (!(_option.disableLinking && _option.useCustomOutputPath) && !_option.useCBackend) {
                 std::filesystem::create_directory("obj");
             }
 
             for (auto& module : _session.modules()) {
-                LLVMEmitter llvmEmitter(targetTriple);
                 auto outputFileType = _option.emitAssemblyFile ? OutputFileType::ASM : OutputFileType::OBJECT;
-                if (!codegen(module, llvmEmitter, outputFileType)) {
-                    return false;
+                auto filename = module->filenameWithoutExtension();
+                if (_option.disableLinking && _option.useCustomOutputPath) {
+                    filename = _option.customOutputPath;
                 }
-
-                if (_option.printIR) {
-                    llvmEmitter.printIR();
+                else if (!_option.useCBackend) {
+                    filename = _session.registerAndReturnUniqueObjectFilepath(filename);
+                }
+                
+                if (!_option.useCBackend) {
+                    LLVMEmitter llvmEmitter(targetTriple);
+                    llvmEmitter.emit(module, &_session);
+                    llvmEmitter.writeToFile(filename, outputFileType);
+                    if (_option.printIR) {
+                        llvmEmitter.printIR();
+                    }
+                } else {
+                    CEmitter cEmitter;
+                    cEmitter.emit(module, &_session);
+                    cEmitter.writeToFile(filename);
                 }
             }
+        }
+
+        if (!_option.useCBackend) {
+            // @Robustness: Something is weird with llvms memory management.
+            // If I call llvm::shutdown while llvm stuff is still around it crashes
+            // For now we never call llvm::llvm_shutdown and let the operating system free the memory
+            // THIS COULDN'T GET REPRODUCED WITH LLVM 8, MAYBE IT'S FIXED NOW
+            LLVMEmitter::destroy();
         }
 
 		/* LINKING */
@@ -257,7 +258,7 @@ namespace klong {
 				}
 			);
 
-            if (!_option.disableLinking) {
+            if (!_option.disableLinking && !_option.useCBackend) {
 				auto objPaths = _session.getObjectFilenames();
                 if (!link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo)) {
                     std::cout << "Linking failed.";

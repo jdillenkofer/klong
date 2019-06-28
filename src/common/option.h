@@ -14,6 +14,7 @@ namespace klong {
         bool disableLinking = false;
 		bool emitDebugInfo = false;
 		bool emitDwarf = true;
+        bool useCBackend = false;
         bool useCustomOutputPath = false;
         std::string customOutputPath;
         bool isCustomTarget = false;
