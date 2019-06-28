@@ -1,0 +1,8 @@
+pub fun main() -> i32 {
+
+    /*
+      /* test nested comments */
+      // comments
+    */
+    return 0;
+}

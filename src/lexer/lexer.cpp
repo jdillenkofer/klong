@@ -471,11 +471,23 @@ namespace klong {
             return false;
         }
         
+        int32_t nestedCommentCount = 0;
         while(_currentPosition < _code.length() - 1) {
-            while(advance() != '*') {
+            char c;
+            while((c = advance()) != '*' || nestedCommentCount > 0) {
+                
                 if (_currentPosition == _code.length() - 1) {
                     _currentPosition = commentStart;
                     return false;
+                }
+
+                if (c == '/' && peek() == '*') {
+                    advance();
+                    ++nestedCommentCount;
+                }
+                if (c == '*' && peek() == '/') {
+                    advance();
+                    --nestedCommentCount;
                 }
             }
 
