@@ -56,5 +56,6 @@ namespace klong {
     private:
         CompilationSession* _session;
         std::stringstream _outputStream;
+        std::string _functionTypename;
     };
 }

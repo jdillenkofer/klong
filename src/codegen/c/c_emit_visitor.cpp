@@ -15,12 +15,16 @@ namespace klong {
     {
         _outputStream << "#ifndef HEADERGUARD_" << module->filenameWithoutExtension() << "_H" << std::endl;
         _outputStream << "#define HEADERGUARD_" << module->filenameWithoutExtension() << "_H" << std::endl;
-        _outputStream << "#include <math.h>" << std::endl;
-        _outputStream << "#include <stdbool.h>" << std::endl;
+        
+        _outputStream << "#define NULL 0" << std::endl;
         _outputStream << "#include <stdint.h>" << std::endl;
+        _outputStream << "#include <stdbool.h>" << std::endl;
+/*
+        _outputStream << "#include <math.h>" << std::endl;
         _outputStream << "#include <stdio.h>" << std::endl;
         _outputStream << "#include <stdlib.h>" << std::endl;
         _outputStream << "#include <string.h>" << std::endl;
+*/
 
         // include other module dependencies
         for (auto& dependants : module->dependencies()) {
@@ -37,11 +41,14 @@ namespace klong {
                 function->functionType()->returnType()->accept(this);
                 _outputStream << function->name();
                 _outputStream << "(";
-                auto& params = function->params();
-                for (int i = 0; i < params.size(); ++i) {
+                auto params = function->params();
+                for (uint32_t i = 0; i < params.size(); ++i) {
                     auto& param = params[i];
                     param->type()->accept(this);
                     _outputStream << param->name() << ((params.size() - 1 == i) ? "" : ", ");
+                }
+                if (function->functionType()->isVariadic()) {
+                    _outputStream << ", ...";
                 }
                 _outputStream << ")";
                 _outputStream << ";" << std::endl;
@@ -57,9 +64,9 @@ namespace klong {
 
     void CEmitVisitor::visitBlockStmt(Block * stmt)
     {
-        for (auto& stmt : stmt->statements()) {
+        for (auto& childStmt : stmt->statements()) {
             _outputStream << "    ";
-            stmt->accept(this);
+            childStmt->accept(this);
         }
     }
     
@@ -72,6 +79,25 @@ namespace klong {
     void CEmitVisitor::visitExtDeclStmt(ExternalDeclaration * stmt)
     {
         _outputStream << "extern ";
+        if (stmt->type()->kind() == TypeKind::FUNCTION) {
+            auto functionType = static_cast<FunctionType*>(stmt->type());
+            functionType->returnType()->accept(this);
+            _outputStream << stmt->name();
+            _outputStream << "(";
+            auto paramTypes = functionType->paramTypes();
+            for (uint32_t i = 0; i < paramTypes.size(); ++i) {
+                auto& paramType = paramTypes[i];
+                paramType->accept(this);
+                _outputStream << ((paramTypes.size() - 1 == i) ? "" : ", ");
+            }
+            if (functionType->isVariadic()) {
+                _outputStream << ", ...";
+            }
+            _outputStream << ")";
+
+            _outputStream << ";" << std::endl;
+            return;
+        }
         stmt->type()->accept(this);
         _outputStream << stmt->name() << ";" << std::endl;
     }
@@ -99,11 +125,14 @@ namespace klong {
         stmt->functionType()->returnType()->accept(this);
         _outputStream << stmt->name();
         _outputStream << "(";
-        auto& params = stmt->params();
-        for (int i = 0; i < params.size(); ++i) {
+        auto params = stmt->params();
+        for (uint32_t i = 0; i < params.size(); ++i) {
             auto& param = params[i];
             param->type()->accept(this);
             _outputStream << param->name() << ((params.size() - 1 == i) ? "" : ", ");
+        }
+        if (stmt->functionType()->isVariadic()) {
+            _outputStream << ", ...";
         }
         _outputStream << ")";
         _outputStream << "{" << std::endl;
@@ -143,8 +172,29 @@ namespace klong {
         if (stmt->isGlobal() && !stmt->isPublic()) {
             _outputStream << "static ";
         }
-        stmt->type()->accept(this);
+        bool isArray = false;
+        uint64_t arraySize = 0;
+        Type* innerType = nullptr;
+        auto type = stmt->type();
+        if (Type::isPointer(type)) {
+            auto pointerType = static_cast<PointerType*>(type);
+            if (pointerType->isArray()) {
+                isArray = true;
+                arraySize = pointerType->size();
+                innerType = pointerType->pointsTo();
+            }
+        }
+
+        if (isArray) {
+            innerType->accept(this);
+        }
+        else {
+            type->accept(this);
+        }
         _outputStream << " " << stmt->name();
+        if (isArray) {
+            _outputStream << "[" << arraySize << "]";
+        }
         if (stmt->initializer()) {
             _outputStream << "= ";
             stmt->initializer()->accept(this);
@@ -285,14 +335,14 @@ namespace klong {
         case BinaryOperation::INEQUALITY:
             _outputStream << " != ";
             break;
-        case BinaryOperation::AND:
-            _outputStream << " && ";
-            break;
         case BinaryOperation::XOR:
             _outputStream << " ^ ";
             break;
+        case BinaryOperation::AND:
+            _outputStream << " & ";
+            break;
         case BinaryOperation::OR:
-            _outputStream << " || ";
+            _outputStream << " | ";
             break;
         }
         expr->right()->accept(this);
@@ -304,8 +354,8 @@ namespace klong {
         _outputStream << "( ";
         expr->callee()->accept(this);
         _outputStream << "( ";
-        auto& args = expr->args();
-        for (int i = 0; i < args.size(); ++i) {
+        auto args = expr->args();
+        for (uint32_t i = 0; i < args.size(); ++i) {
             auto& arg = args[i];
             arg->accept(this);
             if (args.size() - 1 != i) {
@@ -345,12 +395,22 @@ namespace klong {
     
     void CEmitVisitor::visitEnumAccessExpr(EnumAccess * expr)
     {
-        expr->target()->accept(this);
-        _outputStream << "." << expr->value() << " ";
+        _outputStream << expr->value() << " ";
     }
     
     void CEmitVisitor::visitLogicalExpr(Logical * expr)
     {
+        _outputStream << "(";
+        switch (expr->op()) {
+        case LogicalOperation::AND:
+            _outputStream << "&&";
+            break;
+        case LogicalOperation::OR:
+            _outputStream << "||";
+            break;
+        }
+        expr->right()->accept(this);
+        _outputStream << ") ";
     }
     
     void CEmitVisitor::visitUnaryExpr(Unary * expr)
@@ -371,7 +431,7 @@ namespace klong {
             break;
         }
         expr->right()->accept(this);
-        _outputStream << ")";
+        _outputStream << ") ";
     }
     
     void CEmitVisitor::visitSizeOfExpr(SizeOf * expr)
@@ -433,13 +493,49 @@ namespace klong {
         _outputStream << "NULL ";
     }
     
+    void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+        if (from.empty())
+            return;
+        size_t start_pos = 0;
+        while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+            str.replace(start_pos, from.length(), to);
+            start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+        }
+    }
+
     void CEmitVisitor::visitStringLiteral(StringLiteral * expr)
     {
-        _outputStream << "\"" << expr->value() << "\" ";
+        auto stringValue = expr->value();
+        replaceAll(stringValue, "\'", "\\'");
+        replaceAll(stringValue, "\"", "\\\"");
+        replaceAll(stringValue, "\?", "\\\?");
+        replaceAll(stringValue, "\\", "\\\\");
+        replaceAll(stringValue, "\a", "\\a");
+        replaceAll(stringValue, "\b", "\\b");
+        replaceAll(stringValue, "\f", "\\f");
+        replaceAll(stringValue, "\n", "\\n");
+        replaceAll(stringValue, "\r", "\\r");
+        replaceAll(stringValue, "\t", "\\t");
+        replaceAll(stringValue, "\v", "\\v");
+        replaceAll(stringValue, "\0", "\\0");
+        _outputStream << "\"" << stringValue << "\" ";
     }
     
     void CEmitVisitor::visitCharacterLiteral(CharacterLiteral * expr)
     {
+        auto stringValue = std::string("") + expr->value();
+        replaceAll(stringValue, "\'", "\\'");
+        replaceAll(stringValue, "\"", "\\\"");
+        replaceAll(stringValue, "\?", "\\\?");
+        replaceAll(stringValue, "\\", "\\\\");
+        replaceAll(stringValue, "\a", "\\a");
+        replaceAll(stringValue, "\b", "\\b");
+        replaceAll(stringValue, "\f", "\\f");
+        replaceAll(stringValue, "\n", "\\n");
+        replaceAll(stringValue, "\r", "\\r");
+        replaceAll(stringValue, "\t", "\\t");
+        replaceAll(stringValue, "\v", "\\v");
+        replaceAll(stringValue, "\0", "\\0");
         _outputStream << "'" << expr->value() << "' ";
     }
     
@@ -449,6 +545,18 @@ namespace klong {
 
     void CEmitVisitor::visitFunctionType(FunctionType * type)
     {
+        type->returnType()->accept(this);
+        _outputStream << "(*" << _functionTypename << ")(";
+        auto paramTypes = type->paramTypes();
+        for (uint32_t i = 0; i < paramTypes.size(); ++i) {
+            auto& paramType = paramTypes[i];
+            paramType->accept(this);
+            _outputStream << ((paramTypes.size() - 1 == i) ? "" : ", ");
+        }
+        if (type->isVariadic()) {
+            _outputStream << ", ...";
+        }
+        _outputStream << ")";
     }
 
     void CEmitVisitor::visitPrimitiveType(PrimitiveType * type)
@@ -495,12 +603,25 @@ namespace klong {
 
     void CEmitVisitor::visitPointerType(PointerType * type)
     {
-        type->pointsTo()->accept(this);
+        auto pointsTo = type->pointsTo();
+        if (pointsTo->kind() == TypeKind::FUNCTION) {
+            pointsTo->accept(this);
+            return;
+        }
+        pointsTo->accept(this);
         _outputStream << "* ";
     }
 
     void CEmitVisitor::visitCustomType(CustomType * type)
     {
+        auto resolvesTo = type->resolvesTo();
+        if (resolvesTo->typeDeclarationKind() == TypeDeclarationKind::STRUCT) {
+            _outputStream << "struct ";
+        } else if (resolvesTo->typeDeclarationKind() == TypeDeclarationKind::UNION) {
+            _outputStream << "union ";
+        } else if (resolvesTo->typeDeclarationKind() == TypeDeclarationKind::ENUM) {
+            _outputStream << "enum ";
+        }
         _outputStream << type->name() << " ";
     }
 }

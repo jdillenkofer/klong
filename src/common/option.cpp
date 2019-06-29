@@ -5,7 +5,7 @@ namespace klong {
         Result<Option, std::string> optionResult;
         Option option;
         int c;
-        while ((c = getopt(argc, argv, "hvcgdso:b:ip")) != -1)
+        while ((c = getopt(argc, argv, "hvcgdeso:b:ip")) != -1)
         {
             switch (c) {
                 case 'v':
@@ -20,6 +20,9 @@ namespace klong {
 				case 'd':
 					option.emitDwarf = false;
 					break;
+                case 'e':
+                    option.useCBackend = true;
+                    break;
                 case 's':
                     option.emitAssemblyFile = true;
 					option.disableLinking = true;
