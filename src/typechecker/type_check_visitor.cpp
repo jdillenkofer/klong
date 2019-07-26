@@ -211,18 +211,21 @@ namespace klong {
         check(stmt->initializer());
 
         if (stmt->type() == nullptr) {
-            auto clonedInitType = std::shared_ptr<Type>(stmt->initializer()->type()->clone());
+            auto initializerType = stmt->initializer()->type();
+            if (initializerType) {
+                auto clonedInitType = std::shared_ptr<Type>(initializerType->clone());
 
-            auto initAsPointerType = dynamic_cast<PointerType*>(stmt->initializer()->type());
+                auto initAsPointerType = dynamic_cast<PointerType*>(initializerType);
 
-            // propagate array type meta info
-            if (initAsPointerType && initAsPointerType->isArray()) {
-                auto clonedInitasPointerType = dynamic_cast<PointerType*>(clonedInitType.get());
-                clonedInitasPointerType->isArray(true);
-                clonedInitasPointerType->size(initAsPointerType->size());
+                // propagate array type meta info
+                if (initAsPointerType && initAsPointerType->isArray()) {
+                    auto clonedInitasPointerType = dynamic_cast<PointerType*>(clonedInitType.get());
+                    clonedInitasPointerType->isArray(true);
+                    clonedInitasPointerType->size(initAsPointerType->size());
+                }
+
+                stmt->type(clonedInitType);
             }
-
-            stmt->type(clonedInitType);
         } else {
             resolveType(stmt->type());
             auto stmtAsPointerType = dynamic_cast<PointerType*>(stmt->type());
@@ -555,7 +558,7 @@ namespace klong {
 	void TypeCheckVisitor::visitEnumAccessExpr(EnumAccess* expr) {
 		resolveType(expr->target());
 		auto resolvedTypeDecl = expr->target()->resolvesTo();
-		if (resolvedTypeDecl && resolvedTypeDecl->typeDeclarationKind() != TypeDeclarationKind::ENUM) {
+		if (!resolvedTypeDecl || resolvedTypeDecl->typeDeclarationKind() != TypeDeclarationKind::ENUM) {
 			_session->addError(
 			        CompilationError(expr->target()->sourceRange(), "Expect enum type."));
 		} else {
