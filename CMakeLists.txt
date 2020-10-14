@@ -85,8 +85,7 @@ set(HEADER_FILES
 	src/common/source_file.h
     src/common/source_location.h
     src/common/compilation_result.h
-    src/common/compilation_error.h
-    src/common/compilation_warning.h
+    src/common/compilation_incident.h
     src/ast/expr.h
     src/ast/stmt.h
 	src/ast/module.h
