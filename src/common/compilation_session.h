@@ -18,8 +18,9 @@ namespace klong {
 		}
 
         CompilationResult& getResult();
-        void addError(CompilationError&& error);
-        void addWarning(CompilationWarning&& warning);
+        void reportError(std::string message, SourceRange sourceRange = SourceRange());
+        void reportWarning(std::string message, SourceRange sourceRange = SourceRange());
+        void reportInfo(std::string message, SourceRange sourceRange = SourceRange());
 
         bool hasModule(const std::string& modulepath);
         void reserveModule(std::string modulepath);

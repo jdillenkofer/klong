@@ -1,6 +1,6 @@
 #include "compiler.h"
 
-#include <iostream>
+#include <cstdio>
 #include <chrono>
 
 #include "common/defer.h"
@@ -46,17 +46,22 @@ namespace klong {
         auto filename = module->filenameWithoutExtension();
         if (_option.disableLinking && _option.useCustomOutputPath) {
             filename = _option.customOutputPath;
-		} else {
-			filename = _session.registerAndReturnUniqueObjectFilepath(filename);
-		}
+        } else {
+            filename = _session.registerAndReturnUniqueObjectFilepath(filename);
+        }
 
         llvmEmitter.writeToFile(filename, outputFileType);
         return true;
     }
 
-    template <typename T> bool compareWarningsOrErrors(const T& a, const T& b) {
-        const auto& aSourceRange = a.sourceRange();
-        const auto& bSourceRange = b.sourceRange();
+    bool compareIncidents(const CompilationIncident& a, const CompilationIncident& b) {
+        const auto& aType = a.type;
+        const auto& bType = b.type;
+        if (aType != bType) {
+            return aType < bType;
+        }
+        const auto& aSourceRange = a.sourceRange;
+        const auto& bSourceRange = b.sourceRange;
         // if both sourceRanges are valid, first order by filename then order by line
         if (aSourceRange.valid() && bSourceRange.valid()) {
             std::string aFilename = aSourceRange.start.filename();
@@ -73,48 +78,24 @@ namespace klong {
         return &a < &b;
     }
 
-    void Compiler::printResult(CompilationResult &result) {
-        // print warnings
-        {
-            auto warnings = result.getWarnings();
-            std::sort(warnings.begin(), warnings.end(), compareWarningsOrErrors<CompilationWarning>);
+    void Compiler::reportCompilationResult(CompilationResult &result) {
+        auto incidents = result.getIncidents();
+        std::sort(incidents.begin(), incidents.end(), compareIncidents);
 
-            std::string prevFilename = "";
-            for (uint64_t i = 0; i < warnings.size(); i++) {
-                auto& warning = warnings[i];
-                auto sourceRange = warning.sourceRange();
-                if (sourceRange.valid() && prevFilename != sourceRange.start.filename()) {
-                    std::cout << "WARNING - file: " << sourceRange.start.filename() << std::endl;
-                }
-                if (sourceRange.valid()) {
-                    std::cout << "line " << sourceRange.start.line() << ": " << warning.what() << std::endl;
-                    std::cout << sourceRange.getRelevantSourceText() << std::flush;
-                } else {
-                    std::cout << warning.what() << std::endl;
-                }
-                prevFilename = sourceRange.valid() ? sourceRange.start.filename() : "";
+        std::string prevFilename = "";
+        for (uint64_t i = 0; i < incidents.size(); i++) {
+            auto& incident = incidents[i];
+            auto sourceRange = incident.sourceRange;
+            if (sourceRange.valid() && prevFilename != sourceRange.start.filename()) {
+                printf("%s - file: %s\n", incident.getTypeName(), sourceRange.start.filename().c_str());
             }
-        }
-        // print errors
-        {
-            auto errors = result.getErrors();
-            std::sort(errors.begin(), errors.end(), compareWarningsOrErrors<CompilationError>);
-
-            std::string prevFilename = "";
-            for (uint64_t i = 0; i < errors.size(); i++) {
-                auto& error = errors[i];
-                auto sourceRange = error.sourceRange();
-                if (sourceRange.valid() && prevFilename != sourceRange.start.filename()) {
-                    std::cout << "ERROR - file: " << sourceRange.start.filename() << std::endl;
-                }
-                if (sourceRange.valid()) {
-                    std::cout << "line " << sourceRange.start.line() << ": " << error.what() << std::endl;
-                    std::cout << sourceRange.getRelevantSourceText() << std::flush;
-                } else {
-                    std::cout << error.what() << std::endl;
-                }
-                prevFilename = sourceRange.valid() ? sourceRange.start.filename() : "";
+            if (sourceRange.valid()) {
+                printf("line %d: %s\n", sourceRange.start.line(), incident.message.c_str());
+                printf(sourceRange.getRelevantSourceText().c_str());
+            } else {
+                printf("%s\n", incident.message.c_str());
             }
+            prevFilename = sourceRange.valid() ? sourceRange.start.filename() : "";
         }
     }
 
@@ -141,7 +122,7 @@ namespace klong {
             );
 
             if (!parse(rootModule, sourceFile)) {
-                printResult(_session.getResult());
+                reportCompilationResult(_session.getResult());
                 return false;
             }
         }
@@ -160,7 +141,7 @@ namespace klong {
             );
 
             if (!resolve(rootModule)) {
-                printResult(_session.getResult());
+                reportCompilationResult(_session.getResult());
                 return false;
             }
 
@@ -180,11 +161,11 @@ namespace klong {
             );
 
             if (!typecheck(rootModule)) {
-                printResult(_session.getResult());
+                reportCompilationResult(_session.getResult());
                 return false;
             } else {
-                if (_session.getResult().hasWarnings()) {
-                    printResult(_session.getResult());
+                if (_session.getResult().hasAnyReportableIncidents()) {
+                    reportCompilationResult(_session.getResult());
                 }
             }
         }
@@ -239,32 +220,35 @@ namespace klong {
             }
         }
 
-		/* LINKING */
-		{
-			auto linkStart = std::chrono::high_resolution_clock::now();
-			defer(
-				if (_option.verbose) {
-					auto linkEnd = std::chrono::high_resolution_clock::now();
-					std::cout << "Link time: " <<
-						std::chrono::duration_cast<std::chrono::milliseconds>(
-							linkEnd - linkStart).count() <<
-						"ms" << std::endl;
-
-					std::cout << "overall time: " <<
-						std::chrono::duration_cast<std::chrono::milliseconds>(
-							linkEnd - parseStart).count() <<
-						"ms" << std::endl;
-				}
-			);
-
-            if (!_option.disableLinking) {
-				auto objPaths = _session.getObjectFilenames();
-                if (!link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo)) {
-                    std::cout << "Linking failed.";
-                    return false;
+        /* LINKING */
+        if (!_option.disableLinking) {
+            auto linkStart = std::chrono::high_resolution_clock::now();
+            defer(
+                if (_option.verbose) {
+                    auto linkEnd = std::chrono::high_resolution_clock::now();
+                    std::cout << "Link time: " <<
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            linkEnd - linkStart).count() <<
+                        "ms" << std::endl;
                 }
-			}
-		}
+            );
+
+            auto objPaths = _session.getObjectFilenames();
+            if (!link(objPaths, _option.useCustomOutputPath ? _option.customOutputPath : "a.out", _option.emitDebugInfo)) {
+                std::cout << "Linking failed.";
+                return false;
+            }
+        }
+
+        defer(
+            if (_option.verbose) {
+                auto overallEnd = std::chrono::high_resolution_clock::now();
+                std::cout << "overall time: " <<
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        overallEnd - parseStart).count() <<
+                    "ms" << std::endl;
+            }
+        );
 
         return true;
     }

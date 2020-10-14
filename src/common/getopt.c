@@ -16,9 +16,10 @@ Code given out at the 1985 UNIFORUM conference in Dallas.
 #define ERR(s, c)	if(opterr){\
 	char errbuf[2];\
 	errbuf[0] = c; errbuf[1] = '\n';\
-	fputs(argv[0], stderr);\
-	fputs(s, stderr);\
-	fputc(c, stderr);}
+	fputs(argv[0], stdout);\
+	fputs(s, stdout);\
+	fputc(c, stdout);\
+	fputc('\n', stdout);}
 
 int	opterr = 1;
 int	optind = 1;

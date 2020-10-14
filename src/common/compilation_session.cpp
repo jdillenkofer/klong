@@ -6,12 +6,19 @@ namespace klong {
         return _result;
     }
 
-    void CompilationSession::addError(CompilationError&& error) {
-        _result.addError(std::move(error));
+    void CompilationSession::reportError(std::string message, SourceRange sourceRange) {
+        CompilationIncident error(CompilationIncidentType::ERROR, message, sourceRange);
+        _result.addIncident(std::move(error));
     }
 
-    void CompilationSession::addWarning(CompilationWarning&& warning) {
-        _result.addWarning(std::move(warning));
+    void CompilationSession::reportWarning(std::string message, SourceRange sourceRange) {
+        CompilationIncident warning(CompilationIncidentType::WARNING, message, sourceRange);
+        _result.addIncident(std::move(warning));
+    }
+
+    void CompilationSession::reportInfo(std::string message, SourceRange sourceRange) {
+        CompilationIncident warning(CompilationIncidentType::INFO, message, sourceRange);
+        _result.addIncident(std::move(warning));
     }
 
     bool CompilationSession::hasModule(const std::string& modulepath) {

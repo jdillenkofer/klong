@@ -22,7 +22,7 @@ namespace klong {
         bool codegen(ModulePtr& module, LLVMEmitter& llvmEmitter, OutputFileType outputFileType);
         bool compile(std::string filepath);
     private:
-        void printResult(CompilationResult &result);
+        void reportCompilationResult(CompilationResult &result);
     private:
         Option _option;
         CompilationSession _session;

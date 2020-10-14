@@ -38,16 +38,12 @@ namespace klong {
 
     void TypeCheckVisitor::declareType(TypeDeclaration* typeDeclarationStmt) {
         if (_typeDeclarations.find(typeDeclarationStmt->name()) != _typeDeclarations.end()) {
-            _session->addError(
-                    CompilationError(typeDeclarationStmt->sourceRange(),
-                            "Type '" + typeDeclarationStmt->name() + "' already declared."));
+            _session->reportError("Type '" + typeDeclarationStmt->name() + "' already declared.", typeDeclarationStmt->sourceRange());
         }
         if (typeDeclarationStmt->isPublic()) {
             auto isAlreadyDeclared = !_session->declareType(typeDeclarationStmt->name(), typeDeclarationStmt);
             if (isAlreadyDeclared) {
-                _session->addError(
-                        CompilationError(typeDeclarationStmt->sourceRange(),
-                                         "Type '" + typeDeclarationStmt->name() + "' already declared."));
+                _session->reportError("Type '" + typeDeclarationStmt->name() + "' already declared.", typeDeclarationStmt->sourceRange());
             }
         }
         _typeDeclarations[typeDeclarationStmt->name()] = typeDeclarationStmt;
@@ -147,24 +143,19 @@ namespace klong {
         check(stmt->body());
         auto primType = static_cast<PrimitiveType*>(stmt->functionType()->returnType());
         if (!_returnsValue && primType != nullptr && !primType->isVoid()) {
-            _session->addError(
-                    CompilationError(stmt->sourceRange(),
-                            "Control-flow reaches end of non-void function "
-                            + stmt->name() + "."));
+            _session->reportError("Control-flow reaches end of non-void function " + stmt->name() + ".", stmt->sourceRange());
         }
         currentFunction = previousFunction;
     }
 
     void TypeCheckVisitor::visitParameterStmt(Parameter* stmt) {
         if (stmt->type()->kind() == TypeKind::FUNCTION) {
-            _session->addError(
-                    CompilationError(stmt->sourceRange(), "Parameters of type functionType are not allowed."));
+            _session->reportError("Parameters of type functionType are not allowed.", stmt->sourceRange());
         }
         if (stmt->type()->kind() == TypeKind::POINTER) {
             auto pointerType = static_cast<PointerType*>(stmt->type());
             if (pointerType->isArray()) {
-                _session->addError(
-                    CompilationError(stmt->sourceRange(), "Parameters of type array are not allowed."));
+                _session->reportError("Parameters of type array are not allowed.", stmt->sourceRange());
             }
         }
     }
@@ -172,8 +163,7 @@ namespace klong {
     void TypeCheckVisitor::visitIfStmt(If* stmt) {
         check(stmt->condition());
         if (!Type::isBoolean(stmt->condition()->type())) {
-            _session->addError(
-                    CompilationError(stmt->condition()->sourceRange(), "Expect bool condition in if-statement."));
+            _session->reportError("Expect bool condition in if-statement.", stmt->condition()->sourceRange());
         }
         check(stmt->thenBranch());
         bool thenBranchReturnsValue = getAndResetReturnsValue();
@@ -195,8 +185,7 @@ namespace klong {
             auto valueType = stmt->value()->type();
             if (!functionReturnType->isEqual(valueType)) {
                 if (!Type::isVoidPtrCast(stmt->value(), functionReturnType)) {
-                    _session->addError(
-                        CompilationError(stmt->sourceRange(), "Expect return statement type to match the function returnType."));
+                    _session->reportError("Expect return statement type to match the function returnType.", stmt->sourceRange());
                 }
             }
             _returnsValue = true;
@@ -205,8 +194,7 @@ namespace klong {
 
     void TypeCheckVisitor::visitVarDeclStmt(VariableDeclaration* stmt) {
         if (currentFunction != nullptr && stmt->isPublic()) {
-            _session->addError(
-                    CompilationError(stmt->sourceRange(), "Pub keyword not allowed in front of local variable."));
+            _session->reportError("Pub keyword not allowed in front of local variable.", stmt->sourceRange());
         }
         check(stmt->initializer());
 
@@ -232,14 +220,12 @@ namespace klong {
             if (stmtAsPointerType && stmtAsPointerType->isArray()
                 && stmt->initializer() && stmt->initializer()->kind() != ExprKind::LITERAL) {
                 if (!Type::isVoidPtrCast(stmt->initializer(), stmt->type())) {
-                    _session->addError(
-                        CompilationError(stmt->sourceRange(), "initializer of arrays can only contain array literals."));
+                    _session->reportError("initializer of arrays can only contain array literals.", stmt->sourceRange());
                 }
             }
             if (stmt->initializer() && !stmt->type()->isEqual(stmt->initializer()->type())) {
                 if (!Type::isVoidPtrCast(stmt->initializer(), stmt->type())) {
-                    _session->addError(
-                        CompilationError(stmt->sourceRange(), "initializerType doesn't match declaration type."));
+                    _session->reportError("initializerType doesn't match declaration type.", stmt->sourceRange());
                 }
             }
         }
@@ -256,8 +242,7 @@ namespace klong {
             if (isCustomType) {
                 auto customType = static_cast<CustomType*>(value->type());
                 if (customType && customType->name() == stmt->name()) {
-                    _session->addError(
-                        CompilationError(value->sourceRange(), "Self referential member definitions are not allowed."));
+                    _session->reportError("Self referential member definitions are not allowed.", value->sourceRange());
                 }
             }
 		}
@@ -283,8 +268,7 @@ namespace klong {
     void TypeCheckVisitor::visitWhileStmt(While* stmt) {
         check(stmt->condition());
         if (!Type::isBoolean(stmt->condition()->type())) {
-            _session->addError(
-                    CompilationError(stmt->condition()->sourceRange(), "while condition expects bool type."));
+            _session->reportError("while condition expects bool type.", stmt->condition()->sourceRange());
         }
         check(stmt->body());
     }
@@ -293,8 +277,7 @@ namespace klong {
         check(stmt->initializer());
         check(stmt->condition());
         if (!Type::isBoolean(stmt->condition()->type())) {
-            _session->addError(
-                    CompilationError(stmt->condition()->sourceRange(), "for condition expects bool type."));
+            _session->reportError("for condition expects bool type.", stmt->condition()->sourceRange());
         }
         check(stmt->increment());
         check(stmt->body());
@@ -333,8 +316,7 @@ namespace klong {
 
         if (!targetType->isEqual(expr->value()->type())) {
             if (!Type::isVoidPtrCast(expr->value(), targetType)) {
-                _session->addError(
-                    CompilationError(expr->value()->sourceRange(), "Expect valid type in assignment."));
+                _session->reportError("Expect valid type in assignment.", expr->value()->sourceRange());
             }
         }
 
@@ -391,8 +373,7 @@ namespace klong {
                     expr->type(resultType);
                     break;
                 }
-				_session->addError(
-				        CompilationError(expr->sourceRange(), "Illegal type in arithmetic operation."));
+				_session->reportError("Illegal type in arithmetic operation.", expr->sourceRange());
 				break;
             }
 			case BinaryOperation::EQUALITY:
@@ -427,8 +408,7 @@ namespace klong {
                     break;
                 }
 
-                _session->addError(
-                        CompilationError(expr->sourceRange(), "Comparisons must be of the same type."));
+                _session->reportError("Comparisons must be of the same type.", expr->sourceRange());
                 break;
             }
             case BinaryOperation::MODULO:
@@ -443,13 +423,11 @@ namespace klong {
                     expr->type(resultType);
                     break;
                 }
-                _session->addError(
-                        CompilationError(expr->sourceRange(), "Illegal type in binary operation"));
+                _session->reportError("Illegal type in binary operation", expr->sourceRange());
                 break;
             }
             default:
-                _session->addError(
-                        CompilationError(expr->sourceRange(), "Illegal binary op."));
+                _session->reportError("Illegal binary op.", expr->sourceRange());
                 break;
         }
     }
@@ -468,15 +446,13 @@ namespace klong {
                 auto functionType = static_cast<FunctionType*>(calleePointer->pointsTo());
                 auto arguments = expr->args();
                 if (!functionType->matchesSignature(arguments)) {
-                    _session->addError(
-                        CompilationError(expr->sourceRange(), "Call Expr doesn't match function signature."));
+                    _session->reportError("Call Expr doesn't match function signature.", expr->sourceRange());
                 }
                 expr->type(std::shared_ptr<Type>(functionType->returnType()->clone()));
                 return;
             }
         }
-        _session->addError(
-                CompilationError(expr->sourceRange(), "Callee doesn't resolve to function pointer expression."));
+        _session->reportError("Callee doesn't resolve to function pointer expression.", expr->sourceRange());
     }
 
     void TypeCheckVisitor::visitGroupingExpr(Grouping* expr) {
@@ -487,24 +463,18 @@ namespace klong {
 	void TypeCheckVisitor::visitSubscriptExpr(Subscript* expr) {
 		check(expr->target());
         if (expr->target()->type()->kind() != TypeKind::POINTER) {
-            _session->addError(
-                CompilationError(expr->sourceRange(),
-                    "Illegal target type for subscript expr. Target has to be of type pointer."));
+            _session->reportError("Illegal target type for subscript expr. Target has to be of type pointer.", expr->sourceRange());
             return;
         }
 		check(expr->index());
         if (expr->index()->type()->kind() != TypeKind::PRIMITIVE) {
-            _session->addError(
-                CompilationError(expr->sourceRange(),
-                    "Index of subscript operator has to be numeric."));
+            _session->reportError("Index of subscript operator has to be numeric.", expr->sourceRange());
             return;
         }
 		auto pointerType = static_cast<PointerType*>(expr->target()->type());
 		auto numberType = static_cast<PrimitiveType*>(expr->index()->type());
 		if (!numberType->isInteger()) {
-			_session->addError(
-			        CompilationError(expr->sourceRange(),
-			                "Index of subscript operator has to be numeric."));
+			_session->reportError("Index of subscript operator has to be numeric.", expr->sourceRange());
 		}
 		auto innerType = std::shared_ptr<Type>(pointerType->pointsTo()->clone());
 		expr->type(innerType);
@@ -519,9 +489,7 @@ namespace klong {
         }
 
         if (!customType) {
-            _session->addError(
-                    CompilationError(expr->sourceRange(),
-                            "MemberAccess target is not a custom type."));
+            _session->reportError("MemberAccess target is not a custom type.", expr->sourceRange());
             return;
         }
 
@@ -535,19 +503,14 @@ namespace klong {
                 auto memberTypeDecl = static_cast<MemberTypeDeclaration*>(declarationType);
                 auto memberPtr = memberTypeDecl->findMember(expr->value());
                 if (!memberPtr) {
-                    _session->addError(
-                            CompilationError(
-                                    expr->sourceRange(),
-                                    "MemberAccess target does not have such a member element."));
+                    _session->reportError("MemberAccess target does not have such a member element.", expr->sourceRange());
                 } else {
                     expr->type(std::shared_ptr<Type>(memberPtr->type()->clone()));
                 }
                 break;
             }
 			case TypeDeclarationKind::ENUM: {
-				_session->addError(
-				        CompilationError(expr->sourceRange(),
-				                "MemberAccess target does not allow enum types. Try to use the '::' operator instead."));
+				_session->reportError("MemberAccess target does not allow enum types. Try to use the '::' operator instead.", expr->sourceRange());
 				break;
 			}
             default:
@@ -559,14 +522,12 @@ namespace klong {
 		resolveType(expr->target());
 		auto resolvedTypeDecl = expr->target()->resolvesTo();
 		if (!resolvedTypeDecl || resolvedTypeDecl->typeDeclarationKind() != TypeDeclarationKind::ENUM) {
-			_session->addError(
-			        CompilationError(expr->target()->sourceRange(), "Expect enum type."));
+			_session->reportError("Expect enum type.", expr->target()->sourceRange());
 		} else {
 			auto enumValues = static_cast<EnumDeclaration*>(resolvedTypeDecl)->values();
 			auto it = std::find(enumValues.begin(), enumValues.end(), expr->value());
 			if (it == enumValues.end()) {
-				_session->addError(
-				        CompilationError(expr->sourceRange(), "No such value " + expr->value() + " in enum type " + expr->target()->name() + "."));
+				_session->reportError("No such value " + expr->value() + " in enum type " + expr->target()->name() + ".", expr->sourceRange());
 			}
 			expr->type(std::shared_ptr<Type>(expr->target()->clone()));
 		}
@@ -579,8 +540,7 @@ namespace klong {
             return;
         }
         if (!Type::isBoolean(leftType)) {
-            _session->addError(
-                    CompilationError(expr->left()->sourceRange(), "Expect boolean expr."));
+            _session->reportError("Expect boolean expr.", expr->left()->sourceRange());
         }
         check(expr->right());
         auto rightType = expr->right()->type();
@@ -588,8 +548,7 @@ namespace klong {
             return;
         }
         if (!Type::isBoolean(rightType)) {
-            _session->addError(
-                    CompilationError(expr->right()->sourceRange(), "Expect boolean expr."));
+            _session->reportError("Expect boolean expr.", expr->right()->sourceRange());
         }
         expr->type(std::make_shared<PrimitiveType>(PrimitiveTypeKind::BOOL));
     }
@@ -603,26 +562,21 @@ namespace klong {
         }
 
         if (expr->op() == UnaryOperation::NOT && !Type::isBoolean(rightType)) {
-            _session->addError(
-                    CompilationError(expr->sourceRange(), "'!' expects boolean expression."));
+            _session->reportError("'!' expects boolean expression.", expr->sourceRange());
         }
 
         if (expr->op() == UnaryOperation::MINUS && !Type::isInteger(rightType)) {
-            _session->addError(
-                    CompilationError(expr->sourceRange(), "Unary '-' expects number expression."));
+            _session->reportError("Unary '-' expects number expression.", expr->sourceRange());
         }
 
         if (expr->op() == UnaryOperation::DEREF) {
             if (!Type::isPointer(rightType)) {
-                _session->addError(
-                        CompilationError(expr->sourceRange(), "Deref expects pointer type."));
+                _session->reportError("Deref expects pointer type.", expr->sourceRange());
                 return;
             }
             auto pointerType = static_cast<PointerType*>(rightType);
             if (pointerType->pointsTo()->kind() == TypeKind::FUNCTION) {
-                _session->addError(
-                        CompilationError(expr->sourceRange(),
-                                "Deref expects non function pointer type."));
+                _session->reportError("Deref expects non function pointer type.", expr->sourceRange());
             }
             expr->type(std::shared_ptr<Type>(pointerType->pointsTo()->clone()));
             return;
@@ -631,9 +585,7 @@ namespace klong {
         if (expr->op() == UnaryOperation::ADDRESS_OF) {
             auto variable = dynamic_cast<Variable*>(expr->right());
             if (variable == nullptr) {
-                _session->addError(
-                        CompilationError(expr->sourceRange(),
-                                "Can only get address of variable expressions."));
+                _session->reportError("Can only get address of variable expressions.", expr->sourceRange());
             } else {
                 auto isFunction = false;
                 if (variable->type()->kind() == TypeKind::FUNCTION) {
@@ -648,9 +600,7 @@ namespace klong {
                 }
 
                 if (isFunction) {
-                    _session->addError(
-                            CompilationError(expr->sourceRange(),
-                                               "Can not get address of function. Function names are already pointers."));
+                    _session->reportError("Can not get address of function. Function names are already pointers.", expr->sourceRange());
                 }
             }
             expr->type(std::make_shared<PointerType>(
@@ -664,9 +614,7 @@ namespace klong {
     void TypeCheckVisitor::visitSizeOfExpr(SizeOf *expr) {
         resolveType(expr->right());
         if (expr->right()->kind() == TypeKind::FUNCTION) {
-            _session->addError(
-                    CompilationError(expr->right()->sourceRange(),
-                            "Can not get sizeof a function type. Did you mean sizeof<ptr type>?"));
+            _session->reportError("Can not get sizeof a function type. Did you mean sizeof<ptr type>?", expr->right()->sourceRange());
         }
         expr->type(std::make_shared<PrimitiveType>(expr->sourceRange(), PrimitiveTypeKind::U64));
     }
@@ -678,25 +626,17 @@ namespace klong {
             return;
         }
         if (Type::isVoid(sourceType)) {
-            _session->addError(
-                    CompilationError(sourceType->sourceRange(),
-                            "Can not cast from void type."));
+            _session->reportError("Can not cast from void type.", sourceType->sourceRange());
         }
         if (sourceType->kind() == TypeKind::CUSTOM) {
-            _session->addError(
-                    CompilationError(expr->targetType()->sourceRange(),
-                                     "Can not cast from custom type."));
+            _session->reportError("Can not cast from custom type.", expr->targetType()->sourceRange());
         }
         auto targetType = std::shared_ptr<Type>(expr->targetType()->clone());
         if (expr->targetType()->kind() == TypeKind::FUNCTION) {
-            _session->addError(
-                    CompilationError(expr->targetType()->sourceRange(),
-                            "Can not cast to function type. Did you mean ptr to function?"));
+            _session->reportError("Can not cast to function type. Did you mean ptr to function?", expr->targetType()->sourceRange());
         }
         if (expr->targetType()->kind() == TypeKind::CUSTOM) {
-            _session->addError(
-                    CompilationError(expr->targetType()->sourceRange(),
-                            "Can not cast to custom type. Did you mean ptr to custom type?"));
+            _session->reportError("Can not cast to custom type. Did you mean ptr to custom type?", expr->targetType()->sourceRange());
         }
         expr->type(targetType);
     }
@@ -745,8 +685,7 @@ namespace klong {
                 break;
             }
             default:
-                _session->addError(
-                        CompilationError(expr->sourceRange(), "Variable resolves to invalid kind."));
+                _session->reportError("Variable resolves to invalid kind.", expr->sourceRange());
         }
     }
 
@@ -786,7 +725,7 @@ namespace klong {
         auto valueType = expr->values()[0]->type();
         for (auto& val : expr->values()) {
             if (!valueType->isEqual(val->type())) {
-                throw CompilationError(expr->sourceRange(), "Not all array values are of the same type.");
+                throw CompilationIncident(CompilationIncidentType::ERROR, "Not all array values are of the same type.", expr->sourceRange());
             }
         }
 
@@ -801,13 +740,11 @@ namespace klong {
         for (auto& param : type->paramTypes()) {
             resolveType(param);
             if (param->kind() == TypeKind::FUNCTION) {
-                _session->addError(
-                        CompilationError(param->sourceRange(), "Parameters of type functionType are not allowed."));
+                _session->reportError("Parameters of type functionType are not allowed.", param->sourceRange());
             }
             if (param->kind() == TypeKind::PRIMITIVE) {
                 if (Type::isVoid(param)) {
-                    _session->addError(
-                            CompilationError(param->sourceRange(), "Parameters of type void are not allowed."));
+                    _session->reportError("Parameters of type void are not allowed.", param->sourceRange());
                 }
             }
         }
@@ -830,8 +767,7 @@ namespace klong {
             typeDecl = _session->findTypeDeclaration(type->name());
         }
         if (!typeDecl) {
-            _session->addError(
-                    CompilationError(type->sourceRange(), "Couldn't resolve typename."));
+            _session->reportError("Couldn't resolve typename.", type->sourceRange());
         }
         type->resolvesTo(typeDecl);
     }

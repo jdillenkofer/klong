@@ -10,26 +10,21 @@ namespace klong {
     }
 
     bool CompilationResult::hasErrors() const {
-        return !_errors.empty();
+        return _hasErrors;
     }
 
-    bool CompilationResult::hasWarnings() const {
-        return !_warnings.empty();
+    bool CompilationResult::hasAnyReportableIncidents() const {
+        return _incidents.size() > 0;
     }
 
-    void CompilationResult::addError(CompilationError&& error) {
-        _errors.emplace_back(error);
+    void CompilationResult::addIncident(CompilationIncident&& incident) {
+        if (incident.type == CompilationIncidentType::ERROR) {
+            _hasErrors = true;
+        }
+        _incidents.emplace_back(incident);
     }
 
-    void CompilationResult::addWarning(CompilationWarning&& warning) {
-        _warnings.emplace_back(warning);
-    }
-
-    std::vector<CompilationError> CompilationResult::getErrors() const {
-        return _errors;
-    }
-
-    std::vector<CompilationWarning> CompilationResult::getWarnings() const {
-        return _warnings;
+    std::vector<CompilationIncident> CompilationResult::getIncidents() const {
+        return _incidents;
     }
 }

@@ -3,8 +3,7 @@
 #include <vector>
 
 #include "ast/module.h"
-#include "compilation_error.h"
-#include "compilation_warning.h"
+#include "compilation_incident.h"
 
 namespace klong {
     class CompilationResult {
@@ -15,16 +14,14 @@ namespace klong {
         void setSuccess(ModulePtr module);
 
         bool hasErrors() const;
-        bool hasWarnings() const;
+        bool hasAnyReportableIncidents() const;
 
-        void addError(CompilationError&& error);
-        void addWarning(CompilationWarning&& warning);
+        void addIncident(CompilationIncident&& incident);
 
-        std::vector<CompilationError> getErrors() const;
-        std::vector<CompilationWarning> getWarnings() const;
+        std::vector<CompilationIncident> getIncidents() const;
     private:
+        bool _hasErrors = false;
         ModulePtr _module;
-        std::vector<CompilationError> _errors;
-        std::vector<CompilationWarning> _warnings;
+        std::vector<CompilationIncident> _incidents;
     };
 }
