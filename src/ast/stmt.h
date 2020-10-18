@@ -3,9 +3,9 @@
 #include "visitor.h"
 #include "lexer/token.h"
 #include "type.h"
+#include "array.h"
 
 #include <optional>
-#include <vector>
 #include <memory>
 #include <utility>
 
@@ -62,7 +62,7 @@ namespace klong {
 
     class Block : public Stmt {
     public:
-        Block(SourceRange sourceRange, std::vector<StmtPtr>&& statements):
+        Block(SourceRange sourceRange, Array<StmtPtr>&& statements):
             Stmt(StatementKind::BLOCK, std::move(sourceRange)),
             _statements(statements) {
         }
@@ -71,16 +71,16 @@ namespace klong {
             visitor->visitBlockStmt(this);
         }
 
-        std::vector<Stmt*> statements() const {
-            std::vector<Stmt*> stmts;
+        Array<Stmt*> statements() const {
+            Array<Stmt*> stmts;
             for (auto& stmt : _statements) {
-                stmts.push_back(stmt.get());
+                stmts.push(stmt.get());
             }
             return stmts;
         }
 
     private:
-        std::vector<StmtPtr> _statements;
+        Array<StmtPtr> _statements;
     };
 
     class Expression : public Stmt {
@@ -179,8 +179,8 @@ namespace klong {
 
     class Function : public Stmt {
     public:
-        Function(SourceRange sourceRange, std::string name, std::vector<ParameterPtr>&& params,
-            std::shared_ptr<FunctionType> functionType, std::vector<StmtPtr>&& body, bool isPublic):
+        Function(SourceRange sourceRange, std::string name, Array<ParameterPtr>&& params,
+            std::shared_ptr<FunctionType> functionType, Array<StmtPtr>&& body, bool isPublic):
             Stmt(StatementKind::FUNCTION, std::move(sourceRange)),
             _name(std::move(name)),
             _params(params),
@@ -197,10 +197,10 @@ namespace klong {
             return _name;
         }
 
-        std::vector<Parameter*> params() const {
-            std::vector<Parameter*> params;
+        Array<Parameter*> params() const {
+            Array<Parameter*> params;
             for (auto& param : _params) {
-                params.push_back(param.get());
+                params.push(param.get());
             }
             return params;
         }
@@ -209,10 +209,10 @@ namespace klong {
             return _functionType.get();
         }
 
-        std::vector<Stmt*> body() const {
-            std::vector<Stmt*> body;
+        Array<Stmt*> body() const {
+            Array<Stmt*> body;
             for (auto& stmt : _body) {
-                body.push_back(stmt.get());
+                body.push(stmt.get());
             }
             return body;
         }
@@ -223,9 +223,9 @@ namespace klong {
 
     private:
         std::string _name;
-        std::vector<ParameterPtr> _params;
+        Array<ParameterPtr> _params;
         std::shared_ptr<FunctionType> _functionType;
-        std::vector<StmtPtr> _body;
+        Array<StmtPtr> _body;
         bool _isPublic;
     };
 
@@ -409,7 +409,7 @@ namespace klong {
 		MemberTypeDeclaration(SourceRange sourceRange,
 			TypeDeclarationKind kind,
 			std::string name,
-			std::vector<std::shared_ptr<CustomMember>>&& members,
+			Array<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
 				TypeDeclaration(std::move(sourceRange), kind, std::move(name), isPublic),
 				_members(members) {
@@ -454,16 +454,16 @@ namespace klong {
 			return _members[index.value()].get();
 		}
 
-		std::vector<CustomMember*> members() {
-			std::vector<CustomMember*> members;
+		Array<CustomMember*> members() {
+			Array<CustomMember*> members;
 			for (auto& member : _members) {
-				members.push_back(member.get());
+				members.push(member.get());
 			}
 			return members;
 		}
 
 	private:
-		std::vector<std::shared_ptr<CustomMember>> _members;
+		Array<std::shared_ptr<CustomMember>> _members;
 		bool _isSelfReferential;
 	};
 
@@ -471,7 +471,7 @@ namespace klong {
 	public:
 		StructDeclaration(SourceRange sourceRange,
 			std::string name,
-			std::vector<std::shared_ptr<CustomMember>>&& members,
+			Array<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) : 
 				MemberTypeDeclaration(std::move(sourceRange), TypeDeclarationKind::STRUCT, std::move(name), std::move(members), isPublic) {
 		}
@@ -485,7 +485,7 @@ namespace klong {
     public:
 		UnionDeclaration(SourceRange sourceRange,
 			std::string name,
-			std::vector<std::shared_ptr<CustomMember>>&& members,
+			Array<std::shared_ptr<CustomMember>>&& members,
 			bool isPublic) :
 				MemberTypeDeclaration(std::move(sourceRange), TypeDeclarationKind::UNION, std::move(name), std::move(members), isPublic) {
 		}
@@ -499,12 +499,12 @@ namespace klong {
 	public:
 		EnumDeclaration(SourceRange sourceRange,
 			std::string name,
-			std::vector<std::string>&& values,
+			Array<std::string>&& values,
 			bool isPublic):
 				TypeDeclaration(std::move(sourceRange), TypeDeclarationKind::ENUM, std::move(name), isPublic), _values(std::move(values)) {
 		}
 
-		std::vector<std::string> values() const {
+		Array<std::string> values() const {
 			return _values;
 		}
 
@@ -512,7 +512,7 @@ namespace klong {
 			visitor->visitEnumDeclStmt(this);
 		}
 	private:
-		std::vector<std::string> _values;
+		Array<std::string> _values;
 	};
 
     class While : public Stmt {

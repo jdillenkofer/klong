@@ -60,14 +60,14 @@ namespace klong {
 		stmt->accept(this);
     }
 
-    void LLVMEmitVisitor::emitBlock(const std::vector<Stmt*>& statements) {
-        _deferScopes.emplace_back(std::vector<Stmt*>());
+    void LLVMEmitVisitor::emitBlock(const Array<Stmt*>& statements) {
+        _deferScopes.push(Array<Stmt*>());
         for (auto& stmt : statements) {
             emitCode(stmt);
         }
         emitLocalDefers();
         assert(!_deferScopes.empty());
-        _deferScopes.pop_back();
+        _deferScopes.pop();
     }
 
     void LLVMEmitVisitor::emitLocalDefers() {
@@ -557,7 +557,7 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitDeferStmt(Defer* stmt) {
-        _deferScopes.back().push_back(stmt->stmtToDefer());
+        _deferScopes.back().push(stmt->stmtToDefer());
     }
 
     void LLVMEmitVisitor::visitCommentStmt(Comment* stmt) {
@@ -799,15 +799,15 @@ namespace klong {
 
     void LLVMEmitVisitor::visitCallExpr(Call* expr) {
         auto calleeF = emitCodeR(expr->callee());
-        std::vector<llvm::Value*> argsV;
+        Array<llvm::Value*> argsV;
         for (auto& arg : expr->args()) {
             auto value = emitCodeR(arg);
             if (arg->castToType()) {
                 value = emitCast(value, arg->type(), arg->castToType());
             }
-            argsV.push_back(value);
+            argsV.push(value);
         }
-        _valueOfLastExpr = _builder.CreateCall(calleeF, argsV);
+        _valueOfLastExpr = _builder.CreateCall(calleeF, llvm::ArrayRef(argsV.data(), argsV.size()));
     }
 
     void LLVMEmitVisitor::visitGroupingExpr(Grouping* expr) {
@@ -1080,12 +1080,12 @@ namespace klong {
     }
 
     void LLVMEmitVisitor::visitArrayLiteral(ArrayLiteral* expr) {
-        std::vector<llvm::Constant*> values;
+        Array<llvm::Constant*> values;
         for (auto& arrayVal : expr->values()) {
-            values.push_back((llvm::Constant*) emitCodeR(arrayVal));
+            values.push((llvm::Constant*) emitCodeR(arrayVal));
         }
 		auto llvmArrayType = _typeEmitVisitor.getLLVMType(expr->type());
-        _valueOfLastExpr = llvm::ConstantArray::get((llvm::ArrayType*)llvmArrayType, values);
+        _valueOfLastExpr = llvm::ConstantArray::get((llvm::ArrayType*)llvmArrayType, llvm::ArrayRef(values.data(), values.size()));
     }
 
     void LLVMEmitVisitor::setSession(CompilationSession* session) {

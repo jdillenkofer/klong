@@ -92,11 +92,11 @@ namespace klong {
     }
 
     Type* FunctionType::clone() const {
-        return new FunctionType(SourceRange(), std::vector<TypePtr>(this->_paramTypes),
+        return new FunctionType(SourceRange(), Array<TypePtr>(this->_paramTypes),
             std::shared_ptr<Type>(this->_returnType->clone()), _isVariadic);
     }
 
-    bool FunctionType::matchesSignature(const std::vector<Type*>& callSignature) const {
+    bool FunctionType::matchesSignature(const Array<Type*>& callSignature) const {
         if (this->_paramTypes.size() != callSignature.size()) {
             for (size_t i = 0; i < this->_paramTypes.size(); i++) {
                 if (!this->_paramTypes[i]->isEqual(callSignature[i])) {
@@ -107,7 +107,7 @@ namespace klong {
         return true;
     }
 
-    bool FunctionType::matchesSignature(std::vector<Expr*>& arguments) const {
+    bool FunctionType::matchesSignature(Array<Expr*>& arguments) const {
         auto& expectedTypes = _paramTypes;
         if (!isVariadic() && expectedTypes.size() != arguments.size()) {
             return false;

@@ -3,6 +3,7 @@
 #include <stack>
 #include <map>
 
+#include "array.h"
 #include "common/compilation_session.h"
 #include "common/symbol_info.h"
 #include "ast/module.h"
@@ -86,7 +87,7 @@ namespace klong {
     private:
         void resolve(Stmt* stmt);
         void resolve(Expr* expr);
-        void resolve(const std::vector<Stmt*>& statements);
+        void resolve(const Array<Stmt*>& statements);
 
         bool resolveLocal(Variable* variable);
 
@@ -100,7 +101,7 @@ namespace klong {
 
     private:
         Module* _module;
-        std::deque<std::map<std::string, SymbolInfo>> _scopes;
+        Array<std::map<std::string, SymbolInfo>> _scopes;
         bool _isInsideFunction = false;
         CompilationSession* _session;
     };

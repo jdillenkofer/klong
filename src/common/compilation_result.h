@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include "array.h"
 
 #include "ast/module.h"
 #include "compilation_incident.h"
@@ -18,10 +18,10 @@ namespace klong {
 
         void addIncident(CompilationIncident&& incident);
 
-        std::vector<CompilationIncident> getIncidents() const;
+        Array<CompilationIncident> getIncidents() const;
     private:
         bool _hasErrors = false;
         ModulePtr _module;
-        std::vector<CompilationIncident> _incidents;
+        Array<CompilationIncident> _incidents;
     };
 }

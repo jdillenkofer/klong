@@ -3,8 +3,8 @@
 #include "visitor.h"
 #include "common/source_range.h"
 #include "type.h"
+#include "array.h"
 
-#include <vector>
 #include <memory>
 
 namespace klong {
@@ -143,7 +143,7 @@ namespace klong {
     
     class Call : public Expr {
     public:
-        Call(SourceRange sourceRange, ExprPtr callee, std::vector<ExprPtr>&& args):
+        Call(SourceRange sourceRange, ExprPtr callee, Array<ExprPtr>&& args):
             Expr(ExprKind::CALL, std::move(sourceRange)),
             _callee(std::move(callee)), _args(args) {
         }
@@ -156,17 +156,17 @@ namespace klong {
             return _callee.get();
         }
 
-        std::vector<Expr*> args() const {
-            std::vector<Expr*> args;
+        Array<Expr*> args() const {
+            Array<Expr*> args;
             for (auto& arg : _args) {
-                args.push_back(arg.get());
+                args.push(arg.get());
             }
             return args;
         }
 
     private:
         ExprPtr _callee;
-        std::vector<ExprPtr> _args;
+        Array<ExprPtr> _args;
     };
     
     class Grouping : public Expr {
@@ -435,15 +435,15 @@ namespace klong {
 
     class ArrayLiteral: public Literal {
     public:
-        ArrayLiteral(SourceRange sourceRange, std::vector<ExprPtr>&& values):
+        ArrayLiteral(SourceRange sourceRange, Array<ExprPtr>&& values):
             Literal(std::move(sourceRange)),
             _values(values) {
         }
 
-        std::vector<Expr*> values() const {
-            std::vector<Expr*> values;
+        Array<Expr*> values() const {
+            Array<Expr*> values;
             for(auto& val : _values) {
-                values.push_back(val.get());
+                values.push(val.get());
             }
             return values;
         }
@@ -453,7 +453,7 @@ namespace klong {
         }
 
     private:
-        std::vector<ExprPtr> _values;
+        Array<ExprPtr> _values;
     };
 
     enum class LogicalOperation {

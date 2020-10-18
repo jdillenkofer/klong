@@ -10,19 +10,19 @@ namespace klong {
     }
 
     void LLVMTypeEmitVisitor::visitFunctionType(FunctionType* type) {
-        std::vector<llvm::Type*> paramTypes;
+        Array<llvm::Type*> paramTypes;
 
-        _outerTypes.push_back(TypeKind::FUNCTION);
+        _outerTypes.push(TypeKind::FUNCTION);
 
         for (auto& paramType : type->paramTypes()) {
-            paramTypes.push_back(getLLVMType(paramType));
+            paramTypes.push(getLLVMType(paramType));
         }
 
 		llvm::Type* returnType = getLLVMType(type->returnType());
 
-        _outerTypes.pop_back();
+        _outerTypes.pop();
 
-        _valueOfLastType = llvm::FunctionType::get(returnType, paramTypes, type->isVariadic());
+        _valueOfLastType = llvm::FunctionType::get(returnType, llvm::ArrayRef(paramTypes.data(), paramTypes.size()), type->isVariadic());
     }
 
     void LLVMTypeEmitVisitor::visitPrimitiveType(PrimitiveType* type) {
@@ -67,9 +67,9 @@ namespace klong {
     }
 
     void LLVMTypeEmitVisitor::visitPointerType(PointerType* type) {
-        _outerTypes.push_back(TypeKind::POINTER);
+        _outerTypes.push(TypeKind::POINTER);
         auto innerType = getLLVMType(type->pointsTo());
-		_outerTypes.pop_back();
+		_outerTypes.pop();
         if (type->isArray()) {
             _valueOfLastType = llvm::ArrayType::get(innerType, type->size());
         } else {
@@ -84,7 +84,7 @@ namespace klong {
             return;
         }
 
-        _outerTypes.push_back(TypeKind::CUSTOM);
+        _outerTypes.push(TypeKind::CUSTOM);
         auto typeDeclaration = type->resolvesTo();
         switch(typeDeclaration->typeDeclarationKind()) {
             case TypeDeclarationKind::STRUCT:
@@ -101,12 +101,12 @@ namespace klong {
                     }
                 }
 
-                std::vector<llvm::Type*> members;
+                Array<llvm::Type*> members;
                 for (auto& value : structDeclaration->members()) {
-                    members.push_back(getLLVMType(value->type()));
+                    members.push(getLLVMType(value->type()));
                 }
 
-                _valueOfLastType = llvm::StructType::create(_context, members, type->name());
+                _valueOfLastType = llvm::StructType::create(_context, llvm::ArrayRef(members.data(), members.size()), type->name());
                 _customTypeCache[type->name()] = _valueOfLastType;
                 break;
             }
@@ -136,12 +136,12 @@ namespace klong {
                 }
 
                 // only add the biggest llvm type to the union
-                std::vector<llvm::Type*> members;
+                Array<llvm::Type*> members;
 				if (biggestLLVMType != nullptr) {
-					members.push_back(biggestLLVMType);
+					members.push(biggestLLVMType);
 				}
 
-                _valueOfLastType = llvm::StructType::create(_context, members, type->name());
+                _valueOfLastType = llvm::StructType::create(_context, llvm::ArrayRef(members.data(), members.size()), type->name());
                 _customTypeCache[type->name()] = _valueOfLastType;
                 break;
             }
@@ -154,6 +154,6 @@ namespace klong {
                 assert(false);
                 break;
         }
-        _outerTypes.pop_back();
+        _outerTypes.pop();
     }
 }

@@ -19,7 +19,7 @@ namespace klong {
         }
     }
 
-    void ResolveVisitor::resolve(const std::vector<Stmt*>& statements) {
+    void ResolveVisitor::resolve(const Array<Stmt*>& statements) {
         for (const auto& statement : statements) {
             if (statement->kind() == StatementKind::FUNCTION) {
                 auto stmt = static_cast<Function*>(statement);
@@ -81,11 +81,11 @@ namespace klong {
     }
 
     void ResolveVisitor::enterScope() {
-        _scopes.emplace_back(std::map<std::string, SymbolInfo>());
+        _scopes.push(std::map<std::string, SymbolInfo>());
     }
 
     void ResolveVisitor::exitScope() {
-        _scopes.pop_back();
+        _scopes.pop();
     }
 
     void ResolveVisitor::declare(Stmt* declarationStmt, std::string name, DeclarationType declarationType, bool isPublic) {

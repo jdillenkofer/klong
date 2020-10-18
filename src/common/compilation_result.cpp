@@ -21,10 +21,10 @@ namespace klong {
         if (incident.type == CompilationIncidentType::ERROR) {
             _hasErrors = true;
         }
-        _incidents.emplace_back(incident);
+        _incidents.push(incident);
     }
 
-    std::vector<CompilationIncident> CompilationResult::getIncidents() const {
+    Array<CompilationIncident> CompilationResult::getIncidents() const {
         return _incidents;
     }
 }

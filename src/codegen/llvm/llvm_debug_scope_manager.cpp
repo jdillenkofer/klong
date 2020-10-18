@@ -3,11 +3,11 @@
 namespace klong {
 
 	void LLVMDebugScopeManager::push(llvm::DIScope* scope) {
-		_debugBlocks.push_back(scope);
+		_debugBlocks.push(scope);
 	}
 
 	void LLVMDebugScopeManager::pop() {
-		_debugBlocks.pop_back();
+		_debugBlocks.pop();
 	}
 
 	void LLVMDebugScopeManager::setDebugFile(llvm::DIFile* debugFile) {

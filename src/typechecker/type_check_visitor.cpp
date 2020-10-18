@@ -11,7 +11,7 @@
 
 namespace klong {
 
-    void TypeCheckVisitor::check(const std::vector<Stmt*>& statements) {
+    void TypeCheckVisitor::check(const Array<Stmt*>& statements) {
         for (const auto& stmt : statements) {
             check(stmt);
         }
@@ -434,7 +434,7 @@ namespace klong {
 
     void TypeCheckVisitor::visitCallExpr(Call* expr) {
         check(expr->callee());
-        std::vector<Type*> callParamTypes;
+        Array<Type*> callParamTypes;
         for (const auto& arg : expr->args()) {
             check(arg);
         }

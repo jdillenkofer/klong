@@ -14,7 +14,7 @@ namespace klong {
 		assert(_debugInfoBuilder != nullptr);
 		llvm::SmallVector<llvm::Metadata*, 8> paramDebugTypes;
 
-		_outerTypes.push_back(TypeKind::FUNCTION);
+		_outerTypes.push(TypeKind::FUNCTION);
 
 		llvm::DIType* returnDebugType = getLLVMDebugType(type->returnType());
 		paramDebugTypes.push_back(returnDebugType);
@@ -23,7 +23,7 @@ namespace klong {
 			paramDebugTypes.push_back(getLLVMDebugType(paramType));
 		}
 
-		_outerTypes.pop_back();
+		_outerTypes.pop();
 		auto typeArray = _debugInfoBuilder->getOrCreateTypeArray(paramDebugTypes);
 		_valueOfLastDebugType = _debugInfoBuilder->createSubroutineType(typeArray);
 	}
@@ -82,9 +82,9 @@ namespace klong {
 
 	void LLVMDebugTypeEmitVisitor::visitPointerType(PointerType* type) {
 		assert(_debugInfoBuilder != nullptr);
-		_outerTypes.push_back(TypeKind::POINTER);
+		_outerTypes.push(TypeKind::POINTER);
 		auto innerDebugType = getLLVMDebugType(type->pointsTo());
-		_outerTypes.pop_back();
+		_outerTypes.pop();
 		_valueOfLastDebugType = _debugInfoBuilder->createPointerType(innerDebugType, _dataLayout.getPointerSizeInBits());
 	}
 
@@ -103,7 +103,7 @@ namespace klong {
 		auto scope = _debugScopeManager->getDebugScope();
 		auto line = type->sourceRange().start.line();
 
-		_outerTypes.push_back(TypeKind::CUSTOM);
+		_outerTypes.push(TypeKind::CUSTOM);
 		auto typeDeclaration = type->resolvesTo();
 		switch (typeDeclaration->typeDeclarationKind()) {
 		case TypeDeclarationKind::STRUCT:
@@ -120,17 +120,17 @@ namespace klong {
 				}
 			}
 
-			std::vector<llvm::Metadata*> elements;
+			Array<llvm::Metadata*> elements;
 			uint64_t structSizeInBits = 0;
 			for (auto& value : structDeclaration->members()) {
 				auto actualDebugType = getLLVMDebugType(value->type());
 				auto memberDebugType = _debugInfoBuilder->createMemberType(scope, value->name(), debugFile, value->sourceRange().start.line(), 
 					actualDebugType->getSizeInBits(), actualDebugType->getAlignInBits(), actualDebugType->getOffsetInBits(), llvm::DINode::DIFlags::FlagZero, actualDebugType);
 				structSizeInBits += actualDebugType->getSizeInBits();
-				elements.push_back(memberDebugType);
+				elements.push(memberDebugType);
 			}
 
-			llvm::DINodeArray members = _debugInfoBuilder->getOrCreateArray(elements);
+			llvm::DINodeArray members = _debugInfoBuilder->getOrCreateArray(llvm::ArrayRef(elements.data(), elements.size()));
 
 			_valueOfLastDebugType = _debugInfoBuilder->createStructType(scope, type->name(), 
 				debugFile, line, structSizeInBits, _dataLayout.getPointerPrefAlignment(), 
@@ -152,9 +152,9 @@ namespace klong {
 				}
 			}
 
-			std::vector<llvm::DIType*> members;
+			Array<llvm::DIType*> members;
 			for (auto& value : unionDeclaration->members()) {
-				members.push_back(getLLVMDebugType(value->type()));
+				members.push(getLLVMDebugType(value->type()));
 			}
 
 			// _valueOfLastDebugType = _debugInfoBuilder->createUnionType(scope, type->name(), _debugFile, );
@@ -170,7 +170,7 @@ namespace klong {
 			assert(false);
 			break;
 		}
-		_outerTypes.pop_back();
+		_outerTypes.pop();
 	}
 
 	void LLVMDebugTypeEmitVisitor::setDebugInfoBuilder(llvm::DIBuilder* debugInfoBuilder) {

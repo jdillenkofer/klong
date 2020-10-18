@@ -1,5 +1,6 @@
 #pragma once
 
+#include "array.h"
 #include "ast/stmt.h"
 #include "common/compilation_result.h"
 #include "common/symbol_info.h"
@@ -28,10 +29,10 @@ namespace klong {
         bool isCyclicDependency(std::string modulepath);
         ModulePtr getModule(std::string modulepath);
 
-        std::vector<ModulePtr> modules();
+        Array<ModulePtr> modules();
 
         std::optional<SymbolInfo> findSymbol(const std::string &name);
-        std::vector<SymbolInfo> hasPrivateSymbols(const std::string& name);
+        Array<SymbolInfo> hasPrivateSymbols(const std::string& name);
         bool declareSymbol(std::string name, SymbolInfo symbolInfo);
         void declarePrivateSymbol(std::string name, SymbolInfo symbolInfo);
 
@@ -44,7 +45,7 @@ namespace klong {
         bool isTypechecked(const std::string& modulepath);
 
 		std::string registerAndReturnUniqueObjectFilepath(std::string prefixname);
-		std::vector<std::string> getObjectFilenames();
+		Array<std::string> getObjectFilenames();
 
 		bool emitDebugInfo() const;
 		bool emitDwarf() const;
@@ -56,7 +57,7 @@ namespace klong {
         std::set<std::string> _resolvedModules;
         std::set<std::string> _typecheckedModules;
 
-		std::vector<std::string> _objectFilenames;
+		Array<std::string> _objectFilenames;
 
         CompilationResult _result;
 		bool _emitDebugInfo;

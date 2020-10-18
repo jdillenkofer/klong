@@ -76,6 +76,7 @@ set(SOURCE_FILES
 	src/common/compilation_session.cpp)
 
 set(HEADER_FILES
+    src/array.h
     src/compiler.h
     src/common/defer.h
     src/common/option.h

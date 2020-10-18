@@ -3,8 +3,8 @@
 #include "lexer/token.h"
 #include "common/source_range.h"
 #include "visitor.h"
+#include "array.h"
 
-#include <vector>
 #include <memory>
 #include <cassert>
 
@@ -77,7 +77,7 @@ namespace klong {
 
     class FunctionType : public Type {
     public:
-        FunctionType(SourceRange sourceRange, std::vector<TypePtr>&& paramTypes, TypePtr returnType, bool isVariadic):
+        FunctionType(SourceRange sourceRange, Array<TypePtr>&& paramTypes, TypePtr returnType, bool isVariadic):
             Type(TypeKind::FUNCTION, sourceRange),
             _paramTypes(paramTypes),
             _returnType(returnType),
@@ -92,10 +92,10 @@ namespace klong {
             visitor->visitFunctionType(this);
         }
 
-        std::vector<Type*> paramTypes() const {
-            std::vector<Type*> paramTypes;
+        Array<Type*> paramTypes() const {
+            Array<Type*> paramTypes;
             for (auto& paramType : _paramTypes) {
-                paramTypes.push_back(paramType.get());
+                paramTypes.push(paramType.get());
             }
             return paramTypes;
         }
@@ -112,12 +112,12 @@ namespace klong {
 
         Type* clone() const override;
 
-        bool matchesSignature(const std::vector<Type*>& callSignature) const;
+        bool matchesSignature(const Array<Type*>& callSignature) const;
 
-        bool matchesSignature(std::vector<Expr*>& arguments) const;
+        bool matchesSignature(Array<Expr*>& arguments) const;
 
     private:
-        std::vector<TypePtr> _paramTypes;
+        Array<TypePtr> _paramTypes;
         TypePtr _returnType;
         bool _isVariadic;
     };

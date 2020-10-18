@@ -52,10 +52,10 @@ namespace klong {
         return nullptr;
     }
 
-    std::vector<ModulePtr> CompilationSession::modules() {
-        std::vector<ModulePtr> modules;
+    Array<ModulePtr> CompilationSession::modules() {
+        Array<ModulePtr> modules;
         for(auto& item : _allModules) {
-            modules.push_back(item.second);
+            modules.push(item.second);
         }
         return modules;
     }
@@ -68,11 +68,11 @@ namespace klong {
         return {};
     }
 
-    std::vector<SymbolInfo> CompilationSession::hasPrivateSymbols(const std::string& name) {
+    Array<SymbolInfo> CompilationSession::hasPrivateSymbols(const std::string& name) {
         auto privateSymbolRange = _privateSymbols.equal_range(name);
-        std::vector<SymbolInfo> privateSymbol;
+        Array<SymbolInfo> privateSymbol;
         for (auto it = privateSymbolRange.first; it != privateSymbolRange.second; it++) {
-            privateSymbol.push_back(it->second);
+            privateSymbol.push(it->second);
         }
         return privateSymbol;
     }
@@ -137,12 +137,12 @@ namespace klong {
 			uniqueObjectFilepath = prefixPath + "_" + std::to_string(numberSuffix) + fileExtension;
 			numberSuffix++;
 		}
-		_objectFilenames.push_back(uniqueObjectFilepath);
+		_objectFilenames.push(uniqueObjectFilepath);
 		// remove the .o fileExtension
 		return uniqueObjectFilepath.substr(0, uniqueObjectFilepath.size() - fileExtension.size());
 	}
 
-	std::vector<std::string> CompilationSession::getObjectFilenames() {
+	Array<std::string> CompilationSession::getObjectFilenames() {
 		return _objectFilenames;
 	}
 

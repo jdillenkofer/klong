@@ -69,7 +69,7 @@ namespace klong {
         void visitCustomType(CustomType *type) override;
 
     private:
-        void check(const std::vector<Stmt*>& statements);
+        void check(const Array<Stmt*>& statements);
         void check(Stmt* stmt);
         void check(Expr* expr);
 
@@ -86,7 +86,7 @@ namespace klong {
         std::map<std::string, TypeDeclaration*> _typeDeclarations;
         CompilationSession* _session;
         bool _returnsValue = false;
-        std::vector<TypePtr> _arithmeticConversionStack = {
+        Array<TypePtr> _arithmeticConversionStack = {
                 std::make_shared<PrimitiveType>(PrimitiveTypeKind::I8),
                 std::make_shared<PrimitiveType>(PrimitiveTypeKind::U8),
                 std::make_shared<PrimitiveType>(PrimitiveTypeKind::I16),

@@ -2,8 +2,8 @@
 
 #include "visitor.h"
 #include "lexer/token.h"
+#include "array.h"
 
-#include <vector>
 #include <memory>
 #include <filesystem>
 
@@ -23,15 +23,15 @@ namespace klong {
             visitor->visitModule(this);
         }
 
-        std::vector<Stmt*> statements() const {
-            std::vector<Stmt*> stmts;
+        Array<Stmt*> statements() const {
+            Array<Stmt*> stmts;
             for(auto& stmt : _statements) {
-                stmts.push_back(stmt.get());
+                stmts.push(stmt.get());
             }
             return stmts;
         }
 
-        void addStatements(std::vector<StmtPtr>&& stmts) {
+        void addStatements(Array<StmtPtr>&& stmts) {
             _statements = stmts;
         }
 
@@ -61,7 +61,7 @@ namespace klong {
             return filenameNoExt.str();
         }
 
-        std::vector<std::shared_ptr<Module>> dependencies() const {
+        Array<std::shared_ptr<Module>> dependencies() const {
             return _dependencies;
         }
 
@@ -75,12 +75,12 @@ namespace klong {
         }
 
         void addDependency(std::shared_ptr<Module> module) {
-            _dependencies.emplace_back(module);
+            _dependencies.push(module);
         }
 
     private:
-        std::vector<std::shared_ptr<Module>> _dependencies;
-        std::vector<StmtPtr> _statements;
+        Array<std::shared_ptr<Module>> _dependencies;
+        Array<StmtPtr> _statements;
 		std::string _absolutepath;
 		std::string _parentpath;
         std::string _filename;

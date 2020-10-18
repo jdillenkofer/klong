@@ -1,5 +1,6 @@
 #pragma once
 
+#include "array.h"
 #include "llvm/IR/DIBuilder.h"
 
 namespace klong {
@@ -13,6 +14,6 @@ namespace klong {
 		llvm::DIScope* getDebugScope();
 	private:
 		llvm::DIFile* _debugFile;
-		std::vector<llvm::DIScope*> _debugBlocks;
+		Array<llvm::DIScope*> _debugBlocks;
 	};
 }

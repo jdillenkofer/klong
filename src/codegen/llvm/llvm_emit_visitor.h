@@ -1,7 +1,6 @@
 #pragma once
 
-#include <deque>
-
+#include "array.h"
 #include "common/compilation_session.h"
 #include "ast/stmt.h"
 #include "ast/visitor.h"
@@ -74,7 +73,7 @@ namespace klong {
         llvm::Value* emitCodeL(Expr* expr);
         llvm::Value* emitCodeR(Expr* expr);
         void emitCode(Stmt *stmt);
-        void emitBlock(const std::vector<Stmt*>& statements);
+        void emitBlock(const Array<Stmt*>& statements);
         void emitLocalDefers();
         void emitAllDefers();
         llvm::Value* getVariableAddress(Expr* expr);
@@ -110,7 +109,7 @@ namespace klong {
 		bool _eliminateDeadCodeInCurrentBlock;
 
 		// used for defer
-		std::deque<std::vector<Stmt*>> _deferScopes;
+		Array<Array<Stmt*>> _deferScopes;
 		CompilationSession* _session;
     };
 }

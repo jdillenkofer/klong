@@ -10,9 +10,9 @@ namespace klong {
         std::string absolutepath = _lexer->absolutepath();
         _module = std::make_shared<Module>(absolutepath, moduleName);
 
-        std::vector<StmtPtr> statements;
+        Array<StmtPtr> statements;
         while(!isAtEnd()) {
-            statements.push_back(declarationStmt());
+            statements.push(declarationStmt());
         }
 
         _module->addStatements(std::move(statements));
@@ -216,15 +216,15 @@ namespace klong {
         Token fun = previous();
         Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
         Token leftPar = consume(TokenType::LEFT_PAR, "Expected '(' after function name.");
-        std::vector<ParameterPtr> params;
-        std::vector<TypePtr> paramTypes;
+        Array<ParameterPtr> params;
+        Array<TypePtr> paramTypes;
         if (!check(TokenType::RIGHT_PAR)) {
             do {
                 Token identifier = consume(TokenType::IDENTIFIER, "Expect parameter name.");
                 consume(TokenType::COLON, "Expect ':' after parameter name.");
                 TypePtr type = typeDeclaration();
 
-                params.push_back(
+                params.push(
                         std::make_shared<Parameter>(
                                 SourceRange { identifier.sourceRange.start, type->sourceRange().end },
                                 identifier.value,
@@ -236,7 +236,7 @@ namespace klong {
                         throw CompilationIncident(CompilationIncidentType::ERROR, "Illegal type 'void' in argument list.", primitiveType->sourceRange());
                     }
                 }
-                paramTypes.push_back(type);
+                paramTypes.push(type);
             } while(match(TokenType::COMMA));
         }
         Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after parameters.");
@@ -245,7 +245,7 @@ namespace klong {
             returnType = typeDeclaration();   
         }
         consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' before function body.");
-        std::vector<StmtPtr> body = blockStmt();
+        Array<StmtPtr> body = blockStmt();
         Token rightCurlyBrace = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after function body.");
         auto functionType = std::make_shared<FunctionType>(SourceRange {
             leftPar.sourceRange.start,
@@ -258,10 +258,10 @@ namespace klong {
                 name.value, std::move(params), functionType, std::move(body), isPublic);
     }
 
-    std::vector<StmtPtr> Parser::blockStmt() {
-        std::vector<StmtPtr> statements;
+    Array<StmtPtr> Parser::blockStmt() {
+        Array<StmtPtr> statements;
         while(!check(TokenType::RIGHT_CURLY_BRACE) && !isAtEnd()) {
-            statements.push_back(declarationStmt());
+            statements.push(declarationStmt());
         }
         return statements;
     }
@@ -315,7 +315,7 @@ namespace klong {
 		std::string typeKindName = isStruct ? "struct" : "union";
 		Token name = consume(TokenType::IDENTIFIER, "Expect " + typeKindName + " name.");
 		consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' after " + typeKindName + " name.");
-		std::vector<std::shared_ptr<CustomMember>> members;
+		Array<std::shared_ptr<CustomMember>> members;
 		if (check(TokenType::IDENTIFIER)) {
 			do {
 				Token literal = consume(TokenType::IDENTIFIER, "Expect " + typeKindName + " element name.");
@@ -333,7 +333,7 @@ namespace klong {
 						"Member with name '" + customMember->name() + "' already exists in '" + name.value + "'.", 
                         customMember->sourceRange());
 				}
-				members.emplace_back(customMember);
+				members.push(customMember);
 			} while (match(TokenType::COMMA));
 		}
 		Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last " + typeKindName + " member.");
@@ -352,7 +352,7 @@ namespace klong {
 		Token enumToken = previous();
 		Token name = consume(TokenType::IDENTIFIER, "Expect enum name.");
 		consume(TokenType::LEFT_CURLY_BRACE, "Expect '{' after enum name.");
-		std::vector<std::string> values;
+		Array<std::string> values;
 		if (check(TokenType::IDENTIFIER)) {
 			do {
 				Token literal = consume(TokenType::IDENTIFIER, "Expect value.");
@@ -365,7 +365,7 @@ namespace klong {
 						"Value with name '" + literal.value + "' already exists in '" + name.value + "'.",
                         literal.sourceRange);
 				}
-				values.emplace_back(literal.value);
+				values.push(literal.value);
 			} while (match(TokenType::COMMA));
 		}
 		Token rightCurlyBracket = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after last enum value.");
@@ -426,7 +426,7 @@ namespace klong {
             case TokenType::LEFT_PAR:
             {
                 bool isVariadic = false;
-                std::vector<TypePtr> argTypes;
+                Array<TypePtr> argTypes;
                 if (peek().type != TokenType::RIGHT_PAR) {
                     do {
                         if (match(TokenType::SPREAD)) {
@@ -437,7 +437,7 @@ namespace klong {
                                     peek().sourceRange);
                             }
                         } else {
-                            argTypes.push_back(typeDeclaration());
+                            argTypes.push(typeDeclaration());
                         }
                     } while(match(TokenType::COMMA));
                 }
@@ -656,7 +656,7 @@ namespace klong {
         }
         if (match(TokenType::LEFT_CURLY_BRACE)) {
             Token leftCurlyBrace = previous();
-            std::vector<StmtPtr> block = blockStmt();
+            Array<StmtPtr> block = blockStmt();
             Token rightCurlyBrace = consume(TokenType::RIGHT_CURLY_BRACE, "Expect '}' after block.");
             return std::make_shared<Block>(
                     SourceRange { leftCurlyBrace.sourceRange.start, rightCurlyBrace.sourceRange.end },
@@ -1003,10 +1003,10 @@ namespace klong {
 
 	ExprPtr Parser::finishCallExpr(ExprPtr callee) {
 		Token leftPar = previous();
-		std::vector<ExprPtr> args;
+		Array<ExprPtr> args;
 		if (!check(TokenType::RIGHT_PAR)) {
 			do {
-				args.push_back(expression());
+				args.push(expression());
 			} while (match(TokenType::COMMA));
 		}
 		Token rightPar = consume(TokenType::RIGHT_PAR, "Expect ')' after arguments.");
@@ -1120,9 +1120,9 @@ namespace klong {
         }
 
         if (match(TokenType::LEFT_SQUARED_BRACKET)) {
-            std::vector<ExprPtr> values;
+            Array<ExprPtr> values;
             do {
-                values.push_back(literal());
+                values.push(literal());
             } while(match(TokenType::COMMA));
             auto rightSquaredBracket = consume(TokenType::RIGHT_SQUARED_BRACKET, "Expect ']' at the end of an array literal.");
             return std::make_shared<ArrayLiteral>(

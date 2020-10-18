@@ -1,5 +1,6 @@
 #pragma once
 
+#include "array.h"
 #include "ast/type.h"
 #include "ast/visitor.h"
 
@@ -7,7 +8,6 @@
 
 #include "llvm/IR/DIBuilder.h"
 #include <map>
-#include <deque>
 #include <llvm/IR/DataLayout.h>
 
 namespace klong {
@@ -33,7 +33,7 @@ namespace klong {
 	private:
 		std::map<std::string, llvm::DIType*> _customTypeCache;
 		llvm::DIType* _valueOfLastDebugType = nullptr;
-		std::deque<TypeKind> _outerTypes;
+		Array<TypeKind> _outerTypes;
 		llvm::LLVMContext& _context;
 		llvm::DataLayout _dataLayout;
 		llvm::DIBuilder* _debugInfoBuilder;

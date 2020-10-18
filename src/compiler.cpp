@@ -83,7 +83,7 @@ namespace klong {
         std::sort(incidents.begin(), incidents.end(), compareIncidents);
 
         std::string prevFilename = "";
-        for (uint64_t i = 0; i < incidents.size(); i++) {
+        for (uint32_t i = 0; i < incidents.size(); i++) {
             auto& incident = incidents[i];
             auto sourceRange = incident.sourceRange;
             if (sourceRange.valid() && prevFilename != sourceRange.start.filename()) {
