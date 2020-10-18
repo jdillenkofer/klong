@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stack>
 #include <map>
 
 #include "array.h"

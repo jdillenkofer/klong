@@ -51,6 +51,7 @@ template<typename T> struct Array {
         for (uint32_t i = 0; i < _size; ++i) {
             _data[i].~T();
         }
+        free(_data);
         _size = other._size;
         _capacity = other._capacity;
         _data = (T*) malloc(sizeof(T) * _capacity);
@@ -60,7 +61,7 @@ template<typename T> struct Array {
         return *this;
     }
 
-    Array& operator= (Array &&) {
+    Array& operator= (Array && other) {
         _size = other._size;
         _capacity = other._capacity;
         _data = other._data;
@@ -70,17 +71,18 @@ template<typename T> struct Array {
         return *this;
     }
 
-    T& operator[](int index) {
+    inline T& operator[](int index) {
         assert(index >= 0 && index < _size);
         return _data[index];
     }
 
-    T operator[](int index) const {
+    inline T operator[](int index) const {
         assert(index >= 0 && index < _size);
         return _data[index];
     }
 
     void ensure_space(uint32_t required_space) {
+        assert(required_space >= 0);
         if (required_space <= _capacity) {
             return;
         }
@@ -114,28 +116,30 @@ template<typename T> struct Array {
         return copy;
     }
 
-    T back() const {
+    inline T back() const {
+        assert(size > 0);
         return _data[_size - 1];
     }
 
-    T& back() {
+    inline T& back() {
+        assert(size > 0);
         return _data[_size - 1];
     }
 
-    bool empty() const {
+    inline bool empty() const {
         return _size == 0;
     }
 
-    uint32_t size() const {
+    inline uint32_t size() const {
         return _size;
     }
 
-    T* data() {
+    inline T* data() {
         return _data;
     }
 
-    T* begin() const { return &_data[0]; }
-    T* end() const { return &_data[_size]; }
+    inline T* begin() const { return &_data[0]; }
+    inline T* end() const { return &_data[_size]; }
 
 private:
     T* _data;
