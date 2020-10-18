@@ -117,12 +117,12 @@ template<typename T> struct Array {
     }
 
     inline T back() const {
-        assert(size > 0);
+        assert(_size > 0);
         return _data[_size - 1];
     }
 
     inline T& back() {
-        assert(size > 0);
+        assert(_size > 0);
         return _data[_size - 1];
     }
 
